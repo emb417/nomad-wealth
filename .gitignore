@@ -1,0 +1,11 @@
+# Ignore CSV, html and log files
+*.csv
+*.log
+*.html
+
+# Ignore OS files
+.DS_Store
+
+# Ignore pycache and venv
+__pycache__/
+venv/
