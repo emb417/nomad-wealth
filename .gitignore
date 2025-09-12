@@ -1,7 +1,10 @@
-# Ignore CSV, html and log files
+# Ignore Import files: CSV and JSON
 *.csv
-*.log
+*.json
+
+# Ignore Export files: html and log files
 *.html
+*.log
 
 # Ignore OS files
 .DS_Store

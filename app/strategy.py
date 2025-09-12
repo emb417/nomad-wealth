@@ -1,30 +1,8 @@
 import numpy as np
 import pandas as pd
-from datetime import datetime
 import logging
 
-infl_thresholds = {
-    "Fixed-Income": (0.06, 0.00),
-    "Market": (0.06, 0.02),
-    "Real-Estate": (0.04, 0.02),
-}
-gain_table = {
-    "Fixed-Income": {
-        "High": (0.00, 0.0010),
-        "Average": (0.0028, 0.0010),
-        "Low": (0.0035, 0.0015),
-    },
-    "Market": {
-        "High": (-0.0010, 0.0050),
-        "Average": (0.0042, 0.0050),
-        "Low": (0.0058, 0.0050),
-    },
-    "Real-Estate": {
-        "High": (0.0029, 0.0015),
-        "Average": (0.0019, 0.0015),
-        "Low": (0.0009, 0.0015),
-    },
-}
+from datetime import datetime
 
 
 def get_bucket_asset_class(bucket):
@@ -71,7 +49,7 @@ def generate_annual_inflation(
     return annual_inflation
 
 
-def apply_inflation_scenario(new_row, row, annual_inflation):
+def apply_inflation_scenario(new_row, row, annual_inflation, inflation_thresholds, gain_table):
     for bucket in new_row.index:
         if bucket != "Date":
             asset_class = get_bucket_asset_class(bucket)
@@ -79,13 +57,15 @@ def apply_inflation_scenario(new_row, row, annual_inflation):
                 infl_scenario = "Average"
                 year = pd.to_datetime(row["Date"]).year
                 infl_rate = annual_inflation.get(year, {}).get("rate", 0)
-                for asset_class_threshold, (high, low) in infl_thresholds.items():
-                    if infl_rate > high:
-                        infl_scenario = "High"
-                    elif infl_rate < low:
-                        infl_scenario = "Low"
-                avg, std = gain_table[asset_class][infl_scenario]
-                gain_rate = np.random.normal(avg, std)
+                thresholds = inflation_thresholds.get(asset_class, {})
+                if infl_rate > thresholds.get("high", 0):
+                    infl_scenario = "High"
+                elif infl_rate < thresholds.get("low", 0):
+                    infl_scenario = "Low"
+                gain_data = gain_table[asset_class].get(infl_scenario, {})
+                gain_avg = gain_data.get("avg", 0)
+                gain_std = gain_data.get("std", 0)
+                gain_rate = np.random.normal(gain_avg, gain_std)
                 new_row[bucket] *= 1 + gain_rate
     return new_row
 
@@ -163,7 +143,7 @@ def apply_recurring_transactions(
     return row
 
 
-def apply_forecasting(ledger_df, fixed_df, recurring_df, profile_data):
+def apply_forecasting(ledger_df, fixed_df, recurring_df, profile_data, inflation_thresholds, gain_table):
     # Apply fixed and recurring transactions to updated asset values
     updated_ledger_df = ledger_df.copy()
 
@@ -189,7 +169,7 @@ def apply_forecasting(ledger_df, fixed_df, recurring_df, profile_data):
             new_row["Depreciating"] *= 0.99
 
         # Apply gains/losses based on the inflation scenarios per bucket
-        gains_row = apply_inflation_scenario(new_row, row, annual_inflation)
+        gains_row = apply_inflation_scenario(new_row, row, annual_inflation, inflation_thresholds, gain_table)
 
         # Apply fixed transactions
         fixed_row = apply_fixed_transactions(
