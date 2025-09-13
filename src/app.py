@@ -1,9 +1,10 @@
 import logging
-from datetime import datetime
-
 import pandas as pd
-from pandas.tseries.offsets import MonthBegin
 import plotly.express as px
+
+from datetime import datetime
+from pandas.tseries.offsets import MonthBegin
+from typing import Dict, List
 
 from load_data import load_csv, load_json
 from logging_setup import setup_logging
@@ -57,32 +58,35 @@ def main():
     # 3) Seed buckets from last historical row
     ########################
     
-    buckets: dict[str, Bucket] = {}
+    buckets: Dict[str, Bucket] = {}
     for bucket_name, breakdown in holdings_config.items():
+        # Grab the last-known historical balance for this bucket
         start_bal = int(hist_df[bucket_name].iloc[-1])
 
-        holdings = []
+        holdings: List[Holding] = []
         for h in breakdown:
             cls_name = h["asset_class"]
             weight   = float(h["weight"])
 
+            # Compute how much of the existing balance lives in this slice
             raw_amt = start_bal * weight
             amt     = int(round(raw_amt))
 
-            avg       = gain_table[cls_name]["Average"]["avg"]
-            std       = gain_table[cls_name]["Average"]["std"]
-            asset_cls = AssetClass(cls_name, avg, std)
+            # Create the AssetClass (now only takes name)
+            asset_cls = AssetClass(cls_name)
 
-            holdings.append(Holding(asset_cls, amt))
+            # → Holding signature is (asset_class, weight, amount)
+            holdings.append(Holding(asset_cls, weight, amt))
 
-        # adjust rounding drift on last holding
+        # Fix any rounding drift on the last slice
         total_alloc = sum(h.amount for h in holdings)
-        drift        = start_bal - total_alloc
+        drift       = start_bal - total_alloc
         if drift:
             holdings[-1].amount += drift
 
+        # Build the Bucket with its initial holdings
         buckets[bucket_name] = Bucket(bucket_name, holdings)
-
+    
     ########################
     # 4) Build policy, strategies, and transactions
     ########################

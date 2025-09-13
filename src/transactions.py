@@ -1,7 +1,7 @@
 import pandas as pd
-from pandas import Timestamp
+from pandas import Period
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict
 from domain import Bucket
 
 class Transaction(ABC):
@@ -13,88 +13,75 @@ class Transaction(ABC):
 
 class FixedTransaction:
     """
-    One‐off cash flows applied to buckets based on the transaction date.
-    When forecasting for month M, we look for any fixed transactions
-    whose date falls in the prior month’s period.
+    One‐off cash flows keyed by the CSV’s Date/Amount/Bucket columns.
+    Always deposits the full amount into bucket.deposit(amount),
+    letting the bucket’s own holding-policy split it internally.
     """
 
     def __init__(self, df: pd.DataFrame):
-        # Expect columns: Date, Type, Amount, optional AssetClass, optional Description
+        # Expect columns: Date, Bucket, Amount, optional Description
         self.df = df.copy()
         self.df["Date"] = pd.to_datetime(self.df["Date"])
 
     def apply(self,
-          buckets: Dict[str, Bucket],
-          tx_month: pd.Period) -> None:
-        """
-        Apply all fixed transactions whose Date’s year-month matches tx_month.
-        If an AssetClass is provided, target that specific holding;
-        otherwise default to the first holding in the bucket.
-        
-        :param buckets: mapping of bucket name → Bucket instance
-        :param tx_month: the period to look back on (forecast_date minus one month)
-        """
-        # Filter for transactions in the same YYYY-MM as tx_month
-        month_period = tx_month.to_timestamp().to_period("M")
-        hits = self.df[self.df["Date"].dt.to_period("M") == month_period]
+              buckets: Dict[str, Bucket],
+              tx_month: Period) -> None:
+        # Filter for any fixed transactions in this YYYY-MM
+        hits = self.df[self.df["Date"].dt.to_period("M") == tx_month]
 
         for _, row in hits.iterrows():
-            bucket_name = row["Type"]
-            bucket      = buckets[bucket_name]
-            amt         = int(row["Amount"])
-            asset_class = row.get("AssetClass")
+            # 1) pick the bucket name from CSV
+            raw_bucket = row.get("Bucket")
+            bucket_key = (
+                raw_bucket
+                if pd.notna(raw_bucket) and str(raw_bucket).strip()
+                else "Cash"
+            )
 
-            # Target a specific holding if AssetClass is provided
-            if asset_class and pd.notna(asset_class):
-                for h in bucket.holdings:
-                    if h.asset_class.name == asset_class:
-                        h.amount += amt
-                        break
-            else:
-                # Default: apply to first holding (e.g., cash slice)
-                bucket.holdings[0].amount += amt
+            # 2) deposit into the bucket and let it split per its policy
+            bucket = buckets[bucket_key]
+            amt    = int(row["Amount"])
+            bucket.deposit(amt)
 
 
 class RecurringTransaction:
     """
-    Monthly cash flows applied to buckets based on a start/end range.
-    When forecasting for month M, we look for any recurring transactions
-    whose window includes the prior month’s period.
+    Monthly cash flows keyed by Start Date/End Date/Bucket/Amount.
+    Fires each month if tx_month ∈ [Start, End].
     """
 
     def __init__(self, df: pd.DataFrame):
-        # Expect columns: Start Date, End Date, Type, Amount, optional AssetClass, optional Description
+        # Expect columns: Start Date, End Date, Bucket, Amount
         self.df = df.copy()
         self.df["Start Date"] = pd.to_datetime(self.df["Start Date"])
         self.df["End Date"]   = pd.to_datetime(self.df["End Date"], errors="coerce")
 
     def apply(self,
-          buckets: Dict[str, Bucket],
-          tx_month: pd.Period) -> None:
-        """
-        Apply one monthly transaction per rule if tx_month falls within its window.
-        :param buckets: mapping of bucket name → Bucket instance
-        :param tx_month: the period to look back on (forecast_date minus one month)
-        """
-        period = tx_month.to_timestamp().to_period("M")
+              buckets: Dict[str, Bucket],
+              tx_month: Period) -> None:
+        period = tx_month
+
         for _, row in self.df.iterrows():
             start = row["Start Date"].to_period("M")
-            end   = row["End Date"].to_period("M") if not pd.isna(row["End Date"]) else None
+            end   = (
+                row["End Date"].to_period("M")
+                if pd.notna(row["End Date"])
+                else None
+            )
 
-            if start <= period and (end is None or period <= end):
-                bucket = buckets[row["Type"]]
-                amt    = int(row["Amount"])
-                asset_cls: Optional[str] = row.get("AssetClass")
+            if not (start <= period and (end is None or period <= end)):
+                continue
 
-                # Target a specific holding if AssetClass is provided
-                if asset_cls and pd.notna(asset_cls):
-                    for h in bucket.holdings:
-                        if h.asset_class.name == asset_cls:
-                            h.amount += amt
-                            break
-                else:
-                    # Default: apply to first holding slice
-                    bucket.holdings[0].amount += amt
+            raw_bucket = row.get("Bucket")
+            bucket_key = (
+                raw_bucket
+                if pd.notna(raw_bucket) and str(raw_bucket).strip()
+                else "Cash"
+            )
+
+            bucket = buckets[bucket_key]
+            amt    = int(row["Amount"])
+            bucket.deposit(amt)
                     
 class SocialSecurityTransaction:
     """

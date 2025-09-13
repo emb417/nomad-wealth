@@ -1,42 +1,59 @@
-from dataclasses import dataclass, field
-from typing import List
 import numpy as np
+from typing import List, Optional
+from datetime import datetime
 
-@dataclass
 class AssetClass:
-    name: str
-    mean: float
-    std: float
+    """
+    Defines an asset class with a name and return‐sampling behavior.
+    """
+    def __init__(self, name: str):
+        self.name = name
 
-    def sample_return(self) -> float:
-        """Draw one period’s return for this asset class."""
-        return float(np.random.normal(self.mean, self.std))
+    def sample_return(self, avg: float, std: float) -> float:
+        """
+        Draw a random return from a normal distribution.
+        """
+        return np.random.normal(avg, std)
 
-@dataclass
+
 class Holding:
-    asset_class: AssetClass
-    amount: int        # dollars as integer
+    """
+    A single slice in a Bucket.
+      - asset_class: the AssetClass instance  
+      - weight:     relative weight for split deposits  
+      - amount:     current dollar amount in this slice  
+    """
+    def __init__(self,
+                 asset_class: AssetClass,
+                 weight: float,
+                 amount: int = 0):
+        self.asset_class = asset_class
+        self.weight      = weight
+        self.amount      = amount
 
-    def apply_growth(self) -> None:
-        """
-        Sample a float return, apply to int amount,
-        then round back to the nearest dollar.
-        """
-        r = self.asset_class.sample_return()
-        new_amt = self.amount * (1 + r)
-        self.amount = int(round(new_amt))
 
-@dataclass
 class Bucket:
-    name: str
-    holdings: List[Holding] = field(default_factory=list)
+    def __init__(self, name: str, holdings: List[Holding]):
+        self.name     = name
+        self.holdings = holdings
 
-    @property
-    def balance(self) -> float:
+    def deposit(self,
+                amount: int,
+                holding_name: Optional[str] = None) -> None:
+        if holding_name:
+            for h in self.holdings:
+                if h.asset_class.name == holding_name:
+                    h.amount += amount
+                    return
+            raise KeyError(f"Holding '{holding_name}' not found in '{self.name}'")
+
+        total_weight = sum(h.weight for h in self.holdings)
+        remainder    = amount
+        for h in self.holdings[:-1]:
+            share      = int(round(amount * (h.weight / total_weight)))
+            h.amount  += share
+            remainder -= share
+        self.holdings[-1].amount += remainder
+
+    def balance(self) -> int:
         return sum(h.amount for h in self.holdings)
-
-    def apply_growth(self) -> None:
-        """Apply growth to each holding in this bucket."""
-        for h in self.holdings:
-            h.apply_growth()
-            

@@ -14,11 +14,11 @@ class RefillPolicy:
 
     def apply(self, buckets: Dict[str, Bucket]) -> None:
         for name, bucket in buckets.items():
-            bal    = bucket.balance
+            bal    = bucket.balance()
             thresh = self.thresholds.get(name, 0)
             if bal < thresh:
                 amt = self.amounts.get(name, 0)
                 src = self.sources.get(name)
-                if src and buckets[src].balance     >= amt:
+                if src and buckets[src].balance()   >= amt:
                     buckets[src].holdings[0].amount -= amt
                     bucket.holdings[0].amount       += amt

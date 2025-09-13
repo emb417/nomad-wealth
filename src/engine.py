@@ -34,24 +34,24 @@ class ForecastEngine:
             # 1) Grab the date we’re forecasting
             forecast_date = pd.to_datetime(row["Date"])
 
-            # 2) Determine which month’s transactions to apply
+            # 2) Apply market gains for this forecast_date
+            self.gain_strategy.apply(self.buckets, forecast_date)
+
+            # 3) Determine which month’s transactions to apply
             #    e.g. for Oct 1, 2025 we look at Sep 2025 txns
             tx_month = (forecast_date - MonthBegin(1)).to_period("M")
 
-            # 3) Apply every transaction against that prior month
+            # 4) Apply every transaction against that prior month
             for tx in self.transactions:
                 tx.apply(self.buckets, tx_month)
 
-            # 4) Refill under-threshold buckets
+            # 5) Refill under-threshold buckets
             self.refill_policy.apply(self.buckets)
-
-            # 5) Apply market gains for this forecast_date
-            self.gain_strategy.apply(self.buckets, forecast_date)
 
             # 6) Snapshot: Date + each bucket’s total
             snapshot = {"Date": forecast_date}
             for name, bucket in self.buckets.items():
-                snapshot[name] = bucket.balance
+                snapshot[name] = bucket.balance()
             records.append(snapshot)
 
         # 7) Return a tidy DataFrame
