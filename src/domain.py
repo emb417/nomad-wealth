@@ -39,3 +39,4 @@ class Bucket:
         """Apply growth to each holding in this bucket."""
         for h in self.holdings:
             h.apply_growth()
+            

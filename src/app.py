@@ -10,7 +10,7 @@ from logging_setup import setup_logging
 from domain import AssetClass, Holding, Bucket
 from policies import RefillPolicy
 from strategies import InflationGenerator, GainStrategy
-from transactions import FixedTransaction, RecurringTransaction
+from transactions import FixedTransaction, RecurringTransaction, SocialSecurityTransaction
 from engine import ForecastEngine
 
 SHOW_CHART  = True
@@ -100,8 +100,14 @@ def main():
     gain_strategy = GainStrategy(gain_table, inflation_thresholds, annual_inflation)
 
     fixed_tx = FixedTransaction(fixed_df)
-    recur_tx = RecurringTransaction(recurring_df, profile)
-    transactions = [fixed_tx, recur_tx]
+    recur_tx = RecurringTransaction(recurring_df)
+    ss_txn = SocialSecurityTransaction(
+        start_date     = profile["Social Security Date"],
+        monthly_amount = profile["Social Security Amount"],
+        pct_cash       = profile["Social Security Percentage"],
+        cash_bucket    = "Cash"
+    )
+    transactions = [fixed_tx, recur_tx, ss_txn]
 
     #########################
     # 5) Run forecast on future dates only

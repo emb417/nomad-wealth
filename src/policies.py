@@ -19,6 +19,6 @@ class RefillPolicy:
             if bal < thresh:
                 amt = self.amounts.get(name, 0)
                 src = self.sources.get(name)
-                if src and buckets[src].balance >= amt:
+                if src and buckets[src].balance     >= amt:
                     buckets[src].holdings[0].amount -= amt
-                    bucket.holdings[0].amount     += amt
+                    bucket.holdings[0].amount       += amt
