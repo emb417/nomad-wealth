@@ -1,115 +1,227 @@
+import logging
 import pandas as pd
-from pandas import Period
+
 from abc import ABC, abstractmethod
 from typing import Dict
+
+# Internal Imports
 from domain import Bucket
 
+
 class Transaction(ABC):
+    is_tax_deferred: bool = False
+    is_taxable: bool = False
+
     @abstractmethod
-    def apply(self, buckets: Dict[str, Bucket], date: pd.Timestamp ) -> None:
-        """Apply this transaction on the given date to the buckets."""
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         pass
 
+    def get_salary(self, tx_month: pd.Period) -> int:
+        return 0
 
-class FixedTransaction:
-    """
-    One‐off cash flows keyed by the CSV’s Date/Amount/Bucket columns.
-    Always deposits the full amount into bucket.deposit(amount),
-    letting the bucket’s own holding-policy split it internally.
-    """
+    def get_social_security(self, tx_month: pd.Period) -> int:
+        return 0
 
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return 0
+
+
+class FixedTransaction(Transaction):
     def __init__(self, df: pd.DataFrame):
-        # Expect columns: Date, Bucket, Amount, optional Description
         self.df = df.copy()
         self.df["Date"] = pd.to_datetime(self.df["Date"])
 
-    def apply(self,
-              buckets: Dict[str, Bucket],
-              tx_month: Period) -> None:
-        # Filter for any fixed transactions in this YYYY-MM
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        # find any rows that happen in this month
         hits = self.df[self.df["Date"].dt.to_period("M") == tx_month]
-
         for _, row in hits.iterrows():
-            # 1) pick the bucket name from CSV
-            raw_bucket = row.get("Bucket")
-            bucket_key = (
-                raw_bucket
-                if pd.notna(raw_bucket) and str(raw_bucket).strip()
-                else "Cash"
-            )
-
-            # 2) deposit into the bucket and let it split per its policy
-            bucket = buckets[bucket_key]
-            amt    = int(row["Amount"])
-            bucket.deposit(amt)
-
-
-class RecurringTransaction:
-    """
-    Monthly cash flows keyed by Start Date/End Date/Bucket/Amount.
-    Fires each month if tx_month ∈ [Start, End].
-    """
-
-    def __init__(self, df: pd.DataFrame):
-        # Expect columns: Start Date, End Date, Bucket, Amount
-        self.df = df.copy()
-        self.df["Start Date"] = pd.to_datetime(self.df["Start Date"])
-        self.df["End Date"]   = pd.to_datetime(self.df["End Date"], errors="coerce")
-
-    def apply(self,
-              buckets: Dict[str, Bucket],
-              tx_month: Period) -> None:
-        period = tx_month
-
-        for _, row in self.df.iterrows():
-            start = row["Start Date"].to_period("M")
-            end   = (
-                row["End Date"].to_period("M")
-                if pd.notna(row["End Date"])
-                else None
-            )
-
-            if not (start <= period and (end is None or period <= end)):
+            bucket_name = str(row.get("Bucket", "Cash")).strip()
+            if bucket_name not in buckets:
+                logging.warning(f"{tx_month} — Bucket '{bucket_name}' not found")
                 continue
 
-            raw_bucket = row.get("Bucket")
-            bucket_key = (
-                raw_bucket
-                if pd.notna(raw_bucket) and str(raw_bucket).strip()
-                else "Cash"
-            )
+            amount = int(row["Amount"])
+            bucket = buckets[bucket_name]
 
-            bucket = buckets[bucket_key]
-            amt    = int(row["Amount"])
-            bucket.deposit(amt)
-                    
-class SocialSecurityTransaction:
-    """
-    Models monthly SS inflows beginning on `start_date`.
-    Deposits only `pct_cash` × monthly_amount into the cash bucket.
-    """
+            if amount >= 0:
+                # a true inflow
+                bucket.deposit(amount)
+            else:
+                # an outflow: try to withdraw from the bucket
+                needed = -amount
+                withdrawn = bucket.withdraw(needed)
+                shortfall = needed - withdrawn
 
-    def __init__(self,
-                 start_date: str,
-                 monthly_amount: int,
-                 pct_cash: float,
-                 cash_bucket: str):
-        # Month to start SS deposits (inclusive)
+                if shortfall > 0:
+                    # route any shortfall back to Cash
+                    buckets["Cash"].withdraw(shortfall)
+                    logging.info(
+                        f"[Fallback] {tx_month} — "
+                        f"${shortfall:,} pulled from Cash for '{bucket_name}'"
+                    )
+
+
+class RecurringTransaction(Transaction):
+    def __init__(self, df: pd.DataFrame):
+        self.df = df.copy()
+        self.df["Start Date"] = pd.to_datetime(self.df["Start Date"])
+        self.df["End Date"] = pd.to_datetime(self.df["End Date"], errors="coerce")
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        for _, row in self.df.iterrows():
+            start = row["Start Date"].to_period("M")
+            end = row["End Date"].to_period("M") if pd.notna(row["End Date"]) else None
+            if not (start <= tx_month and (end is None or tx_month <= end)):
+                continue
+
+            bucket_name = str(row.get("Bucket", "Cash")).strip()
+            if bucket_name not in buckets:
+                logging.warning(f"{tx_month} — Bucket '{bucket_name}' not found")
+                continue
+
+            amount = int(row["Amount"])
+            bucket = buckets[bucket_name]
+
+            if amount >= 0:
+                bucket.deposit(amount)
+            else:
+                needed = -amount
+                withdrawn = bucket.withdraw(needed)
+                shortfall = needed - withdrawn
+
+                if shortfall > 0:
+                    buckets["Cash"].withdraw(shortfall)
+                    logging.info(
+                        f"[Fallback] {tx_month} — "
+                        f"${shortfall:,} pulled from Cash for '{bucket_name}'"
+                    )
+
+
+class SocialSecurityTransaction(Transaction):
+    def __init__(
+        self, start_date: str, monthly_amount: int, pct_cash: float, cash_bucket: str
+    ):
         self.start_month = pd.to_datetime(start_date).to_period("M")
-        # Precompute integer cash portion
-        self.cash_amt    = int(round(monthly_amount * pct_cash))
+        self.monthly_amount = monthly_amount
+        self.cash_amt = int(round(monthly_amount * pct_cash))
         self.cash_bucket = cash_bucket
 
-    def apply(self,
-          buckets: Dict[str, Bucket],
-          tx_month: pd.Period) -> None:
-        """
-        If tx_month ≥ start_month, add cash_amt to the first holding
-        of the designated cash_bucket.
-        """
-        if tx_month.to_timestamp().to_period("M") < self.start_month:
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if tx_month >= self.start_month:
+            buckets[self.cash_bucket].deposit(self.cash_amt)
+
+    def get_social_security(self, tx_month: pd.Period) -> int:
+        return self.monthly_amount if tx_month >= self.start_month else 0
+
+
+class SalaryTransaction(Transaction):
+    def __init__(
+        self,
+        annual_gross: int,
+        annual_bonus: int,
+        bonus_date: str,
+        salary_bucket: str,
+        retirement_date: str,
+    ):
+        self.monthly_base = annual_gross // 12
+        self.remainder = annual_gross - (self.monthly_base * 12)
+        self.annual_bonus = annual_bonus
+        self.bonus_period = pd.to_datetime(bonus_date).to_period("M")
+        self.retirement_period = pd.to_datetime(retirement_date).to_period("M")
+        self.bucket_name = salary_bucket
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if tx_month > self.retirement_period:
             return
 
-        bucket = buckets[self.cash_bucket]
-        # Default to the first holding slice (e.g. money-market fund)
-        bucket.holdings[0].amount += self.cash_amt
+        bucket = buckets[self.bucket_name]
+        amount = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        bucket.deposit(amount)
+
+        if tx_month == self.bonus_period:
+            bucket.deposit(self.annual_bonus)
+
+    def get_salary(self, tx_month: pd.Period) -> int:
+        if tx_month > self.retirement_period:
+            return 0
+        amt = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        return amt + (self.annual_bonus if tx_month == self.bonus_period else 0)
+
+
+class TaxDeferredTransaction(Transaction):
+    is_tax_deferred = True
+
+    def __init__(
+        self,
+        annual_gross: int,
+        annual_bonus: int,
+        bonus_date: str,
+        target_bucket: str,
+        retirement_date: str,
+    ):
+        self.monthly_base = annual_gross // 12
+        self.remainder = annual_gross - (self.monthly_base * 12)
+        self.annual_bonus = annual_bonus
+        self.bonus_period = pd.to_datetime(bonus_date).to_period("M")
+        self.retirement_period = pd.to_datetime(retirement_date).to_period("M")
+        self.bucket_name = target_bucket
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if tx_month > self.retirement_period:
+            return
+
+        bucket = buckets[self.bucket_name]
+        amount = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        bucket.deposit(amount)
+
+        if tx_month == self.bonus_period:
+            bucket.deposit(self.annual_bonus)
+
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        if tx_month > self.retirement_period:
+            return 0
+        base = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        return base + (self.annual_bonus if tx_month == self.bonus_period else 0)
+
+
+class TaxableTransaction(Transaction):
+    is_taxable = True
+
+    def __init__(
+        self,
+        annual_gross: int,
+        annual_bonus: int,
+        bonus_date: str,
+        target_bucket: str,
+        retirement_date: str,
+        gain_log: Dict[pd.Period, int],
+    ):
+        self.monthly_base = annual_gross // 12
+        self.remainder = annual_gross - (self.monthly_base * 12)
+        self.annual_bonus = annual_bonus
+        self.bonus_period = pd.to_datetime(bonus_date).to_period("M")
+        self.retirement_period = pd.to_datetime(retirement_date).to_period("M")
+        self.bucket_name = target_bucket
+        self.gain_log = gain_log
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if tx_month > self.retirement_period:
+            return
+
+        bucket = buckets[self.bucket_name]
+        amount = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        bucket.deposit(amount)
+
+        if tx_month == self.bonus_period:
+            bucket.deposit(self.annual_bonus)
+
+        # deposit any realized gain
+        gain = self.gain_log.get(tx_month, 0)
+        if gain > 0:
+            bucket.deposit(gain)
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return self.gain_log.get(tx_month, 0)

@@ -4,147 +4,190 @@ import plotly.express as px
 
 from datetime import datetime
 from pandas.tseries.offsets import MonthBegin
-from typing import Dict, List
+from typing import Dict
 
+# Internal Imports
+from domain import AssetClass, Holding, Bucket
+from engine import ForecastEngine
 from load_data import load_csv, load_json
 from logging_setup import setup_logging
-from domain import AssetClass, Holding, Bucket
-from policies import RefillPolicy
+from policies import ThresholdRefillPolicy
 from strategies import InflationGenerator, GainStrategy
-from transactions import FixedTransaction, RecurringTransaction, SocialSecurityTransaction
-from engine import ForecastEngine
+from taxes import TaxCalculator
+from transactions import (
+    FixedTransaction,
+    RecurringTransaction,
+    SocialSecurityTransaction,
+    SalaryTransaction,
+)
 
-SHOW_CHART  = True
-SAVE_CHART  = True
-SAVE_LEDGER = True
+SHOW_CHART = False
+SAVE_CHART = False
+SAVE_LEDGER = False
+SAVE_TAXES = False
 
-def main():
-    setup_logging()
-    logging.info("Loading data…")
-    
-    ##########################
-    # 1) Load configs and CSVs
-    ##########################
-    
-    json_data    = load_json()
-    dataframes   = load_csv()
 
-    profile               = json_data["profile"]
-    gain_table            = json_data["gain_table"]
-    inflation_thresholds  = json_data["inflation_thresholds"]
-    holdings_config       = json_data["holdings"]
-    refill_cfg            = json_data["refill_policy"]
+def create_bucket(name, starting_balance, breakdown, allow_negative=False):
+    holdings = []
+    for piece in breakdown:
+        cls_name = piece["asset_class"]
+        weight = float(piece["weight"])
+        amt = int(round(starting_balance * weight))
+        holdings.append(Holding(AssetClass(cls_name), weight, amt))
 
-    balance_df   = dataframes["balance"]
-    fixed_df     = dataframes["fixed"]
-    recurring_df = dataframes["recurring"]
+    drift = starting_balance - sum(h.amount for h in holdings)
+    if drift:
+        holdings[-1].amount += drift
 
-    ##########################
-    # 2) Build buckets and ledger
-    ##########################
+    return Bucket(name, holdings, can_go_negative=allow_negative)
 
-    hist_df   = balance_df.copy()
+
+def seed_buckets(hist_df, holdings_config):
+    last = hist_df.iloc[-1]
+    buckets = {}
+    for name, breakdown in holdings_config.items():
+        bal = int(last[name])
+        buckets[name] = create_bucket(
+            name, bal, breakdown, allow_negative=(name == "Cash")
+        )
+    return buckets
+
+
+def stage_load():
+    """1) Load JSON + CSVs."""
+    json_data = load_json()
+    dfs = load_csv()
+    return json_data, dfs
+
+
+def stage_prepare_timeframes(balance_df, end_date):
+    """2) Build hist_df and future_df."""
+    hist_df = balance_df.copy()
     hist_df["Date"] = pd.to_datetime(hist_df["Date"])
-    last_hist = hist_df["Date"].max()
+    last_date = hist_df["Date"].max()
 
     future_idx = pd.date_range(
-        last_hist + MonthBegin(1),
-        pd.to_datetime(profile["End Date"]),
-        freq="MS"
+        last_date + MonthBegin(1), pd.to_datetime(end_date), freq="MS"
     )
     future_df = pd.DataFrame({"Date": future_idx})
+    return hist_df, future_df
 
-    ########################
-    # 3) Seed buckets from last historical row
-    ########################
-    
-    buckets: Dict[str, Bucket] = {}
-    for bucket_name, breakdown in holdings_config.items():
-        # Grab the last-known historical balance for this bucket
-        start_bal = int(hist_df[bucket_name].iloc[-1])
 
-        holdings: List[Holding] = []
-        for h in breakdown:
-            cls_name = h["asset_class"]
-            weight   = float(h["weight"])
+def stage_init_components(
+    json_data: dict,
+    dfs: Dict[str, pd.DataFrame],
+    hist_df: pd.DataFrame,
+    future_df: pd.DataFrame,
+):
+    """3) Seed buckets, policies, strategies, and transactions."""
+    profile = json_data["profile"]
+    holdings_config = json_data["holdings"]
+    refill_cfg = json_data["refill_policy"]
+    gain_table = json_data["gain_table"]
+    inflation_thresholds = json_data["inflation_thresholds"]
 
-            # Compute how much of the existing balance lives in this slice
-            raw_amt = start_bal * weight
-            amt     = int(round(raw_amt))
+    # Buckets
+    buckets = seed_buckets(hist_df, holdings_config)
 
-            # Create the AssetClass (now only takes name)
-            asset_cls = AssetClass(cls_name)
-
-            # → Holding signature is (asset_class, weight, amount)
-            holdings.append(Holding(asset_cls, weight, amt))
-
-        # Fix any rounding drift on the last slice
-        total_alloc = sum(h.amount for h in holdings)
-        drift       = start_bal - total_alloc
-        if drift:
-            holdings[-1].amount += drift
-
-        # Build the Bucket with its initial holdings
-        buckets[bucket_name] = Bucket(bucket_name, holdings)
-    
-    ########################
-    # 4) Build policy, strategies, and transactions
-    ########################
-    
-    refill_policy = RefillPolicy(
-        thresholds  = refill_cfg["thresholds"],
-        amounts     = refill_cfg["amounts"],
-        sources     = refill_cfg["sources"]
+    # Refill policy & tax calculator
+    dob_period = pd.to_datetime(profile["Date of Birth"]).to_period("M")
+    eligibility = dob_period + (59 * 12 + 6)
+    refill_policy = ThresholdRefillPolicy(
+        thresholds=refill_cfg["thresholds"],
+        source_by_target=refill_cfg["sources"],
+        amounts=refill_cfg["amounts"],
+        taxable_eligibility=eligibility,
     )
+    tax_calc = TaxCalculator(refill_policy)
 
-    years            = sorted(set(future_df["Date"].dt.year))
-    inflation_gen    = InflationGenerator(years, avg=0.03, std=0.02)
-    annual_inflation = inflation_gen.generate()
+    # Gain strategy
+    years = sorted(future_df["Date"].dt.year.unique())
+    infl_gen = InflationGenerator(years, avg=0.03, std=0.02)
+    annual_infl = infl_gen.generate()
+    gain_strategy = GainStrategy(gain_table, inflation_thresholds, annual_infl)
 
-    gain_strategy = GainStrategy(gain_table, inflation_thresholds, annual_inflation)
-
-    fixed_tx = FixedTransaction(fixed_df)
-    recur_tx = RecurringTransaction(recurring_df)
+    # Transactions
+    fixed_tx = FixedTransaction(json_data["fixed_df"] if False else dfs["fixed"])
+    recur_tx = RecurringTransaction(
+        json_data["recurring_df"] if False else dfs["recurring"]
+    )
+    salary_tx = SalaryTransaction(
+        annual_gross=profile["Annual Gross Income"],
+        annual_bonus=profile["Annual Bonus Amount"],
+        bonus_date=profile["Annual Bonus Date"],
+        salary_bucket="Cash",
+        retirement_date=profile["Retirement Date"],
+    )
     ss_txn = SocialSecurityTransaction(
-        start_date     = profile["Social Security Date"],
-        monthly_amount = profile["Social Security Amount"],
-        pct_cash       = profile["Social Security Percentage"],
-        cash_bucket    = "Cash"
+        start_date=profile["Social Security Date"],
+        monthly_amount=profile["Social Security Amount"],
+        pct_cash=profile["Social Security Percentage"],
+        cash_bucket="Cash",
     )
-    transactions = [fixed_tx, recur_tx, ss_txn]
+    transactions = [fixed_tx, recur_tx, salary_tx, ss_txn]
 
-    #########################
-    # 5) Run forecast on future dates only
-    #########################
-    
+    return buckets, refill_policy, tax_calc, gain_strategy, annual_infl, transactions
+
+
+def stage_run_engine(
+    buckets,
+    transactions,
+    refill_policy,
+    gain_strategy,
+    inflation,
+    tax_calc,
+    future_df,
+    profile,
+):
+    """4) Run ForecastEngine and return forecast + taxes DataFrames."""
     engine = ForecastEngine(
         buckets=buckets,
         transactions=transactions,
         refill_policy=refill_policy,
         gain_strategy=gain_strategy,
-        inflation=annual_inflation
+        inflation=inflation,
+        tax_calc=tax_calc,
+        profile=profile,
     )
-    logging.info("Running forecast simulation…")
-    forecasted_df = engine.run(future_df)
+    logging.info(f"Running forecast for {len(future_df)} months…")
+    return engine.run(future_df)
 
-    ########################
-    # 6) Combine history + forecast
-    ########################
-    
+
+def main():
+    setup_logging()
+
+    # Stage 1: Load
+    json_data, dfs = stage_load()
+
+    # Stage 2: Timeframes
+    hist_df, future_df = stage_prepare_timeframes(
+        dfs["balance"], json_data["profile"]["End Date"]
+    )
+
+    # Stage 3: Init components
+    buckets, refill_policy, tax_calc, gain_strategy, inflation, transactions = (
+        stage_init_components(json_data, dfs, hist_df, future_df)
+    )
+
+    # Stage 4: Run
+    forecasted_df, taxes_df = stage_run_engine(
+        buckets,
+        transactions,
+        refill_policy,
+        gain_strategy,
+        inflation,
+        tax_calc,
+        future_df,
+        json_data["profile"],
+    )
+
+    # Combine & log results
     full_ledger = pd.concat([hist_df, forecasted_df], ignore_index=True)
-
-    ########################
-    # 7) Compute end net worth
-    ########################
-    
-    bucket_cols = [c for c in full_ledger.columns if c != "Date"]
-    end_net     = full_ledger.iloc[-1][bucket_cols].sum()
+    end_net = full_ledger.iloc[-1].drop("Date").sum()
     logging.info(f"Forecast complete. End Net Worth: ${end_net:,.0f}")
 
-    ########################
-    # 8) Visualization
-    ########################
-    
+    # Visualize / save
+    bucket_cols = [c for c in full_ledger.columns if c != "Date"]
     if SHOW_CHART or SAVE_CHART:
         fig = px.line(
             full_ledger,
@@ -152,28 +195,21 @@ def main():
             y=bucket_cols,
             color_discrete_sequence=px.colors.qualitative.Set1,
         )
-        fig.update_layout(
-            title="Bucket Balances: Historical + Forecast",
-            legend_title="Bucket"
-        )
-
+        fig.update_layout(title="Bucket Balances", legend_title="Bucket")
         if SHOW_CHART:
             fig.show()
         if SAVE_CHART:
-            ts   = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            ts = datetime.now().strftime("%Y%m%d_%H%M%S")
             path = f"export/forecast_{ts}.html"
             fig.write_html(path)
-            logging.info(f"Chart saved: {path}")
+            logging.info(f"Chart saved to {path}")
 
-    ########################
-    # 9) Save ledger CSV
-    ########################
-    
+    ts = datetime.now().strftime("%Y%m%d_%H%M%S")
     if SAVE_LEDGER:
-        ts   = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        path = f"export/ledger_{ts}.csv"
-        full_ledger.to_csv(path, index=False)
-        logging.info(f"Ledger saved: {path}")
+        full_ledger.to_csv(f"export/ledger_{ts}.csv", index=False)
+    if SAVE_TAXES:
+        taxes_df.to_csv(f"export/taxes_{ts}.csv", index=False)
+
 
 if __name__ == "__main__":
     main()

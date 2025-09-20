@@ -1,24 +1,105 @@
-from typing import Dict
-from domain import Bucket
+import logging
+import pandas as pd
 
-class RefillPolicy:
+from typing import Dict, List, Optional
+
+# Internal Imports
+from domain import Bucket
+from transactions import Transaction
+
+
+class RefillTransaction(Transaction):
+    def __init__(
+        self,
+        source: str,
+        target: str,
+        amount: int,
+        is_tax_deferred: bool = False,
+        is_taxable: bool = False,
+    ):
+        self.source = source
+        self.target = target
+        self.amount = amount
+        self.is_tax_deferred = is_tax_deferred
+        self.is_taxable = is_taxable
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        buckets[self.source].withdraw(self.amount)
+        buckets[self.target].deposit(self.amount)
+
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        return self.amount if self.is_tax_deferred else 0
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return self.amount if self.is_taxable else 0
+
+
+class ThresholdRefillPolicy:
     def __init__(
         self,
         thresholds: Dict[str, int],
-        amounts:    Dict[str, int],
-        sources:    Dict[str, str]
+        source_by_target: Dict[str, List[str]],
+        amounts: Dict[str, int],
+        taxable_eligibility: Optional[pd.Period] = None,
     ):
         self.thresholds = thresholds
-        self.amounts    = amounts
-        self.sources    = sources
+        self.sources = source_by_target
+        self.amounts = amounts
+        self.taxable_eligibility = taxable_eligibility
 
-    def apply(self, buckets: Dict[str, Bucket]) -> None:
-        for name, bucket in buckets.items():
-            bal    = bucket.balance()
-            thresh = self.thresholds.get(name, 0)
-            if bal < thresh:
-                amt = self.amounts.get(name, 0)
-                src = self.sources.get(name)
-                if src and buckets[src].balance()   >= amt:
-                    buckets[src].holdings[0].amount -= amt
-                    bucket.holdings[0].amount       += amt
+    def generate(
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period
+    ) -> List[RefillTransaction]:
+        txns: List[RefillTransaction] = []
+
+        for target, threshold in self.thresholds.items():
+            # 1) Skip taxable until eligible
+            if (
+                target.lower() == "taxable"
+                and self.taxable_eligibility
+                and tx_month < self.taxable_eligibility
+            ):
+                continue
+
+            # 2) Only trigger refill when below threshold
+            tgt_bucket = buckets.get(target)
+            if tgt_bucket is None or tgt_bucket.balance() >= threshold:
+                continue
+
+            # 3) Always try to move the full configured amount
+            per_pass = self.amounts.get(target, 0)
+            if per_pass <= 0:
+                logging.warning(
+                    f"[RefillPolicy] {tx_month} — no refill amount for '{target}'"
+                )
+                continue
+
+            remaining = per_pass
+            for source in self.sources.get(target, []):
+                src_bucket = buckets.get(source)
+                if src_bucket is None:
+                    continue
+
+                available = src_bucket.balance()
+                # cap only by what's available and what's left of per_pass
+                transfer = min(available, remaining)
+                if transfer <= 0:
+                    continue
+
+                is_def = source.lower() == "tax-deferred"
+                is_tax = source.lower() == "taxable"
+
+                txns.append(
+                    RefillTransaction(
+                        source=source,
+                        target=target,
+                        amount=transfer,
+                        is_tax_deferred=is_def,
+                        is_taxable=is_tax,
+                    )
+                )
+                remaining -= transfer
+                if remaining <= 0:
+                    break
+
+        return txns
