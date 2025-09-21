@@ -53,9 +53,7 @@ class ForecastEngine:
             # 3) Market returns
             self.gain_strategy.apply(self.buckets, forecast_date)
 
-            # 4) Tax calculation & cash withdrawal
-
-            # Gather monthly flows
+            # 4) Accumulate flows into yearly_tax_log
             monthly_salary = sum(
                 tx.get_salary(tx_month)
                 for tx in self.transactions
@@ -77,55 +75,63 @@ class ForecastEngine:
                 if tx.is_taxable
             )
 
-            # 4a) Ordinary‐income tax (annualized → monthly slice)
-            annual_ordinary_tax = self.tax_calc.calculate_tax(
-                salary=monthly_salary * 12,
-                ss_benefits=monthly_ss * 12,
-                withdrawals=monthly_deferred,
-                gains=0,
-            )
-            monthly_ordinary_tax = annual_ordinary_tax // 12
-
-            # 4b) Capital‐gains tax (annualize gains, then slice)
-            annual_gains_tax = self.tax_calc.calculate_tax(
-                salary=0, ss_benefits=0, withdrawals=0, gains=monthly_taxable * 12
-            )
-            monthly_gains_tax = annual_gains_tax // 12
-
-            # 4c) Combine and withdraw
-            monthly_tax = monthly_ordinary_tax + monthly_gains_tax
-            if monthly_tax > 0:
-                paid = self.buckets["Cash"].withdraw(monthly_tax)
-                logging.debug(
-                    f"[Taxes:{tx_month}] paid ${paid:,} "
-                    f"(ordinary ${monthly_ordinary_tax:,} + gains ${monthly_gains_tax:,})"
-                )
-
-            # 5) Yearly summary
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
                     "TaxDeferredWithdrawals": 0,
                     "TaxableGains": 0,
                     "Salary": 0,
                     "SocialSecurity": 0,
-                    "TotalTax": 0,
                 }
             ylog = yearly_tax_log[year]
-            ylog["TaxDeferredWithdrawals"] += monthly_deferred
-            ylog["TaxableGains"] += monthly_taxable
             ylog["Salary"] += monthly_salary
             ylog["SocialSecurity"] += monthly_ss
-            ylog["TotalTax"] += monthly_tax
+            ylog["TaxDeferredWithdrawals"] += monthly_deferred
+            ylog["TaxableGains"] += monthly_taxable
 
-            # 7) Snapshot balances
+            # 5) Snapshot balances
             snapshot = {"Date": forecast_date}
             for name, bucket in self.buckets.items():
                 snapshot[name] = bucket.balance()
             records.append(snapshot)
 
-            # 8) Year‐end tax record
-            if forecast_date.month == 12:
-                tr = {"Year": year}
-                tax_records.append(tr)
+            # 6) January: finalize prior‐year taxes
+            if forecast_date.month == 1:
+                prev_year = year - 1
+                prev_log = yearly_tax_log.get(prev_year)
+                if prev_log:
+                    sal = prev_log["Salary"]
+                    ss = prev_log["SocialSecurity"]
+                    wdraw = prev_log["TaxDeferredWithdrawals"]
+                    gain = prev_log["TaxableGains"]
+
+                    # total tax
+                    total_tax = self.tax_calc.calculate_tax(
+                        salary=sal, ss_benefits=ss, withdrawals=wdraw, gains=gain
+                    )
+                    # ordinary = salary+SS+withdrawals only
+                    ord_tax = self.tax_calc.calculate_tax(
+                        salary=sal, ss_benefits=ss, withdrawals=wdraw, gains=0
+                    )
+                    capg_tax = total_tax - ord_tax
+
+                    # pay full year’s bill
+                    paid = self.buckets["Cash"].withdraw(total_tax)
+                    logging.debug(
+                        f"[YearlyTax:{prev_year}] paid ${paid:,} "
+                        f"(ordinary ${ord_tax:,} + gains ${capg_tax:,})"
+                    )
+
+                    tax_records.append(
+                        {
+                            "Year": prev_year,
+                            "TaxDeferredWithdrawals": wdraw,
+                            "TaxableGains": gain,
+                            "Salary": sal,
+                            "SocialSecurity": ss,
+                            "OrdinaryTax": ord_tax,
+                            "CapitalGainsTax": capg_tax,
+                            "TotalTax": total_tax,
+                        }
+                    )
 
         return pd.DataFrame(records), pd.DataFrame(tax_records)

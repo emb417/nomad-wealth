@@ -61,14 +61,14 @@ class ThresholdRefillPolicy:
                 txns.append(
                     RefillTransaction(
                         source="Real-Estate",
-                        target="Cash",
+                        target="Taxable",
                         amount=amt,
                         is_tax_deferred=False,
                         is_taxable=True,
                     )
                 )
                 logging.info(
-                    f"[EmergencyRefill] {tx_month} — "
+                    f"[Emergency Refill] {tx_month} — "
                     f"Liquidated ${amt:,} from Real-Estate → Cash"
                 )
 

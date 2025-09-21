@@ -105,9 +105,12 @@ class RothConversionTransaction(Transaction):
     Gradually convert from Tax-Deferred → Roth bucket,
     beginning at start_date, with a fixed monthly target.
     Stops when source is empty.
+
+    Each month’s converted amount is treated as a tax-deferred
+    withdrawal (ordinary income) and also as a taxable gain.
     """
 
-    is_taxable = True
+    is_tax_deferred = True
 
     def __init__(
         self,
@@ -120,20 +123,34 @@ class RothConversionTransaction(Transaction):
         self.monthly_target = monthly_target
         self.source_bucket = source_bucket
         self.target_bucket = target_bucket
+        self.amount: int = 0
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        self.amount = 0
+
         if tx_month < self.start_period:
             return
 
         src = buckets[self.source_bucket]
         tgt = buckets[self.target_bucket]
+
         available = src.balance()
         if available <= 0:
             return
 
         to_convert = min(available, self.monthly_target)
+        if to_convert <= 0:
+            return
+
+        self.amount = to_convert
         withdrawn = src.withdraw(to_convert)
         tgt.deposit(withdrawn)
+
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        return self.amount if getattr(self, "is_tax_deferred", False) else 0
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return self.amount if getattr(self, "is_taxable", False) else 0
 
 
 class SocialSecurityTransaction(Transaction):
