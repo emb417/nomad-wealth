@@ -22,7 +22,7 @@ from transactions import (
     RothConversionTransaction,
 )
 
-SHOW_CHART = True
+SHOW_CHART = False
 SAVE_CHART = False
 SAVE_LEDGER = False
 SAVE_TAXES = False

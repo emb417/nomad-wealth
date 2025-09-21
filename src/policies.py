@@ -52,6 +52,26 @@ class ThresholdRefillPolicy:
     ) -> List[RefillTransaction]:
         txns: List[RefillTransaction] = []
 
+        # Emergency: if Cash < 0, liquidate all Real-Estate into Cash
+        cash_balance = buckets["Cash"].balance()
+        if cash_balance < -100000:
+            re = buckets.get("Real-Estate")
+            if re and re.balance() > 0:
+                amt = re.balance()
+                txns.append(
+                    RefillTransaction(
+                        source="Real-Estate",
+                        target="Cash",
+                        amount=amt,
+                        is_tax_deferred=False,
+                        is_taxable=True,
+                    )
+                )
+                logging.info(
+                    f"[EmergencyRefill] {tx_month} — "
+                    f"Liquidated ${amt:,} from Real-Estate → Cash"
+                )
+
         for target, threshold in self.thresholds.items():
             # 1) Skip taxable until eligible
             if (

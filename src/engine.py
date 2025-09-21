@@ -41,19 +41,21 @@ class ForecastEngine:
             tx_month = (forecast_date - MonthBegin(1)).to_period("M")
             year = forecast_date.year
 
-            # 1) Core transactions (fixed, recurring, salary, SS)
+            # 1) Core transactions
             for tx in self.transactions:
                 tx.apply(self.buckets, tx_month)
 
-            # 2) Refill policy (top up any bucket below its threshold)
-            for refill_tx in self.refill_policy.generate(self.buckets, tx_month):
-                refill_tx.apply(self.buckets, tx_month)
+            # 2) Refill policy
+            refill_txns = self.refill_policy.generate(self.buckets, tx_month)
+            for tx in refill_txns:
+                tx.apply(self.buckets, tx_month)
 
-            # 3) Market returns (now applies to the *refilled* balances)
+            # 3) Market returns
             self.gain_strategy.apply(self.buckets, forecast_date)
 
             # 4) Tax calculation & cash withdrawal
-            #    (same as your existing tax section)
+
+            # Gather monthly flows
             monthly_salary = sum(
                 tx.get_salary(tx_month)
                 for tx in self.transactions
@@ -66,26 +68,40 @@ class ForecastEngine:
             )
             monthly_deferred = sum(
                 tx.get_withdrawal(tx_month)
-                for tx in self.transactions
-                if getattr(tx, "is_tax_deferred", False)
+                for tx in (*self.transactions, *refill_txns)
+                if tx.is_tax_deferred
             )
             monthly_taxable = sum(
                 tx.get_taxable_gain(tx_month)
-                for tx in self.transactions
-                if getattr(tx, "is_taxable", False)
+                for tx in (*self.transactions, *refill_txns)
+                if tx.is_taxable
             )
 
-            annual_tax = self.tax_calc.calculate_tax(
+            # 4a) Ordinary‐income tax (annualized → monthly slice)
+            annual_ordinary_tax = self.tax_calc.calculate_tax(
                 salary=monthly_salary * 12,
                 ss_benefits=monthly_ss * 12,
                 withdrawals=monthly_deferred,
-                gains=monthly_taxable,
+                gains=0,
             )
-            monthly_tax = annual_tax // 12
-            if monthly_tax > 0:
-                self.buckets["Cash"].deposit(-monthly_tax)
+            monthly_ordinary_tax = annual_ordinary_tax // 12
 
-            # update yearly summary…
+            # 4b) Capital‐gains tax (annualize gains, then slice)
+            annual_gains_tax = self.tax_calc.calculate_tax(
+                salary=0, ss_benefits=0, withdrawals=0, gains=monthly_taxable * 12
+            )
+            monthly_gains_tax = annual_gains_tax // 12
+
+            # 4c) Combine and withdraw
+            monthly_tax = monthly_ordinary_tax + monthly_gains_tax
+            if monthly_tax > 0:
+                paid = self.buckets["Cash"].withdraw(monthly_tax)
+                logging.debug(
+                    f"[Taxes:{tx_month}] paid ${paid:,} "
+                    f"(ordinary ${monthly_ordinary_tax:,} + gains ${monthly_gains_tax:,})"
+                )
+
+            # 5) Yearly summary
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
                     "TaxDeferredWithdrawals": 0,
@@ -101,22 +117,15 @@ class ForecastEngine:
             ylog["SocialSecurity"] += monthly_ss
             ylog["TotalTax"] += monthly_tax
 
-            if self.buckets["Cash"].balance() < -100000:
-                logging.warning(
-                    f"[Yearly] {forecast_date} — Cash balance is low: ${self.buckets['Cash'].balance():,}"
-                )
-            # 5) Record end‐of‐month balances
+            # 7) Snapshot balances
             snapshot = {"Date": forecast_date}
             for name, bucket in self.buckets.items():
                 snapshot[name] = bucket.balance()
             records.append(snapshot)
 
-            # 6) Year‐end tax summary (same as before)…
+            # 8) Year‐end tax record
             if forecast_date.month == 12:
-                tr = {
-                    "Year": year,
-                    # … fill in your existing bracket/gains logic …
-                }
+                tr = {"Year": year}
                 tax_records.append(tr)
 
         return pd.DataFrame(records), pd.DataFrame(tax_records)
