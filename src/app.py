@@ -19,9 +19,10 @@ from transactions import (
     RecurringTransaction,
     SocialSecurityTransaction,
     SalaryTransaction,
+    RothConversionTransaction,
 )
 
-SHOW_CHART = False
+SHOW_CHART = True
 SAVE_CHART = False
 SAVE_LEDGER = False
 SAVE_TAXES = False
@@ -124,7 +125,13 @@ def stage_init_components(
         pct_cash=profile["Social Security Percentage"],
         cash_bucket="Cash",
     )
-    transactions = [fixed_tx, recur_tx, salary_tx, ss_txn]
+    roth_conv = RothConversionTransaction(
+        start_date=profile["Roth Conversion Start Date"],
+        monthly_target=profile["Roth Conversion Amount"],
+        source_bucket="Tax-Deferred",
+        target_bucket="Tax-Free",
+    )
+    transactions = [fixed_tx, recur_tx, salary_tx, ss_txn, roth_conv]
 
     return buckets, refill_policy, tax_calc, gain_strategy, annual_infl, transactions
 

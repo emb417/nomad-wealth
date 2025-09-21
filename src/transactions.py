@@ -100,6 +100,42 @@ class RecurringTransaction(Transaction):
                     )
 
 
+class RothConversionTransaction(Transaction):
+    """
+    Gradually convert from Tax-Deferred → Roth bucket,
+    beginning at start_date, with a fixed monthly target.
+    Stops when source is empty.
+    """
+
+    is_taxable = True
+
+    def __init__(
+        self,
+        start_date: str,
+        monthly_target: int,
+        source_bucket: str = "Tax-Deferred",
+        target_bucket: str = "Tax-Free",
+    ):
+        self.start_period = pd.to_datetime(start_date).to_period("M")
+        self.monthly_target = monthly_target
+        self.source_bucket = source_bucket
+        self.target_bucket = target_bucket
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if tx_month < self.start_period:
+            return
+
+        src = buckets[self.source_bucket]
+        tgt = buckets[self.target_bucket]
+        available = src.balance()
+        if available <= 0:
+            return
+
+        to_convert = min(available, self.monthly_target)
+        withdrawn = src.withdraw(to_convert)
+        tgt.deposit(withdrawn)
+
+
 class SocialSecurityTransaction(Transaction):
     def __init__(
         self, start_date: str, monthly_amount: int, pct_cash: float, cash_bucket: str
