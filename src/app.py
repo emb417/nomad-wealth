@@ -11,7 +11,6 @@ from pandas.tseries.offsets import MonthBegin
 from domain import AssetClass, Holding, Bucket
 from engine import ForecastEngine
 from load_data import load_csv, load_json
-from logging_setup import setup_logging
 from policies import ThresholdRefillPolicy
 from economic_factors import InflationGenerator, MarketGains
 from taxes import TaxCalculator
@@ -134,7 +133,9 @@ def stage_init_components(json_data, dfs, hist_df, future_df):
 
 
 def main():
-    setup_logging()
+    logging.basicConfig(
+        level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    )
     start_time = time.time()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 

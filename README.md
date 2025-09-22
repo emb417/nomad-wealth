@@ -1,23 +1,25 @@
 # Inflation Forecasting & Portfolio Projections
 
-A Python framework that merges historical balances with forward simulations. It applies fixed and recurring transactions, enforces refill policies, models asset-class growth under inflation scenarios, and generates both a forecast ledger and interactive HTML chart.
+A Python framework for simulating long-term portfolio outcomes under inflation-adjusted market conditions. It merges historical balances with forward-looking cash flows, applies refill policies and tax-aware logic, and generates both deterministic and Monte Carlo forecasts with interactive charts.
 
 ---
 
-## Features
+## 🔧 Features
 
-- Fixed & recurring cash-flow ingestion from CSV
-- Threshold-driven refill policies (full-amount or top-off)
-- Per-asset inflation cutoffs driving Low/Average/High growth scenarios
-- Monte Carlo or deterministic gain sampling via a customizable gain table
-- Tax-aware withdrawals (deferred vs. taxable)
-- Pluggable logging and cash-balance alerts
+- Fixed & recurring transaction ingestion from CSV
+- Threshold-driven refill policies with age-based eligibility
+- Roth conversions modeled independently from refill logic
+- Inflation-aware market return simulation via gain tables
+- Monte Carlo sampling with percentile bands and probability metrics
+- Tax-aware withdrawals (ordinary vs. capital gains)
+- Interactive Plotly charts and CSV exports
+- Configurable logging and emergency cash alerts
 
 ---
 
-## Quick Start
+## 🚀 Quick Start
 
-1. Clone and install dependencies
+1. Clone and install dependencies:
 
    ```bash
    git clone <repo-url>
@@ -25,14 +27,13 @@ A Python framework that merges historical balances with forward simulations. It 
    pip install -r requirements.txt
    ```
 
-2. Configure JSONs in `config/` (see `config/README.md`)
-3. Prepare your CSVs in `data/` (see `data/README.md`)
-4. Review and set flags in `src/app.py`:
-   - `SHOW_CHART`
-   - `SAVE_CHART`
-   - `SAVE_LEDGER`
-   - `CASH_WARNING_THRESHOLD`
-5. Run the simulation
+2. Configure your profile and rules in `config/` (see `config/README.md`)
+3. Prepare historical balances and transaction data in `data/` (see `data/README.md`)
+4. Review flags in `src/app.py`:
+   - `SIMS`, `SIMS_SAMPLES`
+   - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART`
+   - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES`
+5. Run the simulation:
 
    ```bash
    python src/app.py
@@ -40,34 +41,66 @@ A Python framework that merges historical balances with forward simulations. It 
 
 ---
 
-## Folder Structure
+## 📁 Folder Structure
 
-- `config/` JSON definitions for buckets, market assumptions, thresholds, refill rules
-- `data/`  CSV files: balances, fixed, recurring transactions
-- `src/`  Application code (see `src/README.md`)
-- `export/`  Generated forecast CSV and HTML charts
-
----
-
-## Running & Reviewing
-
-1. Ensure bucket names match exactly across `config/` and `data/`
-2. Launch with debug/info logging enabled to trace refill, returns, and tax events
-3. Inspect `export/forecast.csv` and `export/forecast.html`
-4. Adjust refill strategies or gain tables, then rerun
+| Folder    | Description                                                            |
+| --------- | ---------------------------------------------------------------------- |
+| `config/` | JSON definitions for buckets, thresholds, gain tables, inflation rules |
+| `data/`   | CSVs for historical balances, fixed and recurring transactions         |
+| `src/`    | Application code (see [`src/README.md`](src/README.md))                |
+| `export/` | Generated outputs: Monte Carlo charts, sample forecasts, tax records   |
 
 ---
 
-## Roadmap
+## 📈 Outputs
 
-- JSON schema validation
-- Percentage-based refill rules
-- Full Monte Carlo sampling & confidence intervals
-- Extend policy engine to multi-bucket pro-rata top-ups
+- `mc_networth_<timestamp>.html`: Monte Carlo net worth chart with:
+  - All simulation paths
+  - Median, 15th, and 85th percentile lines
+  - Probability of positive net worth at key ages
+- `####_buckets_forecast_<timestamp>.csv`: Bucket balances for sampled simulations
+- `####_taxes_forecast_<timestamp>.csv`: Year-end tax breakdowns
+- `####_buckets_forecast_<timestamp>.html`: Interactive chart of bucket balances
+
+See [`export/README.md`](export/README.md) for details.
+
+---
+
+## 🧠 Simulation Logic
+
+- Historical balances are merged with forward projections
+- Each month applies:
+  1. Core transactions (fixed, recurring, salary, SS, Roth)
+  2. Refill logic (age-gated for tax-deferred sources)
+  3. Market returns via inflation-aware gain sampling
+  4. Tax computation and cash withdrawal
+  5. Balance snapshot and tax logging
+- Year-end taxes are paid in January of the following year
+
+---
+
+## 🛣️ Roadmap
+
+- Tax-Free withdrawal eligibility
+- Handle unemployment and delayed salary expectations
+- Extract all hard-coded values into config files
+- UI to enter balances and manage individual accounts and assign them to buckets
+- UI for tuning configurations: profile, holdings, gains, inflation, policies
+- UI for managing future transactions: fixed and recurring
+- UI for managing income sources: unemployement, salary, bonuses, social security
+- Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
+- Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
+- Visualize annual income sources using stacked bar chart
+- Visualize annual expenses using stacked bar chart
+- Visualize comparison of income to expenses
+- Visualize cash flows using multi-level sankey chart
+- Visualize tax liabilities per year per bucket
+- Handle specified equities with current market values and forecasted gains
+- Scenario tagging and multi-profile support
+- Interactive forecast comparison across scenarios
+- Support "smile" expenses curve
 - Category-specific inflation for expenses
 
 ---
 
-_Last updated:_ 2025-09-20
-
----
+_Last updated:_ 2025-09-22

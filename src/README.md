@@ -1,6 +1,4 @@
-# src/README.md
-
-## Source Code Overview
+# Source Code Overview
 
 All application logic lives under `src/`.
 
@@ -8,69 +6,88 @@ All application logic lives under `src/`.
 
 ## app.py
 
-Entry point. Parses `config/` and `data/`, initializes:
+Entry point. Loads configuration and historical data, initializes:
 
 - Buckets & holdings
-- Transactions (Fixed, Recurring, Salary, SS, Deferred, Taxable)
-- ThresholdRefillPolicy
-- MarketGains & inflation data
+- Transactions (Fixed, Recurring, Salary, Social Security, Roth Conversion)
+- ThresholdRefillPolicy with age-based eligibility
+- MarketGains (inflation-aware return simulator)
 - TaxCalculator
 
-Runs `ForecastEngine.run(...)` and writes exports.
+Runs a Monte Carlo loop using `ForecastEngine.run(...)`, aggregates year-end net worth across simulations, and exports:
+
+- Sample forecast charts and CSVs
+- Monte Carlo percentile chart
+- Probability of positive net worth at key ages
 
 ---
 
 ## engine.py
 
-`ForecastEngine` orchestrates the monthly loop:
+`ForecastEngine` orchestrates the monthly forecast loop:
 
-1. Core transactions (fixed, recurring, salary, SS)
-2. Refill policy
-3. Market returns via MarketGains
-4. Tax computation & cash withdrawal
-5. Snapshot balances & export
+1. Apply core transactions (fixed, recurring, salary, SS, Roth)
+2. Trigger refill policy (age-gated for tax-deferred sources)
+3. Apply market returns via `MarketGains`
+4. Compute taxes and withdraw from Cash
+5. Snapshot bucket balances
+6. Log year-end tax summary (paid in January of following year)
 
 ---
 
 ## domain.py
 
-- `AssetClass` & `Holding`
-- `Bucket`: deposit/withdraw logic, pro-rata weight handling
+- `AssetClass` & `Holding`: define asset types and weights
+- `Bucket`: manages deposits, withdrawals, and balance tracking
 
 ---
 
 ## policies.py
 
-- `ThresholdRefillPolicy`: top-off vs. full refill modes
-- Hooks for per-bucket eligibility and refill amounts
+- `ThresholdRefillPolicy`: triggers bucket top-offs based on thresholds
+- Includes age-based gating for tax-deferred withdrawals
+- Emergency logic for negative Cash balances
 
 ---
 
-## strategies.py
+## economic_factors.py
 
-- `MarketGains`: applies per-asset returns based on inflation thresholds
-- Logs each holding’s scenario and sampled gain
+- `MarketGains`: simulates inflation-adjusted market returns
+- `InflationGenerator`: produces annual inflation series with randomness
 
 ---
 
 ## taxes.py
 
-- `TaxCalculator`: ordinary vs. capital gains tax
-- Bracketed rates, social-security inclusion
+- `TaxCalculator`: computes ordinary and capital gains tax
+- Supports marginal brackets, SS inclusion, and age-based logic
 
 ---
 
 ## transactions.py
 
-Defines transaction types:
+Defines all transaction types:
 
 - `FixedTransaction`
 - `RecurringTransaction`
 - `SalaryTransaction`
 - `SocialSecurityTransaction`
-- `TaxDeferredTransaction`
-- `TaxableTransaction`
+- `RothConversionTransaction`
+- `RefillTransaction` (used by refill policy)
+
+Each transaction exposes:
+
+- `apply(...)`: mutates buckets
+- `get_withdrawal(...)`: for tax-deferred tracking
+- `get_taxable_gain(...)`: for capital gains tracking
 
 ---
 
-_Use logging levels to trace details._ Adjust flags in `app.py` as needed.
+## Logging & Flags
+
+Use logging levels (`DEBUG`, `INFO`) to trace simulation behavior.  
+Adjust flags in `app.py` to control:
+
+- Chart display and export
+- Sample simulation selection
+- Monte Carlo run count

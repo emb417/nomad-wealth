@@ -54,8 +54,8 @@ Example:
 ```json
 {
   "Taxable": [
-    { "asset_class": "LargeCap", "weight": 0.6, "initial_amount": 100000 },
-    { "asset_class": "Bond", "weight": 0.4, "initial_amount": 100000 }
+    { "asset_class": "Mutual Funds", "weight": 0.5 },
+    { "asset_class": "Equities", "weight": 0.5 }
   ]
 }
 ```
@@ -68,10 +68,10 @@ Maps each `asset_class` × growth scenario to `(avg, std)` monthly returns:
 
 ```json
 {
-  "LargeCap": {
-    "Low": { "avg": 0.0058, "std": 0.005 },
+  "Equities": {
     "Average": { "avg": 0.0042, "std": 0.005 },
-    "High": { "avg": -0.001, "std": 0.005 }
+    "High": { "avg": -0.001, "std": 0.005 },
+    "Low": { "avg": 0.0058, "std": 0.005 }
   }
 }
 ```
@@ -84,9 +84,13 @@ Per-asset inflation cutoffs dictate Low/Average/High:
 
 ```json
 {
-  "LargeCap": { "low": 0.02, "high": 0.06 },
-  "Bond": { "low": 0.0, "high": 0.06 },
-  "MMF": { "low": 0.0, "high": 0.03 }
+  "Equities": { "low": 0.02, "high": 0.06 },
+  "ETFs": { "low": 0.02, "high": 0.06 },
+  "CDs": { "low": 0.0, "high": 0.06 },
+  "Mutual Funds": { "low": 0.0, "high": 0.03 },
+  "Auto": { "low": 0.0, "high": 0.0 },
+  "Real-Estate": { "low": 0.02, "high": 0.04 },
+  "Depreciating": { "low": 0.0, "high": 0.0 }
 }
 ```
 
@@ -105,15 +109,21 @@ Example:
 
 ```json
 {
-  "thresholds": { "Cash": 50000, "Taxable": 100000 },
-  "amounts": { "Cash": 10000, "Taxable": 50000 },
-  "sources": { "Cash": ["Taxable", "Tax-Deferred"], "Taxable": ["Cash"] },
-  "taxable_eligibility": "2025-10-01"
+  "thresholds": {
+    "Cash": 30000,
+    "Fixed-Income": 90000
+  },
+  "amounts": {
+    "Cash": 50000,
+    "Fixed-Income": 100000
+  },
+  "sources": {
+    "Cash": ["Fixed-Income"],
+    "Fixed-Income": ["Taxable", "Tax-Deferred", "Tax-Free"]
+  }
 }
 ```
 
 ---
 
 See code comments in `policies/ThresholdRefillPolicy` for extensibility hooks.
-
----
