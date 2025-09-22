@@ -279,7 +279,7 @@ def main():
         go.Scatter(
             x=pct_df.index,
             y=pct_df["median"],
-            line=dict(color="green", width=1),
+            line=dict(color="green", width=2),
             name="Median",
         )
     )
@@ -287,7 +287,7 @@ def main():
         go.Scatter(
             x=pct_df.index,
             y=pct_df["p15"],
-            line=dict(color="blue", width=1, dash="dash"),
+            line=dict(color="blue", width=2, dash="dash"),
             name="Lower Bounds",
         )
     )
@@ -295,7 +295,7 @@ def main():
         go.Scatter(
             x=pct_df.index,
             y=pct_df["p85"],
-            line=dict(color="blue", width=1, dash="dash"),
+            line=dict(color="blue", width=2, dash="dash"),
             name="Upper Bounds",
         )
     )
