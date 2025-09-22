@@ -96,6 +96,12 @@ class ThresholdRefillPolicy:
 
             remaining = per_pass
             for source in self.sources.get(target, []):
+                if (
+                    source.lower() == "tax-deferred"
+                    and self.taxable_eligibility
+                    and tx_month < self.taxable_eligibility
+                ):
+                    continue
                 src_bucket = buckets.get(source)
                 if src_bucket is None:
                     continue
