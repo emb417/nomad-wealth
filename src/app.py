@@ -23,13 +23,14 @@ from transactions import (
     RothConversionTransaction,
 )
 
-# toggle display/save
-SHOW_NETWORTH_CHART = True
-SAVE_NETWORTH_CHART = True
+# Set Number of Simulations and Sample Size
+# Show or Save Sample Simulations and Net Worth
 SIMS = 100
-SIMS_SAMPLES = np.random.randint(0, SIMS, size=10)
+SIMS_SAMPLES = np.random.randint(0, SIMS, size=2)
 SHOW_SIMS_SAMPLES = True
-SAVE_SIMS_SAMPLES = True
+SAVE_SIMS_SAMPLES = False
+SHOW_NETWORTH_CHART = True
+SAVE_NETWORTH_CHART = False
 
 
 def create_bucket(name, starting_balance, breakdown, allow_negative=False):
@@ -145,7 +146,7 @@ def main():
 
     # We will collect year‐end net worth for each sim
     # Pre‐allocate a dictionary of year → list of net worths
-    years = future_df["Date"].dt.year.unique()
+    years = sorted(future_df["Date"].dt.year.unique())
     mc_dict = {year: [] for year in years}
 
     # Monte Carlo loop
@@ -176,30 +177,33 @@ def main():
         # run the forecast
         forecast_df, taxes_df = engine.run(future_df)
         if sim in SIMS_SAMPLES:
+            full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
             logging.info(f"Sim {sim+1:04d} | Sample forecast...")
-            fig_title = f"Sim {sim+1:04d} | Forecast Breakdown by Bucket"
+            fig_title = f"Sim {sim+1:04d} | Forecast by Bucket"
             fig = go.Figure(
                 data=[
                     go.Scatter(
-                        x=forecast_df["Date"],
-                        y=forecast_df[col],
+                        x=full_df["Date"],
+                        y=full_df[col],
                         mode="lines",
                         name=col,
                     )
-                    for col in forecast_df.columns[1:]
+                    for col in full_df.columns[1:]
                 ]
             )
             fig.update_layout(
                 title=fig_title,
                 xaxis_title="Date",
                 yaxis_title="Amount ($)",
+                template="plotly_white",
+                legend=dict(orientation="h", x=0.35, y=1.1),
             )
             if SHOW_SIMS_SAMPLES:
                 fig.show()
             if SAVE_SIMS_SAMPLES:
                 path = f"export/{sim+1:04d}_"
                 filename = f"forecast_{ts}"
-                forecast_df.to_csv(f"{path}buckets_{filename}.csv", index=False)
+                full_df.to_csv(f"{path}buckets_{filename}.csv", index=False)
                 taxes_df.to_csv(f"{path}taxes_{filename}.csv", index=False)
                 fig.write_html(f"{path}buckets_{filename}.html")
                 logging.info(
@@ -218,7 +222,7 @@ def main():
         fixed_income_59y6m = forecast_df.loc[withdrawal_date, "Fixed-Income"].iloc[-1]
         taxable_59y6m = forecast_df.loc[withdrawal_date, "Taxable"].iloc[-1]
         logging.debug(
-            f"Sim {sim+1:4d} | 2034 | "
+            f"Sim {sim+1:4d} | 59.5 y.o. | "
             f"Cash: ${int(cash_59y6m):,}, Fixed-Income: ${int(fixed_income_59y6m):,}, "
             f"Taxable: ${int(taxable_59y6m):,}"
         )
@@ -264,7 +268,7 @@ def main():
             go.Scatter(
                 x=mc_df.index,
                 y=mc_df[col],
-                line=dict(color="lightgray"),
+                line=dict(color="gray", width=1),
                 opacity=0.2,
                 showlegend=False,
             )
@@ -275,7 +279,7 @@ def main():
         go.Scatter(
             x=pct_df.index,
             y=pct_df["median"],
-            line=dict(color="green", width=3),
+            line=dict(color="green", width=1),
             name="Median",
         )
     )
@@ -283,30 +287,28 @@ def main():
         go.Scatter(
             x=pct_df.index,
             y=pct_df["p15"],
-            line=dict(color="blue", dash="dash"),
-            name="85% Of Sims Are Higher",
+            line=dict(color="blue", width=1, dash="dash"),
+            name="Lower Bounds",
         )
     )
     fig.add_trace(
         go.Scatter(
             x=pct_df.index,
             y=pct_df["p85"],
-            line=dict(color="red", dash="dash"),
-            name="15% Of Sims Are Higher",
+            line=dict(color="blue", width=1, dash="dash"),
+            name="Upper Bounds",
         )
     )
 
     fig.update_layout(
         title=f"Monte Carlo Net Worth Forecast<br>"
-        f"{age_minus_20_pct:.0%} @ {age_minus_20} | "
-        f"{age_minus_10_pct:.0%} @ {age_minus_10} | "
-        f"{age_end_pct:.0%} @ {age_end}",
+        f"{age_minus_20_pct:.0%} @ {age_minus_20} y.o. | "
+        f"{age_minus_10_pct:.0%} @ {age_minus_10} y.o. | "
+        f"{age_end_pct:.0%} @ {age_end} y.o.",
         xaxis_title="Year",
         yaxis_title="Net Worth ($)",
         template="plotly_white",
-        legend=dict(
-            orientation="h",
-        ),
+        showlegend=False,
     )
 
     if SHOW_NETWORTH_CHART:
