@@ -117,7 +117,7 @@ class ForecastEngine:
                     # pay full year’s bill
                     paid = self.buckets["Cash"].withdraw(total_tax)
                     logging.debug(
-                        f"[YearlyTax:{prev_year}] paid ${paid:,} "
+                        f"[Yearly Tax:{prev_year}] paid ${paid:,} "
                         f"(ordinary ${ord_tax:,} + gains ${capg_tax:,})"
                     )
 

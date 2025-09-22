@@ -67,9 +67,9 @@ class ThresholdRefillPolicy:
                         is_taxable=True,
                     )
                 )
-                logging.info(
+                logging.debug(
                     f"[Emergency Refill] {tx_month} — "
-                    f"Liquidated ${amt:,} from Real-Estate → Cash"
+                    f"Liquidated ${amt:,} from Real-Estate → Taxable"
                 )
 
         for target, threshold in self.thresholds.items():

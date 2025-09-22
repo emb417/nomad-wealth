@@ -58,7 +58,7 @@ class FixedTransaction(Transaction):
                 if shortfall > 0:
                     # route any shortfall back to Cash
                     buckets["Cash"].withdraw(shortfall)
-                    logging.info(
+                    logging.debug(
                         f"[Fallback] {tx_month} — "
                         f"${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
@@ -94,7 +94,7 @@ class RecurringTransaction(Transaction):
 
                 if shortfall > 0:
                     buckets["Cash"].withdraw(shortfall)
-                    logging.info(
+                    logging.debug(
                         f"[Fallback] {tx_month} — "
                         f"${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
