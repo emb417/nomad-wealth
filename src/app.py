@@ -27,9 +27,9 @@ from transactions import (
 SIMS = 100
 SIMS_SAMPLES = np.random.randint(0, SIMS, size=2)
 SHOW_SIMS_SAMPLES = True
-SAVE_SIMS_SAMPLES = False
+SAVE_SIMS_SAMPLES = True
 SHOW_NETWORTH_CHART = True
-SAVE_NETWORTH_CHART = False
+SAVE_NETWORTH_CHART = True
 
 
 def create_bucket(name, starting_balance, breakdown, allow_negative=False):
@@ -260,18 +260,28 @@ def main():
     age_end = age_end_year - dob.year
     age_end_pct = mc_df.loc[age_end_year].gt(0).mean()
 
+    # filter mc_df based on final net worth for chart
+    pct_p85_final_nw = pct_df["p85"][age_end_year]
+    mc_df_filtered = mc_df.loc[mc_df.index == age_end_year]
+    columns_to_drop = [
+        column_name
+        for column_name in mc_df_filtered.columns
+        if mc_df_filtered[column_name].iloc[0] > pct_p85_final_nw
+    ]
+    mc_p85 = mc_df.drop(columns=columns_to_drop)
+
     # Plotly chart
     fig = go.Figure()
 
-    # all sim paths in light gray
-    for col in mc_df.columns:
+    for column in mc_p85.columns:
         fig.add_trace(
             go.Scatter(
-                x=mc_df.index,
-                y=mc_df[col],
+                x=mc_p85.index,
+                y=mc_p85[column],
                 line=dict(color="gray", width=1),
                 opacity=0.2,
                 showlegend=False,
+                name=column,
             )
         )
 

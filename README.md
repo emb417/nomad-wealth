@@ -95,6 +95,8 @@ See [`export/README.md`](export/README.md) for details.
 - Visualize comparison of income to expenses
 - Visualize cash flows using multi-level sankey chart
 - Visualize tax liabilities per year per bucket
+- Handle Liquidation event by adding "rent" or "lease" to expenses
+- Handle Requited Minimium Distributions
 - Handle specified equities with current market values and forecasted gains
 - Scenario tagging and multi-profile support
 - Interactive forecast comparison across scenarios
