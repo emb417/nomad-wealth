@@ -7,7 +7,7 @@ from typing import Dict, List, Tuple
 # Internal Imports
 from domain import Bucket
 from policies import ThresholdRefillPolicy
-from strategies import GainStrategy
+from economic_factors import MarketGains
 from taxes import TaxCalculator
 from transactions import Transaction
 
@@ -18,7 +18,7 @@ class ForecastEngine:
         buckets: Dict[str, Bucket],
         transactions: List[Transaction],
         refill_policy: ThresholdRefillPolicy,
-        gain_strategy: GainStrategy,
+        gain_strategy: MarketGains,
         inflation: Dict[int, Dict[str, float]],
         tax_calc: TaxCalculator,
         profile: Dict[str, int],

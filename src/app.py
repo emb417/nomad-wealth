@@ -13,7 +13,7 @@ from engine import ForecastEngine
 from load_data import load_csv, load_json
 from logging_setup import setup_logging
 from policies import ThresholdRefillPolicy
-from strategies import InflationGenerator, GainStrategy
+from economic_factors import InflationGenerator, MarketGains
 from taxes import TaxCalculator
 from transactions import (
     FixedTransaction,
@@ -103,7 +103,7 @@ def stage_init_components(json_data, dfs, hist_df, future_df):
     years = sorted(future_df["Date"].dt.year.unique())
     infl_gen = InflationGenerator(years, avg=0.03, std=0.02)
     annual_infl = infl_gen.generate()
-    gain_strategy = GainStrategy(gain_table, inflation_thresholds, annual_infl)
+    gain_strategy = MarketGains(gain_table, inflation_thresholds, annual_infl)
 
     # transactions
     fixed_tx = FixedTransaction(dfs["fixed"])

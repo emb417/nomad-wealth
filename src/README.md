@@ -13,7 +13,7 @@ Entry point. Parses `config/` and `data/`, initializes:
 - Buckets & holdings
 - Transactions (Fixed, Recurring, Salary, SS, Deferred, Taxable)
 - ThresholdRefillPolicy
-- GainStrategy & inflation data
+- MarketGains & inflation data
 - TaxCalculator
 
 Runs `ForecastEngine.run(...)` and writes exports.
@@ -26,7 +26,7 @@ Runs `ForecastEngine.run(...)` and writes exports.
 
 1. Core transactions (fixed, recurring, salary, SS)
 2. Refill policy
-3. Market returns via GainStrategy
+3. Market returns via MarketGains
 4. Tax computation & cash withdrawal
 5. Snapshot balances & export
 
@@ -48,7 +48,7 @@ Runs `ForecastEngine.run(...)` and writes exports.
 
 ## strategies.py
 
-- `GainStrategy`: applies per-asset returns based on inflation thresholds
+- `MarketGains`: applies per-asset returns based on inflation thresholds
 - Logs each holding’s scenario and sampled gain
 
 ---

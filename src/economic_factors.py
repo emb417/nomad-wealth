@@ -25,7 +25,7 @@ class InflationGenerator:
         return out
 
 
-class GainStrategy:
+class MarketGains:
     """
     Applies market gains to each Bucket’s holdings by:
       1) looking up that asset’s low/high inflation thresholds
