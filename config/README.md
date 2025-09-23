@@ -78,6 +78,19 @@ Maps each `asset_class` × growth scenario to `(avg, std)` monthly returns:
 
 ---
 
+## inflation_rate.json
+
+Sets `(avg, std)` annual inflation rate assumptions.
+These numbers are based on modern inflation rates using 1990-2025 data:
+
+```json
+{
+  { "avg": 0.01, "std": 0.01 },
+}
+```
+
+---
+
 ## inflation_thresholds.json
 
 Per-asset inflation cutoffs dictate Low/Average/High:

@@ -1,7 +1,6 @@
 import logging
 import numpy as np
 import pandas as pd
-import plotly.graph_objects as go
 import time
 
 from datetime import datetime
@@ -21,6 +20,7 @@ from transactions import (
     SalaryTransaction,
     RothConversionTransaction,
 )
+from visualization import plot_sample_forecast, plot_mc_networth
 
 # Set Number of Simulations and Sample Size
 # Show or Save Sample Simulations and Net Worth
@@ -79,11 +79,12 @@ def stage_prepare_timeframes(balance_df, end_date):
 
 
 def stage_init_components(json_data, dfs, hist_df, future_df):
-    profile = json_data["profile"]
-    holdings_config = json_data["holdings"]
-    refill_cfg = json_data["refill_policy"]
     gain_table = json_data["gain_table"]
+    holdings_config = json_data["holdings"]
+    inflation_rate = json_data["inflation_rate"]
     inflation_thresholds = json_data["inflation_thresholds"]
+    profile = json_data["profile"]
+    refill_cfg = json_data["refill_policy"]
 
     # buckets seeded from last historical row
     buckets = seed_buckets(hist_df, holdings_config)
@@ -99,11 +100,13 @@ def stage_init_components(json_data, dfs, hist_df, future_df):
     )
     tax_calc = TaxCalculator(refill_policy)
 
-    # gain strategy
+    # apply gains
     years = sorted(future_df["Date"].dt.year.unique())
-    infl_gen = InflationGenerator(years, avg=0.03, std=0.02)
+    infl_gen = InflationGenerator(
+        years, avg=inflation_rate["avg"], std=inflation_rate["std"]
+    )
     annual_infl = infl_gen.generate()
-    gain_strategy = MarketGains(gain_table, inflation_thresholds, annual_infl)
+    market_gains = MarketGains(gain_table, inflation_thresholds, annual_infl)
 
     # transactions
     fixed_tx = FixedTransaction(dfs["fixed"])
@@ -129,7 +132,7 @@ def stage_init_components(json_data, dfs, hist_df, future_df):
     )
     transactions = [fixed_tx, recur_tx, salary_tx, ss_txn, roth_conv]
 
-    return buckets, refill_policy, tax_calc, gain_strategy, annual_infl, transactions
+    return buckets, refill_policy, tax_calc, market_gains, annual_infl, transactions
 
 
 def main():
@@ -160,7 +163,7 @@ def main():
             buckets,
             refill_policy,
             tax_calc,
-            gain_strategy,
+            market_gains,
             inflation,
             transactions,
         ) = stage_init_components(json_data, dfs, hist_df, future_df)
@@ -169,7 +172,7 @@ def main():
             buckets=buckets,
             transactions=transactions,
             refill_policy=refill_policy,
-            gain_strategy=gain_strategy,
+            market_gains=market_gains,
             inflation=inflation,
             tax_calc=tax_calc,
             profile=json_data["profile"],
@@ -178,55 +181,15 @@ def main():
         # run the forecast
         forecast_df, taxes_df = engine.run(future_df)
         if sim in SIMS_SAMPLES:
-            full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
-            logging.info(f"Sim {sim+1:04d} | Sample forecast...")
-            fig_title = f"Sim {sim+1:04d} | Forecast by Bucket"
-            fig = go.Figure(
-                data=[
-                    go.Scatter(
-                        x=full_df["Date"],
-                        y=full_df[col],
-                        mode="lines",
-                        name=col,
-                    )
-                    for col in full_df.columns[1:]
-                ]
+            plot_sample_forecast(
+                sim_index=sim,
+                hist_df=hist_df,
+                forecast_df=forecast_df,
+                taxes_df=taxes_df,
+                ts=ts,
+                show=SHOW_SIMS_SAMPLES,
+                save=SAVE_SIMS_SAMPLES,
             )
-            fig.update_layout(
-                title=fig_title,
-                xaxis_title="Date",
-                yaxis_title="Amount ($)",
-                template="plotly_white",
-                legend=dict(orientation="h", x=0.35, y=1.1),
-            )
-            if SHOW_SIMS_SAMPLES:
-                fig.show()
-            if SAVE_SIMS_SAMPLES:
-                path = f"export/{sim+1:04d}_"
-                filename = f"forecast_{ts}"
-                full_df.to_csv(f"{path}buckets_{filename}.csv", index=False)
-                taxes_df.to_csv(f"{path}taxes_{filename}.csv", index=False)
-                fig.write_html(f"{path}buckets_{filename}.html")
-                logging.info(
-                    f"Sim {sim+1:04d} | Saved forecast csv files and charts (html)!"
-                )
-
-        # compute 59.5 years old withdrawal
-        dob = pd.to_datetime(json_data["profile"]["Date of Birth"])
-        dob_59y6m = dob + pd.DateOffset(years=59, months=6)
-        withdrawal_date = (
-            forecast_df["Date"]
-            .dt.to_period("M")
-            .apply(lambda x: x >= dob_59y6m.to_period("M"))
-        )
-        cash_59y6m = forecast_df.loc[withdrawal_date, "Cash"].iloc[-1]
-        fixed_income_59y6m = forecast_df.loc[withdrawal_date, "Fixed-Income"].iloc[-1]
-        taxable_59y6m = forecast_df.loc[withdrawal_date, "Taxable"].iloc[-1]
-        logging.debug(
-            f"Sim {sim+1:4d} | 59.5 y.o. | "
-            f"Cash: ${int(cash_59y6m):,}, Fixed-Income: ${int(fixed_income_59y6m):,}, "
-            f"Taxable: ${int(taxable_59y6m):,}"
-        )
 
         # compute net worth and grab year‐end
         forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
@@ -242,93 +205,16 @@ def main():
 
     # build DataFrame: index=Year, columns=sim_0…sim_{SIMS-1}
     mc_df = pd.DataFrame(mc_dict).T
-    mc_df.columns = [f"sim_{i}" for i in range(SIMS)]
 
-    # compute percentiles
-    pct_df = mc_df.quantile([0.15, 0.5, 0.85], axis=1).T
-    pct_df.columns = ["p15", "median", "p85"]
-
-    # probability of positive net worth at final year
-    eol = pd.to_datetime(json_data["profile"]["End Date"])
-    age_minus_20_year = eol.year - 20
-    age_minus_20 = age_minus_20_year - dob.year
-    age_minus_20_pct = mc_df.loc[age_minus_20_year].gt(0).mean()
-    age_minus_10_year = eol.year - 10
-    age_minus_10 = age_minus_10_year - dob.year
-    age_minus_10_pct = mc_df.loc[age_minus_10_year].gt(0).mean()
-    age_end_year = eol.year
-    age_end = age_end_year - dob.year
-    age_end_pct = mc_df.loc[age_end_year].gt(0).mean()
-
-    # filter mc_df based on final net worth for chart
-    pct_p85_final_nw = pct_df["p85"][age_end_year]
-    mc_df_filtered = mc_df.loc[mc_df.index == age_end_year]
-    columns_to_drop = [
-        column_name
-        for column_name in mc_df_filtered.columns
-        if mc_df_filtered[column_name].iloc[0] > pct_p85_final_nw
-    ]
-    mc_p85 = mc_df.drop(columns=columns_to_drop)
-
-    # Plotly chart
-    fig = go.Figure()
-
-    for column in mc_p85.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=mc_p85.index,
-                y=mc_p85[column],
-                line=dict(color="gray", width=1),
-                opacity=0.2,
-                showlegend=False,
-                name=column,
-            )
-        )
-
-    # percentile lines
-    fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
-            y=pct_df["median"],
-            line=dict(color="green", width=2),
-            name="Median",
-        )
+    plot_mc_networth(
+        SIMS=SIMS,
+        mc_df=mc_df,
+        dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
+        eol_year=pd.to_datetime(json_data["profile"]["End Date"]).year,
+        ts=ts,
+        show=SHOW_NETWORTH_CHART,
+        save=SAVE_NETWORTH_CHART,
     )
-    fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
-            y=pct_df["p15"],
-            line=dict(color="blue", width=2, dash="dash"),
-            name="Lower Bounds",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
-            y=pct_df["p85"],
-            line=dict(color="blue", width=2, dash="dash"),
-            name="Upper Bounds",
-        )
-    )
-
-    fig.update_layout(
-        title=f"Monte Carlo Net Worth Forecast<br>"
-        f"{age_minus_20_pct:.0%} @ {age_minus_20} y.o. | "
-        f"{age_minus_10_pct:.0%} @ {age_minus_10} y.o. | "
-        f"{age_end_pct:.0%} @ {age_end} y.o.",
-        xaxis_title="Year",
-        yaxis_title="Net Worth ($)",
-        template="plotly_white",
-        showlegend=False,
-    )
-
-    if SHOW_NETWORTH_CHART:
-        fig.show()
-
-    if SAVE_NETWORTH_CHART:
-        path = f"export/mc_networth_{ts}.html"
-        fig.write_html(path)
-        logging.info(f"Monte Carlo chart saved to {path}")
 
     end_time = time.time()
     minutes = (end_time - start_time) / 60

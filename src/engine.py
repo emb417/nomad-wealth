@@ -18,7 +18,7 @@ class ForecastEngine:
         buckets: Dict[str, Bucket],
         transactions: List[Transaction],
         refill_policy: ThresholdRefillPolicy,
-        gain_strategy: MarketGains,
+        market_gains: MarketGains,
         inflation: Dict[int, Dict[str, float]],
         tax_calc: TaxCalculator,
         profile: Dict[str, int],
@@ -26,7 +26,7 @@ class ForecastEngine:
         self.buckets = buckets
         self.transactions = transactions
         self.refill_policy = refill_policy
-        self.gain_strategy = gain_strategy
+        self.market_gains = market_gains
         self.inflation = inflation
         self.tax_calc = tax_calc
         self.profile = profile
@@ -51,7 +51,7 @@ class ForecastEngine:
                 tx.apply(self.buckets, tx_month)
 
             # 3) Market returns
-            self.gain_strategy.apply(self.buckets, forecast_date)
+            self.market_gains.apply(self.buckets, forecast_date)
 
             # 4) Accumulate flows into yearly_tax_log
             monthly_salary = sum(
