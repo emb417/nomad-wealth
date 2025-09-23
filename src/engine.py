@@ -6,8 +6,8 @@ from typing import Dict, List, Tuple
 
 # Internal Imports
 from domain import Bucket
-from policies import ThresholdRefillPolicy
 from economic_factors import MarketGains
+from policies import ThresholdRefillPolicy
 from taxes import TaxCalculator
 from transactions import Transaction
 

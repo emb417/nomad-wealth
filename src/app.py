@@ -8,10 +8,10 @@ from pandas.tseries.offsets import MonthBegin
 
 # Internal Imports
 from domain import AssetClass, Holding, Bucket
+from economic_factors import InflationGenerator, MarketGains
 from engine import ForecastEngine
 from load_data import load_csv, load_json
 from policies import ThresholdRefillPolicy
-from economic_factors import InflationGenerator, MarketGains
 from taxes import TaxCalculator
 from transactions import (
     FixedTransaction,
