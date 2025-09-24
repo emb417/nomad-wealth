@@ -6,8 +6,8 @@ A Python framework for simulating long-term portfolio outcomes under inflation-a
 
 ## 🔧 Features
 
-- Fixed & recurring transaction ingestion from CSV
-- Threshold-driven refill policies with age-based eligibility
+- Fixed & recurring transaction ingestion from CSV files
+- Threshold-driven refill policies with retirement age-based gating to eliminate penalties
 - Roth conversions modeled independently from refill logic
 - Inflation-aware market return simulation via gain tables
 - Monte Carlo sampling with percentile bands and probability metrics
@@ -81,15 +81,6 @@ See [`export/README.md`](export/README.md) for details.
 
 ## 🛣️ Roadmap
 
-- Handle unemployment and delayed salary expectations
-- Calculate taxes for state and local taxes
-- Handle self-employment taxes
-- Include contributions to 401k as well as tax implications
-- Handle self and spousal IRA contributions
-- UI to enter balances and manage individual accounts and assign them to buckets
-- UI for tuning configurations: profile, holdings, gains, inflation, policies
-- UI for managing future transactions: fixed and recurring
-- UI for managing income sources: unemployement, salary, bonuses, social security
 - Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
 - Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
@@ -97,9 +88,19 @@ See [`export/README.md`](export/README.md) for details.
 - Visualize comparison of income to expenses
 - Visualize cash flows using multi-level sankey chart
 - Visualize tax liabilities per year per bucket
+- UI to enter balances and manage individual accounts and assign them to buckets
+- UI for tuning configurations: profile, holdings, gains, inflation, policies
+- UI for managing future transactions: fixed and recurring
+- UI for managing income sources: unemployement, salary, bonuses, social security
+- Calculate taxes for state and local taxes
+- Include contributions to 401k as well as tax implications
 - Handle Liquidation event by adding "rent" or "lease" to expenses
 - Handle Requited Minimium Distributions
+- Handle unemployment and delayed salary expectations
+- Handle self-employment taxes
+- Handle self and spousal IRA contributions
 - Handle specified equities with current market values and forecasted gains
+- Support various vesting schedules and maturity dates
 - Scenario tagging and multi-profile support
 - Interactive forecast comparison across scenarios
 - Support "smile" expenses curve
