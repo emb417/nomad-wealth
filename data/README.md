@@ -1,6 +1,4 @@
-# data/README.md
-
-## Data File Schemas
+# Data File Schemas
 
 Place your historical and transaction CSVs under `data/`.
 
@@ -16,8 +14,8 @@ Monthly seed balances. Header columns:
 Example:
 
 ```csv
-Date,Cash,Taxable,Tax-Deferred,Deferred Compensation
-2025-09-01,50000,200000,150000,300000
+Date,Cash,Fixed-Income,Taxable,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K
+2026-01-01,10000,20000,30000,400000,5000,6000,70000,80000,9000
 ```
 
 ---
@@ -34,8 +32,10 @@ One-off transactions. Header columns:
 Example:
 
 ```csv
-2025-09-29,Deferred Compensation,-228000,Deferred Compensation Distribution
-2025-09-29,Taxable,135984,Post-Tax Distribution
+2028-07-01,Fixed-Income,10000,New Investments
+2028-12-01,Cash,-4000,New Car Downpayment
+2030-07-01,Taxable,10000,New Investments
+2030-09-01,529K,-9000,Final Tuition
 ```
 
 ---
@@ -54,12 +54,8 @@ Example:
 
 ```csv
 Start Date,End Date,Bucket,Amount,Description
-2025-01-01,,Cash,3000,Monthly Expenses
-2025-01-01,2040-12-31,Tax-Deferred,-2000,401k Contribution
+2026-01-01,2100-12-31,Cash,-3000,Monthly Living Expenses
+2029-01-01,2034-12-31,Cash,-500,Monthly Car Loan Payment
 ```
-
----
-
-Place any additional CSVs in `data/` and update `src/app.py` to load them.
 
 ---

@@ -1,0 +1,27 @@
+{
+  "Stocks": {
+    "Low": { "avg": 0.008, "std": 0.04 },
+    "Average": { "avg": 0.0068, "std": 0.04 },
+    "High": { "avg": 0.0056, "std": 0.04 }
+  },
+  "Bonds": {
+    "Low": { "avg": 0.001, "std": 0.0005 },
+    "Average": { "avg": 0.002, "std": 0.001 },
+    "High": { "avg": 0.0035, "std": 0.002 }
+  },
+  "Property": {
+    "Low": { "avg": 0.001, "std": 0.0015 },
+    "Average": { "avg": 0.002, "std": 0.0015 },
+    "High": { "avg": 0.0025, "std": 0.0015 }
+  },
+  "Vehicles": {
+    "Low": { "avg": -0.01, "std": 0.0 },
+    "Average": { "avg": -0.01, "std": 0.0 },
+    "High": { "avg": -0.01, "std": 0.0 }
+  },
+  "Cash": {
+    "Low": { "avg": 0.0, "std": 0.0 },
+    "Average": { "avg": 0.0, "std": 0.0 },
+    "High": { "avg": 0.0, "std": 0.0 }
+  }
+}

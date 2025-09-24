@@ -1,0 +1,80 @@
+{
+  "Cash": {
+    "holdings": [{ "asset_class": "Cash", "weight": 1.0 }],
+    "can_go_negative": true,
+    "allow_cash_fallback": false,
+    "bucket_type": "other"
+  },
+  "Fixed-Income": {
+    "holdings": [{ "asset_class": "Bonds", "weight": 1.0 }],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "taxable"
+  },
+  "Taxable": {
+    "holdings": [
+      { "asset_class": "Bonds", "weight": 0.5 },
+      { "asset_class": "Stocks", "weight": 0.5 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "taxable"
+  },
+  "Tax-Deferred": {
+    "holdings": [
+      { "asset_class": "Stocks", "weight": 0.9 },
+      { "asset_class": "Bonds", "weight": 0.1 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "tax_deferred"
+  },
+  "Tax-Free": {
+    "holdings": [
+      { "asset_class": "Stocks", "weight": 0.6 },
+      { "asset_class": "Bonds", "weight": 0.4 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "tax_free"
+  },
+  "Health Savings Account": {
+    "holdings": [
+      { "asset_class": "Stocks", "weight": 0.5 },
+      { "asset_class": "Bonds", "weight": 0.5 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": true,
+    "bucket_type": "other"
+  },
+  "Vehicles": {
+    "holdings": [{ "asset_class": "Vehicles", "weight": 1.0 }],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "taxable"
+  },
+  "Property": {
+    "holdings": [{ "asset_class": "Property", "weight": 1.0 }],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "taxable"
+  },
+  "529K": {
+    "holdings": [
+      { "asset_class": "Stocks", "weight": 0.5 },
+      { "asset_class": "Bonds", "weight": 0.5 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": true,
+    "bucket_type": "other"
+  },
+  "Deferred Comp": {
+    "holdings": [
+      { "asset_class": "Bonds", "weight": 0.6 },
+      { "asset_class": "Stocks", "weight": 0.4 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "tax_deferred"
+  }
+}

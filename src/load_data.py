@@ -18,13 +18,5 @@ def load_csv() -> dict[str, pd.DataFrame]:
 
 
 def load_json() -> dict[str, dict]:
-    return {
-        "profile": json.loads((CONFIG / "profile.json").read_text()),
-        "gain_table": json.loads((CONFIG / "gain_table.json").read_text()),
-        "inflation_rate": json.loads((CONFIG / "inflation_rate.json").read_text()),
-        "inflation_thresholds": json.loads(
-            (CONFIG / "inflation_thresholds.json").read_text()
-        ),
-        "holdings": json.loads((CONFIG / "holdings.json").read_text()),
-        "refill_policy": json.loads((CONFIG / "refill_policy.json").read_text()),
-    }
+    files = {f.stem: json.loads(f.read_text()) for f in CONFIG.glob("*.json")}
+    return files

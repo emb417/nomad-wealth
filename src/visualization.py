@@ -160,3 +160,10 @@ def plot_mc_networth(
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
+
+    logging.info("${:,.0f} - p85 net worth".format(int(round(pct_df["p85"].iloc[-1]))))
+    logging.info("${:,.0f} - Mean net worth".format(int(round(mc_df.mean().iloc[-1]))))
+    logging.info(
+        "${:,.0f} - Median net worth".format(int(round(mc_df.median().iloc[-1])))
+    )
+    logging.info("${:,.0f} - p15 net worth".format(int(round(pct_df["p15"].iloc[-1]))))

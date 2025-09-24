@@ -1,0 +1,28 @@
+{
+  "thresholds": {
+    "Cash": 30000,
+    "Fixed-Income": 90000
+  },
+  "amounts": {
+    "Cash": 50000,
+    "Fixed-Income": 100000
+  },
+  "sources": {
+    "Cash": ["Fixed-Income"],
+    "Fixed-Income": ["Taxable", "Tax-Deferred", "Tax-Free"]
+  },
+  "salary": {
+    "Cash": 0.95,
+    "Fixed-Income": 0.0,
+    "Taxable": 0.0,
+    "Tax-Deferred": 0.05,
+    "Tax-Free": 0.0
+  },
+  "social_security": "Cash",
+  "roth_conversion": {
+    "Start Date": "2026-01-01",
+    "Amount": 4000,
+    "Source": "Tax-Deferred",
+    "Target": "Tax-Free"
+  }
+}
