@@ -81,13 +81,11 @@ See [`export/README.md`](export/README.md) for details.
 
 ## 🛣️ Roadmap
 
-- Tax-Free withdrawal eligibility
 - Handle unemployment and delayed salary expectations
 - Calculate taxes for state and local taxes
 - Handle self-employment taxes
 - Include contributions to 401k as well as tax implications
 - Handle self and spousal IRA contributions
-- Extract all hard-coded values into config files
 - UI to enter balances and manage individual accounts and assign them to buckets
 - UI for tuning configurations: profile, holdings, gains, inflation, policies
 - UI for managing future transactions: fixed and recurring
@@ -109,4 +107,4 @@ See [`export/README.md`](export/README.md) for details.
 
 ---
 
-_Last updated:_ 2025-09-22
+_Last updated:_ 2025-09-23

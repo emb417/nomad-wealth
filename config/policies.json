@@ -24,5 +24,6 @@
     "Amount": 4000,
     "Source": "Tax-Deferred",
     "Target": "Tax-Free"
-  }
+  },
+  "liquidation_threshold": -100000
 }

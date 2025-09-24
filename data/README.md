@@ -14,8 +14,8 @@ Monthly seed balances. Header columns:
 Example:
 
 ```csv
-Date,Cash,Fixed-Income,Taxable,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K
-2026-01-01,10000,20000,30000,400000,5000,6000,70000,80000,9000
+Date,Cash,Fixed-Income,Taxable,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K,Deferred Comp
+2026-01-01,10000,20000,30000,400000,5000,6000,70000,80000,9000,100000
 ```
 
 ---

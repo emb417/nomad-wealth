@@ -105,12 +105,14 @@ class ThresholdRefillPolicy:
         source_by_target: Dict[str, List[str]],
         amounts: Dict[str, int],
         taxable_eligibility: Optional[pd.Period] = None,
+        liquidation_threshold: int = 0,
     ):
         # Minimal validation
         self.thresholds = thresholds or {}
         self.sources = source_by_target or {}
         self.amounts = amounts or {}
         self.taxable_eligibility = taxable_eligibility
+        self.liquidation_threshold = liquidation_threshold
 
     def generate(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period
@@ -134,7 +136,7 @@ class ThresholdRefillPolicy:
         # Emergency liquidation preserved
         cash_bucket = buckets.get("Cash")
         cash_balance = cash_bucket.balance() if cash_bucket is not None else 0
-        if cash_balance < -100000:
+        if cash_balance < self.liquidation_threshold:
             prop = buckets.get("Property")
             if prop and prop.balance() > 0:
                 amt = prop.balance()

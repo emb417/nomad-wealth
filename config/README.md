@@ -74,3 +74,4 @@ Controls auto-refill rules per bucket:
 - `salary`: target buckets get percentage of salary
 - `social_security`: target bucket
 - `roth_conversion`: start date, amount, source, target
+- `liquidation_threshold`: emergency liquidation threshold

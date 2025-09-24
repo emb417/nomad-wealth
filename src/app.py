@@ -154,6 +154,7 @@ def stage_init_components(
         source_by_target=policies_config["sources"],
         amounts=policies_config["amounts"],
         taxable_eligibility=eligibility,
+        liquidation_threshold=policies_config["liquidation_threshold="],
     )
     tax_calc = TaxCalculator(refill_policy)
 
@@ -254,8 +255,6 @@ def main():
 
         for year, nw in ye_nw.items():
             mc_dict[year].append(nw)
-            if year == (pd.to_datetime(json_data["profile"]["End Date"])).year - 10:
-                logging.debug(f"Sim {sim+1:4d} | {year} | ${int(nw):,}")
 
     mc_df = pd.DataFrame(mc_dict).T
 
