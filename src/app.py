@@ -154,7 +154,7 @@ def stage_init_components(
         source_by_target=policies_config["sources"],
         amounts=policies_config["amounts"],
         taxable_eligibility=eligibility,
-        liquidation_threshold=policies_config["liquidation_threshold="],
+        liquidation_threshold=policies_config["liquidation_threshold"],
     )
     tax_calc = TaxCalculator(refill_policy)
 
