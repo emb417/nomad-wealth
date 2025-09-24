@@ -22,8 +22,8 @@ A Python framework for simulating long-term portfolio outcomes under inflation-a
 1. Clone and install dependencies:
 
    ```bash
-   git clone <repo-url>
-   cd <repo>
+   git clone https://github.com/emb417/nomad-wealth
+   cd nomad-wealth
    pip install -r requirements.txt
    ```
 
