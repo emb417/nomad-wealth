@@ -6,7 +6,8 @@ config/profile.json
 *.html
 *.log
 
-# Ignore OS files
+# Ignore IDE and OS files
+.vscode
 .DS_Store
 
 # Ignore pycache and venv

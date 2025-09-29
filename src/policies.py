@@ -149,14 +149,14 @@ class ThresholdRefillPolicy:
                         is_taxable=True,
                     )
                 )
-                logging.warning(
+                logging.debug(
                     f"[Emergency Refill] {tx_month_period} — Liquidated ${amt:,} Property → Taxable"
                 )
 
         for target, threshold in self.thresholds.items():
             tgt_bucket = buckets.get(target)
             if tgt_bucket is None:
-                logging.debug(
+                logging.warning(
                     f"[RefillPolicy] {tx_month_period} — target '{target}' missing, skipping"
                 )
                 continue

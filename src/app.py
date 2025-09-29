@@ -2,10 +2,13 @@ import logging
 import numpy as np
 import pandas as pd
 import time
+
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pandas.tseries.offsets import MonthBegin
+from tqdm import tqdm
 from typing import Dict, List
+
 
 # Internal Imports
 from domain import AssetClass, Holding, Bucket
@@ -210,9 +213,15 @@ def main():
     # Pre-allocate year → list of net worths
     years = sorted(future_df["Date"].dt.year.unique())
     mc_dict = {year: [] for year in years}
+    mc_samples_dict = {year: [] for year in years}
+    summary = {
+        "Liquidations": 0,
+        "Liquidation Dates": [],
+        "Minimum Liquidation Year": None,
+        "Maximum Liquidation Year": None,
+    }
 
-    logging.info(f"Running {SIMS} Monte Carlo simulations…")
-    for sim in range(SIMS):
+    for sim in tqdm(range(SIMS), desc="Running Monte Carlo simulations..."):
         np.random.seed(sim)
 
         # re-init components so each sim starts fresh
@@ -247,7 +256,28 @@ def main():
                 show=SHOW_SIMS_SAMPLES,
                 save=SAVE_SIMS_SAMPLES,
             )
-
+        liquidation_row = forecast_df.loc[forecast_df["Property"] == 0]
+        if not liquidation_row.empty:
+            summary["Liquidations"] = summary.get("Liquidations", 0) + 1
+            summary["Liquidation Dates"].append(liquidation_row["Date"].iloc[0])
+            summary["Minimum Liquidation Year"] = (
+                liquidation_row["Date"].iloc[0].year
+                if (
+                    summary["Minimum Liquidation Year"] is None
+                    or liquidation_row["Date"].iloc[0].year
+                    < summary["Minimum Liquidation Year"]
+                )
+                else summary["Minimum Liquidation Year"]
+            )
+            summary["Maximum Liquidation Year"] = (
+                liquidation_row["Date"].iloc[0].year
+                if (
+                    summary["Maximum Liquidation Year"] is None
+                    or liquidation_row["Date"].iloc[0].year
+                    > summary["Maximum Liquidation Year"]
+                )
+                else summary["Maximum Liquidation Year"]
+            )
         # compute net worth and collect year-end values
         forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
         forecast_df["Year"] = forecast_df["Date"].dt.year
@@ -255,14 +285,20 @@ def main():
 
         for year, nw in ye_nw.items():
             mc_dict[year].append(nw)
+            if sim in SIMS_SAMPLES:
+                mc_samples_dict[year].append(nw)
 
     mc_df = pd.DataFrame(mc_dict).T
+    mc_samples_df = pd.DataFrame(mc_samples_dict).T
 
     plot_mc_networth(
         SIMS=SIMS,
         mc_df=mc_df,
+        SIMS_SAMPLES=SIMS_SAMPLES,
+        mc_samples_df=mc_samples_df,
         dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
         eol_year=pd.to_datetime(json_data["profile"]["End Date"]).year,
+        summary=summary,
         ts=ts,
         show=SHOW_NETWORTH_CHART,
         save=SAVE_NETWORTH_CHART,

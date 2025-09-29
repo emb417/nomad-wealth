@@ -2,6 +2,8 @@ import logging
 import pandas as pd
 import plotly.graph_objects as go
 
+from numpy import ndarray
+
 
 def plot_sample_forecast(
     sim_index: int,
@@ -34,9 +36,11 @@ def plot_sample_forecast(
     fig.update_layout(
         title=title,
         xaxis_title="Date",
-        yaxis_title="Amount ($)",
+        yaxis_title="Amount",
+        yaxis_tickformat="$,.0f",
         template="plotly_white",
-        legend=dict(orientation="h", x=0.35, y=1.1),
+        hovermode="x unified",
+        legend=dict(orientation="h", x=0.5, y=1.1),
     )
 
     if show:
@@ -55,9 +59,12 @@ def plot_sample_forecast(
 
 def plot_mc_networth(
     mc_df: pd.DataFrame,
+    mc_samples_df: pd.DataFrame,
     SIMS: int,
+    SIMS_SAMPLES: ndarray,
     dob_year: int,
     eol_year: int,
+    summary: dict,
     ts: str,
     show: bool,
     save: bool,
@@ -73,11 +80,14 @@ def plot_mc_networth(
        ...
     }
     """
+
     mc_df.columns = [f"sim_{i}" for i in range(SIMS)]
+    mc_samples_df.columns = [f"sim_{i}" for i in SIMS_SAMPLES]
 
     # compute percentiles
     pct_df = mc_df.quantile([0.15, 0.5, 0.85], axis=1).T
     pct_df.columns = ["p15", "median", "p85"]
+    pct_df["mean"] = pct_df.mean(axis=1)
 
     # probability of positive net worth at final year
     age_metrics = {
@@ -90,6 +100,9 @@ def plot_mc_networth(
     }
 
     # filter mc_df based on final net worth for chart
+    pct_p15_final_nw = pct_df["p15"][eol_year]
+    pct_mean_final_nw = pct_df["mean"][eol_year]
+    pct_median_final_nw = pct_df["median"][eol_year]
     pct_p85_final_nw = pct_df["p85"][eol_year]
     mc_df_filtered = mc_df.loc[mc_df.index == eol_year]
     columns_to_drop = [
@@ -98,22 +111,34 @@ def plot_mc_networth(
         if mc_df_filtered[column_name].iloc[0] > pct_p85_final_nw
     ]
     mc_p85 = mc_df.drop(columns=columns_to_drop)
+    networth = {
+        "p15": "{:,.0f}".format(int(pct_p15_final_nw)),
+        "Median": "{:,.0f}".format(int(pct_median_final_nw)),
+        "Average": "{:,.0f}".format(int(pct_mean_final_nw)),
+        "p85": "{:,.0f}".format(int(pct_p85_final_nw)),
+    }
+
+    # liquidation metrics
+    min_liquidation_age = summary["Minimum Liquidation Year"] - dob_year
+    avg_liquidation_age = int(
+        sum(date.year for date in summary["Liquidation Dates"])
+        / len(summary["Liquidation Dates"])
+        - dob_year
+    )
+    max_liquidation_age = summary["Maximum Liquidation Year"] - dob_year
+    pct_liquidation = summary["Liquidations"] / SIMS
 
     fig = go.Figure()
 
-    # cloud of filtered sims
-    for col in mc_p85.columns:
-        fig.add_trace(
-            go.Scatter(
-                x=mc_p85.index,
-                y=mc_p85[col],
-                line=dict(color="gray", width=1),
-                opacity=0.2,
-                showlegend=False,
-            )
-        )
-
     # percentile lines
+    fig.add_trace(
+        go.Scatter(
+            x=pct_df.index,
+            y=pct_df["p85"],
+            line=dict(color="blue", width=2, dash="dash"),
+            name="Upper Bounds",
+        )
+    )
     fig.add_trace(
         go.Scatter(
             x=pct_df.index,
@@ -130,27 +155,74 @@ def plot_mc_networth(
             name="Lower Bounds",
         )
     )
-    fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
-            y=pct_df["p85"],
-            line=dict(color="blue", width=2, dash="dash"),
-            name="Upper Bounds",
+    # cloud of filtered sims and samples (purple)
+    for col in mc_p85.columns:
+        col_name = "{:04d}".format(
+            int("".join(filter(str.isdigit, col.split("_")[-1]))) + 1
         )
-    )
+        if col in mc_samples_df.columns:
+            fig.add_trace(
+                go.Scatter(
+                    x=mc_p85.index,
+                    y=mc_p85[col],
+                    line=dict(color="purple", width=1),
+                    opacity=0.5,
+                    showlegend=False,
+                    hoverinfo="all",
+                    name=f"Sim {col_name}",
+                )
+            )
+        else:
+            fig.add_trace(
+                go.Scatter(
+                    x=mc_p85.index,
+                    y=mc_p85[col],
+                    line=dict(color="gray", width=1),
+                    opacity=0.2,
+                    showlegend=False,
+                    hoverinfo="skip",
+                    name=f"Sim {col_name}",
+                )
+            )
+
+    confidence_color = "green" if SIMS >= 1000 else "blue" if SIMS >= 100 else "red"
+
+    def getNWColor(value):
+        return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
+
+    def getLiquidationColor(value):
+        return "green" if value < 0.2 else "blue" if value < 0.5 else "red"
+
+    def getAgeColor(value):
+        return "green" if value > 75 else "blue" if value > 60 else "red"
 
     title = (
-        f"Monte Carlo Net Worth Forecast<br>"
-        f"{age_metrics['age_minus_20_pct']:.0%} @ {age_metrics['age_minus_20']} y.o. | "
-        f"{age_metrics['age_minus_10_pct']:.0%} @ {age_metrics['age_minus_10']} y.o. | "
-        f"{age_metrics['age_end_pct']:.0%} @ {age_metrics['age_end']} y.o."
+        f"Monte Carlo Net Worth Forecast"
+        f" | <span style='color: {confidence_color}'>{SIMS} Simulations</span>"
+        f"<br><br>Postive Net Worth: <span style='color: {getNWColor(age_metrics['age_minus_20_pct'])}'>{age_metrics['age_minus_20_pct']:.1%}"
+        f" @ {age_metrics['age_minus_20']} y.o.</span>"
+        f" | <span style='color: {getNWColor(age_metrics['age_minus_10_pct'])}'>{age_metrics['age_minus_10_pct']:.1%}"
+        f" @ {age_metrics['age_minus_10']} y.o.</span>"
+        f" | <span style='color: {getNWColor(age_metrics['age_end_pct'])}'>{age_metrics['age_end_pct']:.1%}"
+        f" @ {age_metrics['age_end']} y.o.</span>"
+        f"<br><br>EOL Net Worth: <span style='color: blue'>p15 &#36;{networth['p15']}</span>"
+        f" | <span style='color: green'>Median &#36;{networth['Median']}</span>"
+        f" | Average &#36;{networth['Average']}"
+        f" | <span style='color: blue'>p85 &#36;{networth['p85']}</span>"
+        f"<br><br>Liquidations: <span style='color: {getLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
+        f" | <span style='color: {getAgeColor(min_liquidation_age)}'>Min {min_liquidation_age} y.o.</span>"
+        f" | <span style='color: {getAgeColor(avg_liquidation_age)}'>Avg {avg_liquidation_age} y.o.</span>"
+        f" | <span style='color: {getAgeColor(max_liquidation_age)}'>Max {max_liquidation_age} y.o.</span>"
     )
     fig.update_layout(
         title=title,
+        title_x=0.5,
         xaxis_title="Year",
-        yaxis_title="Net Worth ($)",
+        yaxis_title="Net Worth",
+        yaxis_tickformat="$,.0f",
         template="plotly_white",
         showlegend=False,
+        hovermode="x unified",
     )
 
     if show:
@@ -160,10 +232,3 @@ def plot_mc_networth(
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
-
-    logging.info("${:,.0f} - p85 net worth".format(int(round(pct_df["p85"].iloc[-1]))))
-    logging.info("${:,.0f} - Mean net worth".format(int(round(mc_df.mean().iloc[-1]))))
-    logging.info(
-        "${:,.0f} - Median net worth".format(int(round(mc_df.median().iloc[-1])))
-    )
-    logging.info("${:,.0f} - p15 net worth".format(int(round(pct_df["p15"].iloc[-1]))))
