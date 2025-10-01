@@ -102,6 +102,15 @@ def seed_buckets_from_config(
             bucket_type=bucket_type,
         )
 
+    buckets["Tax Collection"] = create_bucket(
+        name="Tax Collection",
+        starting_balance=0,
+        holdings_config=[{"asset_class": "Cash", "weight": 1.0}],
+        can_go_negative=False,
+        allow_cash_fallback=True,
+        bucket_type="tax",
+    )
+
     return buckets
 
 

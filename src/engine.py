@@ -30,6 +30,15 @@ class ForecastEngine:
         self.inflation = inflation
         self.tax_calc = tax_calc
         self.profile = profile
+        self.annual_tax_estimate = int(
+            self.tax_calc.calculate_tax(
+                salary=profile["Annual Gross Income"],
+                ss_benefits=0,
+                withdrawals=0,
+                gains=0,
+            )
+        )
+        self.monthly_tax_drip = int(self.annual_tax_estimate / 12)
 
     def run(self, ledger_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         records = []
@@ -53,7 +62,11 @@ class ForecastEngine:
             # 3) Market returns
             self.market_gains.apply(self.buckets, forecast_date)
 
-            # 4) Accumulate flows into yearly_tax_log
+            # 4a) Taxes: Monthly withdraw from Cash into Tax Collection
+            self.buckets["Cash"].withdraw(self.monthly_tax_drip)
+            self.buckets["Tax Collection"].deposit(self.monthly_tax_drip)
+
+            # 4b) Taxes: Accumulate flows into yearly_tax_log
             monthly_salary = sum(
                 tx.get_salary(tx_month)
                 for tx in self.transactions
@@ -115,12 +128,31 @@ class ForecastEngine:
                     capg_tax = total_tax - ord_tax
 
                     # pay full year’s bill
-                    paid = self.buckets["Cash"].withdraw(total_tax)
+                    paid_from_tc = self.buckets["Tax Collection"].withdraw(total_tax)
+                    remaining = total_tax - paid_from_tc
+                    paid_from_cash = self.buckets["Cash"].withdraw(remaining)
+
                     logging.debug(
-                        f"[Yearly Tax:{prev_year}] paid ${paid:,} "
+                        f"[Yearly Tax:{prev_year}] paid "
+                        f"${paid_from_tc:,} from TaxCollection + "
+                        f"${paid_from_cash:,} from Cash "
                         f"(ordinary ${ord_tax:,} + gains ${capg_tax:,})"
                     )
 
+                    # Capture leftover in TaxCollection
+                    leftover = self.buckets["Tax Collection"].balance()
+                    next_est = max(total_tax - leftover, 0)
+                    self.annual_tax_estimate = int(next_est)
+                    self.monthly_tax_drip = int(next_est / 12)
+                    if next_est == 0 and leftover > 0:
+                        drained_amount = self.buckets["Tax Collection"].withdraw(
+                            leftover
+                        )
+                        self.buckets["Cash"].deposit(drained_amount)
+                        logging.debug(
+                            f"[TaxCollection Cleanup] Moved ${drained_amount:,} "
+                            "back to Cash (no tax due next year)"
+                        )
                     tax_records.append(
                         {
                             "Year": prev_year,
