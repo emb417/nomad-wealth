@@ -9,7 +9,7 @@
   },
   "sources": {
     "Cash": ["Fixed-Income"],
-    "Fixed-Income": ["Taxable", "Tax-Deferred", "Tax-Free"]
+    "Fixed-Income": ["Tax-Deferred", "Taxable", "Tax-Free"]
   },
   "salary": {
     "Cash": 0.95,
@@ -20,8 +20,8 @@
   },
   "social_security": "Cash",
   "roth_conversion": {
-    "Start Date": "2026-01-01",
-    "Amount": 4000,
+    "Start Date": "2026-04-01",
+    "Amount": 2000,
     "Source": "Tax-Deferred",
     "Target": "Tax-Free"
   },

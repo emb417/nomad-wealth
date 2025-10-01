@@ -81,6 +81,9 @@ See [`export/README.md`](export/README.md) for details.
 
 ## 🛣️ Roadmap
 
+- Calculate taxes for state and local taxes
+- Handle Liquidation event by adding "rent" or "lease" to expenses
+- Handle Required Minimium Distributions
 - Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
 - Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
@@ -92,10 +95,7 @@ See [`export/README.md`](export/README.md) for details.
 - UI for tuning configurations: profile, holdings, gains, inflation, policies
 - UI for managing future transactions: fixed and recurring
 - UI for managing income sources: unemployement, salary, bonuses, social security
-- Calculate taxes for state and local taxes
 - Include contributions to 401k as well as tax implications
-- Handle Liquidation event by adding "rent" or "lease" to expenses
-- Handle Requited Minimium Distributions
 - Handle unemployment and delayed salary expectations
 - Handle self-employment taxes
 - Handle self and spousal IRA contributions

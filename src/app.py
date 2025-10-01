@@ -26,17 +26,19 @@ from transactions import (
 )
 from visualization import plot_sample_forecast, plot_mc_networth
 
+logging.basicConfig(
+    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+)
+
+rng = np.random.default_rng()
+
 # Simulation settings
 SIMS = 100
-SIMS_SAMPLES = np.random.randint(0, SIMS, size=3)
+SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
 SHOW_SIMS_SAMPLES = True
 SAVE_SIMS_SAMPLES = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
-
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
-)
 
 
 def create_bucket(
@@ -289,12 +291,12 @@ def main():
                 mc_samples_dict[year].append(nw)
 
     mc_df = pd.DataFrame(mc_dict).T
+    mc_df.columns = [f"Sim {'{:04d}'.format(int(col) + 1)}" for col in mc_df.columns]
     mc_samples_df = pd.DataFrame(mc_samples_dict).T
+    mc_samples_df.columns = [f"Sim {sim+1:04d}" for sim in SIMS_SAMPLES]
 
     plot_mc_networth(
-        SIMS=SIMS,
         mc_df=mc_df,
-        SIMS_SAMPLES=SIMS_SAMPLES,
         mc_samples_df=mc_samples_df,
         dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
         eol_year=pd.to_datetime(json_data["profile"]["End Date"]).year,

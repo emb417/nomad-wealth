@@ -60,8 +60,6 @@ def plot_sample_forecast(
 def plot_mc_networth(
     mc_df: pd.DataFrame,
     mc_samples_df: pd.DataFrame,
-    SIMS: int,
-    SIMS_SAMPLES: ndarray,
     dob_year: int,
     eol_year: int,
     summary: dict,
@@ -80,10 +78,7 @@ def plot_mc_networth(
        ...
     }
     """
-
-    mc_df.columns = [f"sim_{i}" for i in range(SIMS)]
-    mc_samples_df.columns = [f"sim_{i}" for i in SIMS_SAMPLES]
-
+    SIMS = len(mc_df.columns)
     # compute percentiles
     pct_df = mc_df.quantile([0.15, 0.5, 0.85], axis=1).T
     pct_df.columns = ["p15", "median", "p85"]
@@ -119,13 +114,25 @@ def plot_mc_networth(
     }
 
     # liquidation metrics
-    min_liquidation_age = summary["Minimum Liquidation Year"] - dob_year
-    avg_liquidation_age = int(
-        sum(date.year for date in summary["Liquidation Dates"])
-        / len(summary["Liquidation Dates"])
-        - dob_year
+    min_liquidation_age = (
+        summary["Minimum Liquidation Year"] - dob_year
+        if summary["Minimum Liquidation Year"] is not None
+        else None
     )
-    max_liquidation_age = summary["Maximum Liquidation Year"] - dob_year
+    avg_liquidation_age = (
+        int(
+            sum(date.year for date in summary["Liquidation Dates"])
+            / len(summary["Liquidation Dates"])
+            - dob_year
+        )
+        if len(summary["Liquidation Dates"]) > 0
+        else None
+    )
+    max_liquidation_age = (
+        summary["Maximum Liquidation Year"] - dob_year
+        if summary["Maximum Liquidation Year"] is not None
+        else None
+    )
     pct_liquidation = summary["Liquidations"] / SIMS
 
     fig = go.Figure()
@@ -157,9 +164,6 @@ def plot_mc_networth(
     )
     # cloud of filtered sims and samples (purple)
     for col in mc_p85.columns:
-        col_name = "{:04d}".format(
-            int("".join(filter(str.isdigit, col.split("_")[-1]))) + 1
-        )
         if col in mc_samples_df.columns:
             fig.add_trace(
                 go.Scatter(
@@ -169,7 +173,7 @@ def plot_mc_networth(
                     opacity=0.5,
                     showlegend=False,
                     hoverinfo="all",
-                    name=f"Sim {col_name}",
+                    name=col,
                 )
             )
         else:
@@ -181,39 +185,55 @@ def plot_mc_networth(
                     opacity=0.2,
                     showlegend=False,
                     hoverinfo="skip",
-                    name=f"Sim {col_name}",
+                    name=col,
                 )
             )
 
     confidence_color = "green" if SIMS >= 1000 else "blue" if SIMS >= 100 else "red"
 
-    def getNWColor(value):
+    def getPNWColor(value):
         return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
+
+    def getEOLNWColor(value):
+        value_int = (
+            int("".join(filter(str.isdigit, str(value))))
+            if isinstance(value, str)
+            else 0
+        )
+        return "green" if value_int > 1000000 else "blue" if value_int > 0 else "red"
 
     def getLiquidationColor(value):
         return "green" if value < 0.2 else "blue" if value < 0.5 else "red"
 
     def getAgeColor(value):
-        return "green" if value > 75 else "blue" if value > 60 else "red"
+        ageColor = (
+            "green"
+            if value is None
+            else "green" if value > 75 else "blue" if value > 60 else "red"
+        )
+        return ageColor
 
     title = (
         f"Monte Carlo Net Worth Forecast"
         f" | <span style='color: {confidence_color}'>{SIMS} Simulations</span>"
-        f"<br><br>Postive Net Worth: <span style='color: {getNWColor(age_metrics['age_minus_20_pct'])}'>{age_metrics['age_minus_20_pct']:.1%}"
+        f"<br><br>Postive Net Worth: <span style='color: {getPNWColor(age_metrics['age_minus_20_pct'])}'>{age_metrics['age_minus_20_pct']:.1%}"
         f" @ {age_metrics['age_minus_20']} y.o.</span>"
-        f" | <span style='color: {getNWColor(age_metrics['age_minus_10_pct'])}'>{age_metrics['age_minus_10_pct']:.1%}"
+        f" | <span style='color: {getPNWColor(age_metrics['age_minus_10_pct'])}'>{age_metrics['age_minus_10_pct']:.1%}"
         f" @ {age_metrics['age_minus_10']} y.o.</span>"
-        f" | <span style='color: {getNWColor(age_metrics['age_end_pct'])}'>{age_metrics['age_end_pct']:.1%}"
+        f" | <span style='color: {getPNWColor(age_metrics['age_end_pct'])}'>{age_metrics['age_end_pct']:.1%}"
         f" @ {age_metrics['age_end']} y.o.</span>"
-        f"<br><br>EOL Net Worth: <span style='color: blue'>p15 &#36;{networth['p15']}</span>"
-        f" | <span style='color: green'>Median &#36;{networth['Median']}</span>"
-        f" | Average &#36;{networth['Average']}"
-        f" | <span style='color: blue'>p85 &#36;{networth['p85']}</span>"
+        f"<br><br>EOL Net Worth: <span style='color: {getEOLNWColor(networth['p15'])}'>p15 &#36;{networth['p15']}</span>"
+        f" | <span style='color: {getEOLNWColor(networth['Median'])}'>Median &#36;{networth['Median']}</span>"
+        f" | <span style='color: {getEOLNWColor(networth['Average'])}'>Average &#36;{networth['Average']}</span>"
+        f" | <span style='color: {getEOLNWColor(networth['p85'])}'>p85 &#36;{networth['p85']}</span>"
         f"<br><br>Liquidations: <span style='color: {getLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
-        f" | <span style='color: {getAgeColor(min_liquidation_age)}'>Min {min_liquidation_age} y.o.</span>"
-        f" | <span style='color: {getAgeColor(avg_liquidation_age)}'>Avg {avg_liquidation_age} y.o.</span>"
-        f" | <span style='color: {getAgeColor(max_liquidation_age)}'>Max {max_liquidation_age} y.o.</span>"
     )
+    if pct_liquidation != 0:
+        title += (
+            f" | <span style='color: {getAgeColor(min_liquidation_age)}'>Min {min_liquidation_age} y.o.</span>"
+            f" | <span style='color: {getAgeColor(avg_liquidation_age)}'>Avg {avg_liquidation_age} y.o.</span>"
+            f" | <span style='color: {getAgeColor(max_liquidation_age)}'>Max {max_liquidation_age} y.o.</span>"
+        )
     fig.update_layout(
         title=title,
         title_x=0.5,
