@@ -81,7 +81,6 @@ See [`export/README.md`](export/README.md) for details.
 
 ## 🛣️ Roadmap
 
-- Calculate taxes for state and local taxes
 - Handle Liquidation event by adding "rent" or "lease" to expenses
 - Handle Required Minimium Distributions
 - Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
