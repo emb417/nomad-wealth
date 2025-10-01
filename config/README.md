@@ -74,4 +74,15 @@ Controls auto-refill rules per bucket:
 - `salary`: target buckets get percentage of salary
 - `social_security`: target bucket
 - `roth_conversion`: start date, amount, source, target
-- `liquidation_threshold`: emergency liquidation threshold
+- `liquidation_threshold`: threshold for emergency liquidation of property
+
+---
+
+## tax_brackets.json
+
+Defines tax brackets for salary, SS benefits, tax-deferred withdrawals, and long-term capital gains.
+
+- `ordinary` is a dictionary of { `bracket_name`: [ { `min_salary`: int, `tax_rate`: float } ] } that will be iterated over to calculate different types of income taxes. Modify for your local income taxes.
+- `capital_gains` is a dictionary of { `bracket_name`: [ { `min_salary`: int, `tax_rate`: float } ] }
+
+---

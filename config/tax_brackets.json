@@ -1,0 +1,35 @@
+{
+  "ordinary": {
+    "Federal 2025": [
+      { "min_salary": 0, "tax_rate": 0.1 },
+      { "min_salary": 22000, "tax_rate": 0.12 },
+      { "min_salary": 89450, "tax_rate": 0.22 },
+      { "min_salary": 190750, "tax_rate": 0.24 },
+      { "min_salary": 364200, "tax_rate": 0.32 },
+      { "min_salary": 462500, "tax_rate": 0.35 },
+      { "min_salary": 751600, "tax_rate": 0.37 }
+    ],
+    "Oregon State 2025": [
+      { "min_salary": 0, "tax_rate": 0.0475 },
+      { "min_salary": 8601, "tax_rate": 0.0675 },
+      { "min_salary": 21501, "tax_rate": 0.0875 },
+      { "min_salary": 250000, "tax_rate": 0.099 }
+    ],
+    "Social Security 2025": [
+      { "min_salary": 0, "tax_rate": 0.062 },
+      { "min_salary": 176100, "tax_rate": 0.0 }
+    ],
+    "Medicare 2025": [
+      { "min_salary": 0, "tax_rate": 0.0145 },
+      { "min_salary": 200000, "tax_rate": 0.0235 }
+    ],
+    "Portland Metro SHS 2025": [{ "min_salary": 200000, "tax_rate": 0.01 }]
+  },
+  "capital_gains": {
+    "long_term": [
+      { "min_salary": 0, "tax_rate": 0.0 },
+      { "min_salary": 89250, "tax_rate": 0.15 },
+      { "min_salary": 553850, "tax_rate": 0.2 }
+    ]
+  }
+}

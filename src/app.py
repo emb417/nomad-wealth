@@ -145,6 +145,7 @@ def stage_init_components(
     inflation_thresholds = json_data["inflation_thresholds"]
     profile = json_data["profile"]
     policies_config = json_data["policies"]
+    tax_brackets = json_data["tax_brackets"]
 
     # Build buckets from canonical buckets.json
     buckets = seed_buckets_from_config(hist_df, buckets_config)
@@ -161,7 +162,7 @@ def stage_init_components(
         taxable_eligibility=eligibility,
         liquidation_threshold=policies_config["liquidation_threshold"],
     )
-    tax_calc = TaxCalculator(refill_policy)
+    tax_calc = TaxCalculator(refill_policy, tax_brackets)
 
     # apply gains
     years = sorted(future_df["Date"].dt.year.unique())

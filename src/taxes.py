@@ -1,4 +1,4 @@
-from typing import List, Tuple
+from typing import List, Dict
 
 # Internal Imports
 from policies import ThresholdRefillPolicy
@@ -12,18 +12,14 @@ class TaxCalculator:
     so only Cash can stay negative.
     """
 
-    def __init__(self, refill_policy: ThresholdRefillPolicy):
-        # Married filing jointly 2025 brackets: (lower_bound, rate)
-        self.brackets: List[Tuple[int, float]] = [
-            (0, 0.10),
-            (22000, 0.12),
-            (89450, 0.22),
-            (190750, 0.24),
-            (364200, 0.32),
-            (462500, 0.35),
-            (751600, 0.37),
-        ]
+    def __init__(
+        self,
+        refill_policy: ThresholdRefillPolicy,
+        tax_brackets: Dict[str, Dict[str, List[Dict[str, float]]]],
+    ):
         self.refill_policy = refill_policy
+        self.ordinary_tax_brackets = tax_brackets["ordinary"]
+        self.capital_gains_tax_brackets = tax_brackets["capital_gains"]
 
     def _taxable_social_security(self, ss_benefits: int, other_income: int) -> int:
         provisional = other_income + int(0.5 * ss_benefits)
@@ -45,27 +41,44 @@ class TaxCalculator:
         taxable_ss = self._taxable_social_security(ss_benefits, other_income)
         ordinary_income = other_income + taxable_ss
 
-        ordinary_tax = self._calculate_ordinary_tax(ordinary_income)
+        ordinary_tax = 0
+        for bracket_name, bracket_list in self.ordinary_tax_brackets.items():
+            ordinary_tax += self._calculate_ordinary_tax(
+                {bracket_name: bracket_list}, ordinary_income
+            )
 
         # Step 2: Capital gains tax (long-term only)
         gains_tax = self._calculate_capital_gains_tax(ordinary_income, gains)
 
         return ordinary_tax + gains_tax
 
-    def _calculate_ordinary_tax(self, income: int) -> int:
+    def _calculate_ordinary_tax(
+        self, brackets: Dict[str, List[Dict[str, float]]], income: int
+    ) -> int:
         """
         Applies 2025 ordinary income tax brackets for MFJ.
         """
         tax = 0
-        for i, (lower, rate) in enumerate(self.brackets):
-            upper = (
-                self.brackets[i + 1][0] if i + 1 < len(self.brackets) else float("inf")
-            )
-            if income > lower:
-                taxable_chunk = min(income, upper) - lower
-                tax += taxable_chunk * rate
-            else:
-                break
+        for _, bracket_list in brackets.items():
+            for i, bracket in enumerate(bracket_list):
+                next_bracket = (
+                    bracket_list[i + 1] if i + 1 < len(bracket_list) else None
+                )
+                if income > bracket["min_salary"]:
+                    taxable_chunk = (
+                        min(
+                            income,
+                            (
+                                next_bracket["min_salary"]
+                                if next_bracket
+                                else float("inf")
+                            ),
+                        )
+                        - bracket["min_salary"]
+                    )
+                    tax += taxable_chunk * bracket["tax_rate"]
+                else:
+                    break
         return int(tax)
 
     def _calculate_capital_gains_tax(self, ordinary_income: int, gains: int) -> int:
@@ -76,21 +89,21 @@ class TaxCalculator:
         if gains <= 0:
             return 0
 
-        brackets = [
-            (0, 0.00),
-            (89250, 0.15),
-            (553850, 0.20),
-        ]
+        brackets = self.capital_gains_tax_brackets["long_term"]
 
         total_income = ordinary_income + gains
         tax = 0
 
-        for i, (lower, rate) in enumerate(brackets):
-            upper = brackets[i + 1][0] if i + 1 < len(brackets) else float("inf")
+        taxable = 0
+        for i, bracket in enumerate(brackets):
+            lower = bracket["min_salary"]
+            upper = (
+                brackets[i + 1]["min_salary"] if i + 1 < len(brackets) else float("inf")
+            )
+
             if total_income > lower:
-                taxable = min(total_income, upper) - max(lower, ordinary_income)
-                if taxable > 0:
-                    tax += taxable * rate
+                taxable = min(total_income, upper) - lower
+                tax += taxable * bracket["tax_rate"]
             else:
                 break
 
