@@ -229,22 +229,24 @@ class ThresholdRefillPolicy:
 
             if bucket_name == "Property":
                 take = src.balance()
+                logging.debug(
+                    f"[Emergency Liquidation] {tx_month} — ${take:,} Property Liquidated"
+                )
             else:
                 take = min(src.balance(), shortfall)
+            bt = getattr(src, "bucket_type", None)
+            is_def = bt == "tax_deferred"
+            is_tax = bt == "taxable"
             txns.append(
                 RefillTransaction(
                     source=bucket_name,
                     target="Cash",
                     amount=take,
-                    is_tax_deferred=False,
-                    is_taxable=(getattr(src, "bucket_type", "") == "taxable"),
+                    is_tax_deferred=is_def,
+                    is_taxable=is_tax,
                 )
             )
             shortfall -= take
             if shortfall <= 0:
                 break
-                logging.debug(
-                    f"[Emergency Liquidation] {tx_month} — "
-                    f"Liquidated ${amt:,} from Property → Taxable"
-                )
         return txns
