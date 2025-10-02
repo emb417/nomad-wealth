@@ -28,6 +28,9 @@ class Transaction(ABC):
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0
 
+    def get_penalty_tax(self, tx_month: pd.Period) -> int:
+        return 0
+
 
 class FixedTransaction(Transaction):
     def __init__(

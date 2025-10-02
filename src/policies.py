@@ -24,6 +24,7 @@ class RefillTransaction(Transaction):
         amount: int,
         is_tax_deferred: bool = False,
         is_taxable: bool = False,
+        penalty_rate: float = 0.0,
     ):
         super().__init__()
         self.source = source
@@ -31,10 +32,12 @@ class RefillTransaction(Transaction):
         self.amount = int(amount)
         self.is_tax_deferred = bool(is_tax_deferred)
         self.is_taxable = bool(is_taxable)
+        self.penalty_rate = penalty_rate
 
         # runtime-applied amounts and estimated gains (set by apply)
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
+        self._penalty_tax: int = 0
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         src = buckets.get(self.source)
@@ -65,6 +68,10 @@ class RefillTransaction(Transaction):
             if bt == "taxable" and self.is_taxable:
                 # conservative heuristic: estimate 50% of proceeds are taxable gains
                 self._taxable_gain = int(round(self._applied_amount * 0.5))
+
+            if self.penalty_rate and self._applied_amount > 0:
+                self._penalty_tax = int(round(self._applied_amount * self.penalty_rate))
+
             return
 
         # Conservative: only take what the source can supply without going negative
@@ -83,6 +90,9 @@ class RefillTransaction(Transaction):
             # conservative heuristic: estimate 50% of proceeds are taxable gains
             self._taxable_gain = int(round(self._applied_amount * 0.5))
 
+        if self.penalty_rate and self._applied_amount > 0:
+            self._penalty_tax = int(round(self._applied_amount * self.penalty_rate))
+
     # Report tax-relevant amounts to the engine's tax accumulation
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         # Report as tax-deferred withdrawal only when transaction is marked so
@@ -91,6 +101,9 @@ class RefillTransaction(Transaction):
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         # Return the estimated taxable gain (0 if not applicable)
         return int(self._taxable_gain or 0)
+
+    def get_penalty_tax(self, tx_month: pd.Period) -> int:
+        return self._penalty_tax
 
 
 class ThresholdRefillPolicy:
@@ -234,7 +247,16 @@ class ThresholdRefillPolicy:
                 )
             else:
                 take = min(src.balance(), shortfall)
+
             bt = getattr(src, "bucket_type", None)
+            if (
+                bt == "tax_deferred"
+                and self.taxable_eligibility
+                and tx_month < self.taxable_eligibility
+            ):
+                penalty_rate = 0.10
+            else:
+                penalty_rate = 0.0
             is_def = bt == "tax_deferred"
             is_tax = bt == "taxable"
             txns.append(
@@ -244,6 +266,7 @@ class ThresholdRefillPolicy:
                     amount=take,
                     is_tax_deferred=is_def,
                     is_taxable=is_tax,
+                    penalty_rate=penalty_rate,
                 )
             )
             shortfall -= take

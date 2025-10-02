@@ -92,6 +92,11 @@ class ForecastEngine:
                 for tx in (*self.transactions, *refill_txns)
                 if tx.is_taxable
             )
+            monthly_penalty = sum(
+                tx.get_penalty_tax(tx_month)
+                for tx in (*self.transactions, *refill_txns, *liq_txns)
+                if callable(getattr(tx, "get_penalty_tax", None))
+            )
 
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
@@ -99,12 +104,14 @@ class ForecastEngine:
                     "TaxableGains": 0,
                     "Salary": 0,
                     "SocialSecurity": 0,
+                    "PenaltyTax": 0,
                 }
             ylog = yearly_tax_log[year]
             ylog["Salary"] += monthly_salary
             ylog["SocialSecurity"] += monthly_ss
             ylog["TaxDeferredWithdrawals"] += monthly_deferred
             ylog["TaxableGains"] += monthly_taxable
+            ylog["PenaltyTax"] += monthly_penalty
 
             # Snapshot balances
             snapshot = {"Date": forecast_date}
@@ -121,6 +128,7 @@ class ForecastEngine:
                     ss = prev_log["SocialSecurity"]
                     wdraw = prev_log["TaxDeferredWithdrawals"]
                     gain = prev_log["TaxableGains"]
+                    pen = prev_log["PenaltyTax"]
 
                     # total tax
                     total_tax = self.tax_calc.calculate_tax(
@@ -131,6 +139,12 @@ class ForecastEngine:
                         salary=sal, ss_benefits=ss, withdrawals=wdraw, gains=0
                     )
                     capg_tax = total_tax - ord_tax
+
+                    if pen:
+                        logging.debug(
+                            f"[Penalty] Adding ${pen:,} early‐withdrawal penalty for {prev_year}"
+                        )
+                        total_tax += pen
 
                     # pay full year’s bill
                     paid_from_tc = self.buckets["Tax Collection"].withdraw(total_tax)
@@ -167,6 +181,7 @@ class ForecastEngine:
                             "SocialSecurity": ss,
                             "OrdinaryTax": ord_tax,
                             "CapitalGainsTax": capg_tax,
+                            "PenaltyTax": pen,
                             "TotalTax": total_tax,
                         }
                     )
