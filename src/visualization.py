@@ -195,12 +195,7 @@ def plot_mc_networth(
         return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
 
     def getEOLNWColor(value):
-        value_int = (
-            int("".join(filter(str.isdigit, str(value))))
-            if isinstance(value, str)
-            else 0
-        )
-        return "green" if value_int > 1000000 else "blue" if value_int > 0 else "red"
+        return "green" if value > 1000000 else "blue" if value > 0 else "red"
 
     def getPropertyLiquidationColor(value):
         return "green" if value < 0.2 else "blue" if value < 0.5 else "red"
@@ -222,10 +217,10 @@ def plot_mc_networth(
         f" @ {age_metrics['age_minus_10']} y.o.</span>"
         f" | <span style='color: {getPNWColor(age_metrics['age_end_pct'])}'>{age_metrics['age_end_pct']:.1%}"
         f" @ {age_metrics['age_end']} y.o.</span>"
-        f"<br><br>EOL Net Worth: <span style='color: {getEOLNWColor(networth['p15'])}'>p15 &#36;{networth['p15']}</span>"
-        f" | <span style='color: {getEOLNWColor(networth['Median'])}'>Median &#36;{networth['Median']}</span>"
-        f" | <span style='color: {getEOLNWColor(networth['Average'])}'>Average &#36;{networth['Average']}</span>"
-        f" | <span style='color: {getEOLNWColor(networth['p85'])}'>p85 &#36;{networth['p85']}</span>"
+        f"<br><br>EOL Net Worth: <span style='color: {getEOLNWColor(pct_p15_final_nw)}'>p15 &#36;{networth['p15']}</span>"
+        f" | <span style='color: {getEOLNWColor(pct_median_final_nw)}'>Median &#36;{networth['Median']}</span>"
+        f" | <span style='color: {getEOLNWColor(pct_mean_final_nw)}'>Average &#36;{networth['Average']}</span>"
+        f" | <span style='color: {getEOLNWColor(pct_p85_final_nw)}'>p85 &#36;{networth['p85']}</span>"
         f"<br><br>Property Liquidations: <span style='color: {getPropertyLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
     )
     if pct_liquidation != 0:
