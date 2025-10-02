@@ -74,42 +74,41 @@ def seed_buckets_from_config(
     hist_df: pd.DataFrame, buckets_cfg: Dict
 ) -> Dict[str, Bucket]:
     """
-    Build buckets from the required buckets.json structure (canonical).
-    Each entry in buckets_cfg is expected to contain:
-      - holdings: list of { asset_class, weight }
-      - can_go_negative: bool (optional)
-      - allow_cash_fallback: bool (optional)
+    Build buckets from the columns of hist_df. Each column is expected to have a corresponding entry in buckets_cfg containing:
+        - name: str
+        - holdings: list of { asset_class, weight }
+        - can_go_negative: bool (optional)
+        - allow_cash_fallback: bool (optional)
     Starting balances are taken from the last row of hist_df (balance.json).
+    A Tax Collection bucket is always created.
     """
-    last = hist_df.iloc[-1]
+
     buckets: Dict[str, Bucket] = {}
 
-    for name, meta in buckets_cfg.items():
-        raw = last[name]
-        bal = int(raw.item())
+    for col in hist_df.columns:
+        if col != "Date":
+            if col not in buckets_cfg:
+                raise ValueError(
+                    f"hist_df column '{col}' does not exist in buckets_cfg"
+                )
 
-        holdings_config = meta.get("holdings", [])
-        can_go_negative = bool(meta.get("can_go_negative", False))
-        allow_cash_fallback = bool(meta.get("allow_cash_fallback", False))
-        bucket_type = str(meta.get("bucket_type")).lower()
+            meta = buckets_cfg[col]
+            raw = hist_df[col].iloc[-1]
+            bal = int(raw.item())
 
-        buckets[name] = create_bucket(
-            name=name,
-            starting_balance=bal,
-            holdings_config=holdings_config,
-            can_go_negative=can_go_negative,
-            allow_cash_fallback=allow_cash_fallback,
-            bucket_type=bucket_type,
-        )
+            holdings_config = meta.get("holdings", [])
+            can_go_negative = bool(meta.get("can_go_negative", False))
+            allow_cash_fallback = bool(meta.get("allow_cash_fallback", False))
+            bucket_type = str(meta.get("bucket_type")).lower()
 
-    buckets["Tax Collection"] = create_bucket(
-        name="Tax Collection",
-        starting_balance=0,
-        holdings_config=[{"asset_class": "Cash", "weight": 1.0}],
-        can_go_negative=False,
-        allow_cash_fallback=True,
-        bucket_type="tax",
-    )
+            buckets[col] = create_bucket(
+                name=col,
+                starting_balance=bal,
+                holdings_config=holdings_config,
+                can_go_negative=can_go_negative,
+                allow_cash_fallback=allow_cash_fallback,
+                bucket_type=bucket_type,
+            )
 
     return buckets
 
