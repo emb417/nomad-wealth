@@ -242,8 +242,28 @@ class ThresholdRefillPolicy:
 
             if bucket_name == "Property":
                 take = src.balance()
+                normal_take = min(take, self.amounts.get("Cash", 0))
+                taxable_take = take - normal_take
                 logging.debug(
-                    f"[Emergency Liquidation] {tx_month} — ${take:,} Property Liquidated"
+                    f"[Emergency Liquidation] {tx_month} — ${normal_take:,} Property Liquidated to Cash, ${taxable_take:,} to Taxable"
+                )
+                txns.append(
+                    RefillTransaction(
+                        source=bucket_name,
+                        target="Cash",
+                        amount=normal_take,
+                        is_tax_deferred=False,
+                        is_taxable=True,
+                    )
+                )
+                txns.append(
+                    RefillTransaction(
+                        source=bucket_name,
+                        target="Taxable",
+                        amount=taxable_take,
+                        is_tax_deferred=False,
+                        is_taxable=True,
+                    )
                 )
             else:
                 take = min(src.balance(), shortfall)
