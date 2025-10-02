@@ -82,7 +82,6 @@ See [`export/README.md`](export/README.md) for details.
 ## 🛣️ Roadmap
 
 - Handle Liquidation event by adding "rent" or "lease" to expenses
-- Handle Required Minimium Distributions
 - Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
 - Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
@@ -95,6 +94,8 @@ See [`export/README.md`](export/README.md) for details.
 - UI for managing future transactions: fixed and recurring
 - UI for managing income sources: unemployement, salary, bonuses, social security
 - Include contributions to 401k as well as tax implications
+- Handle Required Minimium Distributions programatically instead of using date-based policy with static amounts
+- Handle Health Savings Account spending programatically, instead of using date-based recurring transactions
 - Handle unemployment and delayed salary expectations
 - Handle self-employment taxes
 - Handle self and spousal IRA contributions
@@ -107,4 +108,4 @@ See [`export/README.md`](export/README.md) for details.
 
 ---
 
-_Last updated:_ 2025-09-23
+_Last updated:_ 2025-10-02
