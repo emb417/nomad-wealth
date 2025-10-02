@@ -115,25 +115,25 @@ def plot_mc_networth(
 
     # liquidation metrics
     min_liquidation_age = (
-        summary["Minimum Liquidation Year"] - dob_year
-        if summary["Minimum Liquidation Year"] is not None
+        summary["Minimum Property Liquidation Year"] - dob_year
+        if summary["Minimum Property Liquidation Year"] is not None
         else None
     )
     avg_liquidation_age = (
         int(
-            sum(date.year for date in summary["Liquidation Dates"])
-            / len(summary["Liquidation Dates"])
+            sum(date.year for date in summary["Property Liquidation Dates"])
+            / len(summary["Property Liquidation Dates"])
             - dob_year
         )
-        if len(summary["Liquidation Dates"]) > 0
+        if len(summary["Property Liquidation Dates"]) > 0
         else None
     )
     max_liquidation_age = (
-        summary["Maximum Liquidation Year"] - dob_year
-        if summary["Maximum Liquidation Year"] is not None
+        summary["Maximum Property Liquidation Year"] - dob_year
+        if summary["Maximum Property Liquidation Year"] is not None
         else None
     )
-    pct_liquidation = summary["Liquidations"] / SIMS
+    pct_liquidation = summary["Property Liquidations"] / SIMS
 
     fig = go.Figure()
 
@@ -202,7 +202,7 @@ def plot_mc_networth(
         )
         return "green" if value_int > 1000000 else "blue" if value_int > 0 else "red"
 
-    def getLiquidationColor(value):
+    def getPropertyLiquidationColor(value):
         return "green" if value < 0.2 else "blue" if value < 0.5 else "red"
 
     def getAgeColor(value):
@@ -226,7 +226,7 @@ def plot_mc_networth(
         f" | <span style='color: {getEOLNWColor(networth['Median'])}'>Median &#36;{networth['Median']}</span>"
         f" | <span style='color: {getEOLNWColor(networth['Average'])}'>Average &#36;{networth['Average']}</span>"
         f" | <span style='color: {getEOLNWColor(networth['p85'])}'>p85 &#36;{networth['p85']}</span>"
-        f"<br><br>Liquidations: <span style='color: {getLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
+        f"<br><br>Property Liquidations: <span style='color: {getPropertyLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
     )
     if pct_liquidation != 0:
         title += (

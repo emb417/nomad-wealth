@@ -170,7 +170,8 @@ def stage_init_components(
         source_by_target=policies_config["sources"],
         amounts=policies_config["amounts"],
         taxable_eligibility=eligibility,
-        liquidation_threshold=policies_config["liquidation_threshold"],
+        liquidation_threshold=policies_config["liquidation"]["threshold"],
+        liquidation_buckets=policies_config["liquidation"]["buckets"],
     )
     tax_calc = TaxCalculator(refill_policy, tax_brackets)
 
@@ -228,10 +229,10 @@ def main():
     mc_dict = {year: [] for year in years}
     mc_samples_dict = {year: [] for year in years}
     summary = {
-        "Liquidations": 0,
-        "Liquidation Dates": [],
-        "Minimum Liquidation Year": None,
-        "Maximum Liquidation Year": None,
+        "Property Liquidations": 0,
+        "Property Liquidation Dates": [],
+        "Minimum Property Liquidation Year": None,
+        "Maximum Property Liquidation Year": None,
     }
 
     for sim in tqdm(range(SIMS), desc="Running Monte Carlo simulations..."):
@@ -269,27 +270,31 @@ def main():
                 show=SHOW_SIMS_SAMPLES,
                 save=SAVE_SIMS_SAMPLES,
             )
-        liquidation_row = forecast_df.loc[forecast_df["Property"] == 0]
-        if not liquidation_row.empty:
-            summary["Liquidations"] = summary.get("Liquidations", 0) + 1
-            summary["Liquidation Dates"].append(liquidation_row["Date"].iloc[0])
-            summary["Minimum Liquidation Year"] = (
-                liquidation_row["Date"].iloc[0].year
-                if (
-                    summary["Minimum Liquidation Year"] is None
-                    or liquidation_row["Date"].iloc[0].year
-                    < summary["Minimum Liquidation Year"]
-                )
-                else summary["Minimum Liquidation Year"]
+        property_liquidation_row = forecast_df.loc[forecast_df["Property"] == 0]
+        if not property_liquidation_row.empty:
+            summary["Property Liquidations"] = (
+                summary.get("Property Liquidations", 0) + 1
             )
-            summary["Maximum Liquidation Year"] = (
-                liquidation_row["Date"].iloc[0].year
+            summary["Property Liquidation Dates"].append(
+                property_liquidation_row["Date"].iloc[0]
+            )
+            summary["Minimum Property Liquidation Year"] = (
+                property_liquidation_row["Date"].iloc[0].year
                 if (
-                    summary["Maximum Liquidation Year"] is None
-                    or liquidation_row["Date"].iloc[0].year
-                    > summary["Maximum Liquidation Year"]
+                    summary["Minimum Property Liquidation Year"] is None
+                    or property_liquidation_row["Date"].iloc[0].year
+                    < summary["Minimum Property Liquidation Year"]
                 )
-                else summary["Maximum Liquidation Year"]
+                else summary["Minimum Property Liquidation Year"]
+            )
+            summary["Maximum Property Liquidation Year"] = (
+                property_liquidation_row["Date"].iloc[0].year
+                if (
+                    summary["Maximum Property Liquidation Year"] is None
+                    or property_liquidation_row["Date"].iloc[0].year
+                    > summary["Maximum Property Liquidation Year"]
+                )
+                else summary["Maximum Property Liquidation Year"]
             )
         # compute net worth and collect year-end values
         forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)

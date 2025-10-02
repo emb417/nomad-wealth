@@ -4,26 +4,36 @@
     "Fixed-Income": 90000
   },
   "amounts": {
-    "Cash": 50000,
-    "Fixed-Income": 100000
+    "Cash": 30000,
+    "Fixed-Income": 30000
   },
   "sources": {
-    "Cash": ["Fixed-Income"],
+    "Cash": ["Fixed-Income", "Tax-Deferred", "Taxable"],
     "Fixed-Income": ["Tax-Deferred", "Taxable", "Tax-Free"]
   },
   "salary": {
-    "Cash": 0.95,
+    "Cash": 0.9,
     "Fixed-Income": 0.0,
     "Taxable": 0.0,
-    "Tax-Deferred": 0.05,
+    "Tax-Deferred": 0.1,
     "Tax-Free": 0.0
   },
   "social_security": "Cash",
   "roth_conversion": {
-    "Start Date": "2030-05-01",
-    "Amount": 5000,
+    "Start Date": "2030-01-01",
+    "Amount": 6000,
     "Source": "Tax-Deferred",
     "Target": "Tax-Free"
   },
-  "liquidation_threshold": -100000
+  "liquidation": {
+    "threshold": -20000,
+    "buckets": [
+      "Cash",
+      "Taxable",
+      "Fixed-Income",
+      "Tax-Deferred",
+      "Tax-Free",
+      "Property"
+    ]
+  }
 }

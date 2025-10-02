@@ -106,6 +106,7 @@ class ThresholdRefillPolicy:
         amounts: Dict[str, int],
         taxable_eligibility: Optional[pd.Period] = None,
         liquidation_threshold: int = 0,
+        liquidation_buckets: Optional[List[str]] = None,
     ):
         # Minimal validation
         self.thresholds = thresholds or {}
@@ -113,6 +114,12 @@ class ThresholdRefillPolicy:
         self.amounts = amounts or {}
         self.taxable_eligibility = taxable_eligibility
         self.liquidation_threshold = liquidation_threshold
+        self.liquidation_buckets = liquidation_buckets or [
+            "Taxable",
+            "Fixed-Income",
+            "Tax-Deferred",
+            "Property",
+        ]
 
     def generate_refills(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period
@@ -206,19 +213,33 @@ class ThresholdRefillPolicy:
     ) -> List[RefillTransaction]:
         txns: List[RefillTransaction] = []
         cash = buckets.get("Cash")
-        if cash and cash.balance() < self.liquidation_threshold:
-            prop = buckets.get("Property")
-            if prop and prop.balance() > 0:
-                amt = prop.balance()
-                txns.append(
-                    RefillTransaction(
-                        source="Property",
-                        target="Taxable",
-                        amount=amt,
-                        is_tax_deferred=False,
-                        is_taxable=True,
-                    )
+        if cash is None:
+            return txns
+        shortfall = self.liquidation_threshold - cash.balance()
+        if shortfall <= 0:
+            return txns
+
+        for bucket_name in self.liquidation_buckets:
+            if bucket_name == "Cash":
+                continue
+
+            src = buckets.get(bucket_name)
+            if not src or src.balance() <= 0:
+                continue
+
+            take = min(src.balance(), shortfall)
+            txns.append(
+                RefillTransaction(
+                    source=bucket_name,
+                    target="Cash",
+                    amount=take,
+                    is_tax_deferred=False,
+                    is_taxable=(getattr(src, "bucket_type", "") == "taxable"),
                 )
+            )
+            shortfall -= take
+            if shortfall <= 0:
+                break
                 logging.debug(
                     f"[Emergency Liquidation] {tx_month} — "
                     f"Liquidated ${amt:,} from Property → Taxable"
