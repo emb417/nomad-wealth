@@ -227,7 +227,10 @@ class ThresholdRefillPolicy:
             if not src or src.balance() <= 0:
                 continue
 
-            take = min(src.balance(), shortfall)
+            if bucket_name == "Property":
+                take = src.balance()
+            else:
+                take = min(src.balance(), shortfall)
             txns.append(
                 RefillTransaction(
                     source=bucket_name,
