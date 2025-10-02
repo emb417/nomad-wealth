@@ -114,7 +114,7 @@ class ThresholdRefillPolicy:
         self.taxable_eligibility = taxable_eligibility
         self.liquidation_threshold = liquidation_threshold
 
-    def generate(
+    def generate_refills(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period
     ) -> List[RefillTransaction]:
         txns: List[RefillTransaction] = []
@@ -132,26 +132,6 @@ class ThresholdRefillPolicy:
         tx_month_period = (
             tx_month.to_period("M") if not isinstance(tx_month, pd.Period) else tx_month
         )
-
-        # Emergency liquidation preserved
-        cash_bucket = buckets.get("Cash")
-        cash_balance = cash_bucket.balance() if cash_bucket is not None else 0
-        if cash_balance < self.liquidation_threshold:
-            prop = buckets.get("Property")
-            if prop and prop.balance() > 0:
-                amt = prop.balance()
-                txns.append(
-                    RefillTransaction(
-                        source="Property",
-                        target="Taxable",
-                        amount=amt,
-                        is_tax_deferred=False,
-                        is_taxable=True,
-                    )
-                )
-                logging.debug(
-                    f"[Emergency Refill] {tx_month_period} — Liquidated ${amt:,} Property → Taxable"
-                )
 
         for target, threshold in self.thresholds.items():
             tgt_bucket = buckets.get(target)
@@ -219,4 +199,28 @@ class ThresholdRefillPolicy:
                 if remaining <= 0:
                     break
 
+        return txns
+
+    def generate_liquidation(
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period
+    ) -> List[RefillTransaction]:
+        txns: List[RefillTransaction] = []
+        cash = buckets.get("Cash")
+        if cash and cash.balance() < self.liquidation_threshold:
+            prop = buckets.get("Property")
+            if prop and prop.balance() > 0:
+                amt = prop.balance()
+                txns.append(
+                    RefillTransaction(
+                        source="Property",
+                        target="Taxable",
+                        amount=amt,
+                        is_tax_deferred=False,
+                        is_taxable=True,
+                    )
+                )
+                logging.debug(
+                    f"[Emergency Liquidation] {tx_month} — "
+                    f"Liquidated ${amt:,} from Property → Taxable"
+                )
         return txns

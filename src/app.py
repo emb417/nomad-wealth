@@ -137,6 +137,7 @@ def stage_load():
 def stage_prepare_timeframes(balance_df: pd.DataFrame, end_date: str):
     hist_df = balance_df.copy()
     hist_df["Date"] = pd.to_datetime(hist_df["Date"])
+    hist_df["Tax Collection"] = 0
     last_date = hist_df["Date"].max()
     future_idx = pd.date_range(
         start=last_date + MonthBegin(1), end=pd.to_datetime(end_date), freq="MS"

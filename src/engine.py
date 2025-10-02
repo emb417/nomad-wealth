@@ -50,23 +50,28 @@ class ForecastEngine:
             tx_month = (forecast_date - MonthBegin(1)).to_period("M")
             year = forecast_date.year
 
-            # 1) Core transactions
+            # Core transactions
             for tx in self.transactions:
                 tx.apply(self.buckets, tx_month)
 
-            # 2) Refill policy
-            refill_txns = self.refill_policy.generate(self.buckets, tx_month)
+            # Refill policy
+            refill_txns = self.refill_policy.generate_refills(self.buckets, tx_month)
             for tx in refill_txns:
                 tx.apply(self.buckets, tx_month)
 
-            # 3) Market returns
+            # Market returns
             self.market_gains.apply(self.buckets, forecast_date)
 
-            # 4a) Taxes: Monthly withdraw from Cash into Tax Collection
+            # Taxes: Monthly withdraw from Cash into Tax Collection
             self.buckets["Cash"].withdraw(self.monthly_tax_drip)
             self.buckets["Tax Collection"].deposit(self.monthly_tax_drip)
 
-            # 4b) Taxes: Accumulate flows into yearly_tax_log
+            # Liqudiate based on policy
+            liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
+            for tx in liq_txns:
+                tx.apply(self.buckets, tx_month)
+
+            # Stats: Accumulate flows into yearly_tax_log
             monthly_salary = sum(
                 tx.get_salary(tx_month)
                 for tx in self.transactions
@@ -101,13 +106,13 @@ class ForecastEngine:
             ylog["TaxDeferredWithdrawals"] += monthly_deferred
             ylog["TaxableGains"] += monthly_taxable
 
-            # 5) Snapshot balances
+            # Snapshot balances
             snapshot = {"Date": forecast_date}
             for name, bucket in self.buckets.items():
                 snapshot[name] = bucket.balance()
             records.append(snapshot)
 
-            # 6) January: finalize prior‐year taxes
+            # January: finalize prior‐year taxes
             if forecast_date.month == 1:
                 prev_year = year - 1
                 prev_log = yearly_tax_log.get(prev_year)
@@ -142,7 +147,7 @@ class ForecastEngine:
                     # Capture leftover in TaxCollection
                     leftover = self.buckets["Tax Collection"].balance()
                     next_est = max(total_tax - leftover, 0)
-                    self.annual_tax_estimate = int(next_est)
+                    self.annual_tax_estimate = next_est
                     self.monthly_tax_drip = int(next_est / 12)
                     if next_est == 0 and leftover > 0:
                         drained_amount = self.buckets["Tax Collection"].withdraw(
