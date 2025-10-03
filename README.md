@@ -36,11 +36,11 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
 - Monte Carlo sampling with percentile bands and probability metrics
 - Interactive Plotly visualizations and CSV exports of net worth, bucket balances, and tax breakdowns
 
-Monte Carlo Net Worth Forecast Example
+### Monte Carlo Net Worth Forecast Example
 
 ![Monte Carlo Net Worth Forecast](assets/mc_networth_forecast.png)
 
-Sample Simulation Forecast by Bucket Example
+### Sample Simulation Forecast by Bucket Example
 
 ![Sim Forecast by Bucket](assets/sim_forecast_by_bucket.png)
 
