@@ -25,7 +25,11 @@ from transactions import (
     SalaryTransaction,
     RothConversionTransaction,
 )
-from visualization import plot_sample_forecast, plot_mc_networth
+from visualization import (
+    plot_historical_balance,
+    plot_sample_forecast,
+    plot_mc_networth,
+)
 
 logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
@@ -40,6 +44,8 @@ SHOW_SIMS_SAMPLES = True
 SAVE_SIMS_SAMPLES = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
+SHOW_HISTORICAL_NW_CHART = True
+SAVE_HISTORICAL_NW_CHART = False
 
 
 def create_bucket(
@@ -226,6 +232,10 @@ def main():
     json_data, dfs = stage_load()
     hist_df, future_df = stage_prepare_timeframes(
         dfs["balance"], json_data["profile"]["End Date"]
+    )
+
+    plot_historical_balance(
+        dfs["balance"], ts, SHOW_HISTORICAL_NW_CHART, SAVE_HISTORICAL_NW_CHART
     )
 
     # Pre-allocate year → list of net worths

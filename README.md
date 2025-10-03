@@ -59,6 +59,7 @@ Sample Simulation Forecast by Bucket Example
    - `SIMS`, `SIMS_SAMPLES`
    - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART`
    - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES`
+   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART`
 5. Run the simulation:
 
    ```bash
@@ -84,6 +85,7 @@ Sample Simulation Forecast by Bucket Example
 - `####_buckets_forecast_<timestamp>.csv`: Bucket balance trajectories for sampled simulations
 - `####_taxes_forecast_<timestamp>.csv`: Year-end tax breakdowns
 - `####_buckets_forecast_<timestamp>.html`: Interactive bucket balance visualizations
+- `historical_nw_<timestamp>.html`: Historical net worth and gain/loss chart
 
 See [`export/README.md`](export/README.md) for details.
 
@@ -105,7 +107,6 @@ Each month the engine sequentially applies:
 
 ## 🛣️ Roadmap
 
-- Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
 - Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
 - Visualize annual expenses using stacked bar chart

@@ -5,6 +5,86 @@ import plotly.graph_objects as go
 from numpy import ndarray
 
 
+def plot_historical_balance(
+    hist_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves the historical balance chart.
+    """
+    total_net_worth = pd.DataFrame(
+        {
+            "Date": pd.to_datetime(hist_df["Date"]),
+            "Total Net Worth": hist_df.drop("Date", axis=1).sum(axis=1),
+        }
+    )
+
+    net_worth_gain_loss = pd.DataFrame(
+        {
+            "Date": hist_df["Date"],
+            "Net Worth Gain/Loss %": total_net_worth["Total Net Worth"]
+            .pct_change()
+            .fillna(0),
+        }
+    )
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=total_net_worth["Date"],
+                y=total_net_worth["Total Net Worth"],
+                marker=dict(color="black", opacity=0.5),
+                name="Total NW",
+                mode="lines+markers",
+                line=dict(
+                    shape="spline",
+                    smoothing=1,
+                    width=2,
+                    color="black",
+                ),
+                opacity=0.75,
+            ),
+            go.Bar(
+                x=net_worth_gain_loss["Date"],
+                y=net_worth_gain_loss["Net Worth Gain/Loss %"],
+                marker=dict(
+                    color=[
+                        "darkgreen" if val > 0 else "darkred"
+                        for val in net_worth_gain_loss["Net Worth Gain/Loss %"]
+                    ],
+                    opacity=0.5,
+                ),
+                name="NW Gain/Loss %",
+                yaxis="y2",
+            ),
+        ]
+    )
+    fig.update_layout(
+        title="Historical Net Worth (NW) and Monthly Gain/Loss %",
+        title_x=0.5,
+        xaxis_title="Date",
+        yaxis_title="Total NW",
+        yaxis_tickformat="$,.0f",
+        yaxis2=dict(
+            title="NW Gain/Loss %",
+            overlaying="y",
+            side="right",
+            range=[-0.1, 0.3],
+        ),
+        yaxis2_tickformat=",.2p",
+        template="plotly_white",
+        showlegend=False,
+        hovermode="x unified",
+    )
+    fig.update_yaxes(showgrid=False)
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(export_path + f"historical_nw_{ts}.html")
+
+
 def plot_sample_forecast(
     sim_index: int,
     hist_df: pd.DataFrame,
