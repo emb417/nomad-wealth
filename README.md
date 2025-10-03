@@ -1,10 +1,33 @@
-# Inflation Forecasting & Portfolio Projections
+# 🕊️ Nomad Wealth: Policy-Driven Financial Freedom
 
-This Python framework offers a complete, policy-driven engine for Monte Carlo simulation of portfolio balances, cash flows, and tax liabilities. It ingests your historical balances and transactions to seed an auditable bucket model, then applies configurable refill rules, retirement-age gating, inflation-aware market returns, and tax calculations to project thousands of possible futures. Interactive charts and CSV exports turn these complex simulations into clear, actionable insights for smarter financial planning.
+Nomad Wealth is a policy-driven Python framework that acts as a complete engine for Monte Carlo simulation of your financial future. It starts with your historical data to seed an auditable, bucket-level model, then applies your explicit, configurable rules—covering everything from cash flow triggers to tax-optimized withdrawals—along with inflation-aware market returns. By projecting thousands of possible futures, it transforms complex simulations into clear, actionable insights for achieving and maintaining financial freedom.
 
 ---
 
-## Why This Framework Matters
+## 🔍 What Can Nomad Wealth Help Me Discover?
+
+This framework moves your financial outlook beyond simple spreadsheets and generic rules. By embracing the complexity of **real-world market volatility, inflation, and taxes**, Nomad Wealth provides clear, auditable answers to your most critical financial questions:
+
+### Resillience & Sufficiency
+
+- **How likely is my current plan to fail?** It quantifies the probability of running out of money under thousands of volatile market scenarios, giving you a scientific success rate, not just a hope.
+- **What is my true maximum sustainable spending limit?** It calculates the highest spending rate you can afford in retirement while maintaining a user-defined risk tolerance (e.g., less than a 5% chance of failure), adjusted for inflation.
+- **What specific policy changes are required to survive a major market downturn?** You can test aggressive bear markets to see exactly where and when your cash flow policies break down.
+
+### Strategy & Optimization
+
+- **How does my asset allocation impact my long-term security?** By comparing simulations, you can determine which portfolio mix provides the best risk-adjusted net worth over decades.
+- **What is the optimal withdrawal order for my accounts (Roth, Taxable, 401k)?** The sophisticated tax engine provides auditable insight into the tax drag of various withdrawal policies, guiding you to a strategy that maximizes purchasing power.
+- **When should I liquidate specific assets (like a home or business) to ensure financial stability?** You can model specific liquidation triggers to see the exact conditions and scenarios that necessitate the sale of a major asset.
+
+### Control & Transparency
+
+- **Where is every dollar going in every possible future?** The auditable bucket model provides unparalleled transparency, allowing you to trace simulated cash flow and account balances to verify and trust every projection.
+- **Are my stated financial _policies_ fully documented and understood?** It forces you to explicitly define every financial decision in declarative JSON, ensuring your strategy is transparent, repeatable, and easily shared with an advisor.
+
+---
+
+## 🏛️ Framework Pillars (Technical Detail)
 
 ### Move Beyond Simple Averages for True Financial Resilience
 
