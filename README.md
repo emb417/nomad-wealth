@@ -62,13 +62,14 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
    pip install -r requirements.txt
    ```
 
-2. Configure profiles and policies in `config/` (see `config/README.md`)
-3. Supply historical balances and transactions in `data/` (see `data/README.md`)
-4. Adjust flags in `src/app.py`:
-   - `SIMS`, `SIMS_SAMPLES`
-   - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART`
-   - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES`
-   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART`
+2. Configure profiles and policies in `config/` (see [`config/README.md`](config/README.md))
+3. Supply historical balances and transactions in `data/` (see [`data/README.md`](data/README.md))
+4. Adjust constants in `src/app.py`:
+   - `SIMS` : the number of simulations, more simulations = more accuracy
+   - `SIMS_SAMPLES` : a random number of simulations selected for inspection and exporting
+   - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART` : show and save the main networth chart
+   - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES` : show and save the randomly selected sample simulations to see forecasts by bucket
+   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART` : show and save the historical networth chart including monthly gain/loss %
 5. Run the simulation:
 
    ```bash
