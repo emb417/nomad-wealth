@@ -32,11 +32,13 @@ This script is the core of the application and orchestrates the entire simulatio
 The following settings can be adjusted in `app.py` to customize the simulation behavior:
 
 - `SIMS`: number of Monte Carlo simulations to run (default: 100)
-- `SIMS_SAMPLES`: indices of the sample simulations to display (default: randomly selected)
+- `SIMS_SAMPLES`: indices of the sample simulations to display (default: 3 randomly selected)
 - `SHOW_SIMS_SAMPLES`: whether to display the sample simulations (default: True)
 - `SAVE_SIMS_SAMPLES`: whether to save the sample simulations (default: False)
 - `SHOW_NETWORTH_CHART`: whether to display the net worth chart (default: True)
 - `SAVE_NETWORTH_CHART`: whether to save the net worth chart (default: False)
+- `SHOW_HISTORICAL_NW_CHART`: whether to display the historical net worth chart (default: True)
+- `SAVE_HISTORICAL_NW_CHART`: whether to save the historical net worth chart (default: False)
 
 These settings allow you to customize the simulation behavior to suit your needs.
 
@@ -57,7 +59,7 @@ The monthly forecast loop consists of the following steps:
 3. Apply market returns via `MarketGains`: simulates inflation-adjusted market returns
 4. Emergency liquidation when Cash < threshold
    - Follows the JSON-configured `liquidation.buckets` priority
-   - Fully sells off **Property**; partially liquidates others as needed
+   - Fully sells off Property; partially liquidates others as needed
    - Tags early withdrawals from tax-deferred buckets (before retirement age) with a 10% penalty
 5. Monthly tax drip: withdraw from Cash → deposit into Tax Collection
 6. Snapshot bucket balances: records the current balances of all buckets
@@ -66,10 +68,10 @@ The monthly forecast loop consists of the following steps:
    - Social Security
    - Tax-deferred withdrawals
    - Taxable gains
-   - **Early-withdrawal penalties**
+   - Early-withdrawal penalties
 8. January year-end settlement:
    - Calculate ordinary + capital gains tax
-   - **Add accumulated penalty tax**
+   - Add accumulated penalty tax
    - Pay total tax from Tax Collection + Cash
    - Roll forward any leftover estimate
 
@@ -123,9 +125,9 @@ This module defines the refill and liquidation policy logic.
 - `generate_refills()` handles normal top-offs
 - `generate_liquidation()`:
   - Calculates cash shortfall (`threshold - Cash.balance()`)
-  - Iterates the **configured bucket order** (skips Cash)
+  - Iterates the configured bucket order (skips Cash)
   - Fully liquidates `"Property"`; partial otherwise
-  - Applies **10% penalty** to tax-deferred buckets before eligibility
+  - Applies 10% penalty to tax-deferred buckets before eligibility
 
 ---
 
