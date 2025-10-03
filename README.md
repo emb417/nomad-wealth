@@ -15,11 +15,11 @@ This Python framework offers a complete, policy-driven engine for Monte Carlo si
 
 Monte Carlo Net Worth Forecast Example
 
-![Monte Carlo Net Worth Forecast](mc_networth_forecast.png)
+![Monte Carlo Net Worth Forecast](assets/mc_networth_forecast.png)
 
 Sample Simulation Forecast by Bucket Example
 
-![Sim Forecast by Bucket](sim_forecast_by_bucket.png)
+![Sim Forecast by Bucket](assets/sim_forecast_by_bucket.png)
 
 ---
 
