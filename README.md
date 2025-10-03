@@ -139,5 +139,3 @@ Each month the engine sequentially applies:
 - Category-specific inflation for expenses
 
 ---
-
-_Last updated:_ 2025-10-02
