@@ -13,6 +13,14 @@ This Python framework offers a complete, policy-driven engine for Monte Carlo si
 - Auditable, bucket-level transaction engine for transparent cash-flow tracking
 - Interactive Plotly charts and CSV outputs for deep analysis and reporting
 
+Monte Carlo Net Worth Forecast Example
+
+![Monte Carlo Net Worth Forecast](mc_networth_forecast.png)
+
+Sample Simulation Forecast by Bucket Example
+
+![Sim Forecast by Bucket](sim_forecast_by_bucket.png)
+
 ---
 
 ## 🔧 Features
