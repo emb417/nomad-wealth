@@ -108,26 +108,113 @@ Encapsulates:
 
 ## policies.py
 
-This module defines the refill and liquidation policy logic.
+`policies.py` orchestrates how buckets are automatically refilled to maintain minimum balances and how `Cash` shortfalls trigger emergency liquidations through generated transactions.
 
 ### RefillTransaction
 
-`RefillTransaction` represents a refill transaction that is triggered by the refill policy. It contains information about the source and target buckets, the amount of funds being transferred, and whether the transaction is tax-deferred or taxable.
+RefillTransaction is a conservative refill operation that moves funds between buckets, delegates actual money movement to each Bucket’s helper methods, flags tax attributes for downstream accounting, and estimates taxable gains when cost-basis data is missing. It inherits from Transaction for interface consistency and records runtime metrics on applied amounts, estimated gains, and penalties.
+
+Attributes:
+
+- `source` (str)  
+  Name of the bucket to withdraw funds from.
+
+- `target` (str)  
+  Name of the bucket to deposit funds into.
+
+- `amount` (int)  
+  Planned transfer amount.
+
+- `is_tax_deferred` (bool)  
+  Marks whether the withdrawal should be treated as tax-deferred.
+
+- `is_taxable` (bool)  
+  Marks whether the withdrawal should be treated as taxable.
+
+- `penalty_rate` (float)  
+  Penalty rate applied to withdrawals (e.g., early-withdrawal fees).
+
+- `_applied_amount` (int)  
+  Actual amount moved during the last `apply` call.
+
+- `_taxable_gain` (int)  
+  Estimated taxable gain portion of the withdrawal.
+
+- `_penalty_tax` (int)  
+  Tax incurred due to penalty rate on withdrawn funds.
+
+Methods:
+
+- `__init__(source: str, target: str, amount: int, is_tax_deferred: bool = False, is_taxable: bool = False, penalty_rate: float = 0.0) → None`  
+  Initializes a refill transaction with source/target names, amount, tax flags, and any penalty rate.
+
+- `apply(buckets: Dict[str, Bucket], tx_month: pd.Period) → None`
+
+  1. Resets runtime metrics.
+  2. If the source bucket allows cash fallback and Cash exists, calls `withdraw_with_cash_fallback(amount, cash)`, deposits the sum into target, logs debug, and records `_applied_amount`.
+  3. Otherwise, calls `partial_withdraw(amount)` on source, deposits whatever is returned, and records `_applied_amount`.
+  4. If the source is taxable and marked `is_taxable`, estimates `_taxable_gain` as 50% of applied amount.
+  5. Applies `_penalty_tax` by multiplying `_applied_amount` by `penalty_rate`.
+
+- `get_withdrawal(tx_month: pd.Period) → int`  
+  Returns `_applied_amount` if `is_tax_deferred` is True; otherwise returns 0.
+
+- `get_taxable_gain(tx_month: pd.Period) → int`  
+  Returns the estimated taxable gain (`_taxable_gain`) from the last `apply` call.
+
+- `get_penalty_tax(tx_month: pd.Period) → int`  
+  Returns the tax owed on any penalty applied during the last `apply` call.
 
 ### ThresholdRefillPolicy
 
-`ThresholdRefillPolicy` implements the refill policy logic based on thresholds. It triggers bucket top-offs when the balance of a bucket falls below a certain threshold. This policy includes age-based gating for tax-deferred withdrawals. It also includes emergency logic for negative Cash balances.
+ThresholdRefillPolicy defines how buckets are automatically topped up or liquidated based on configured thresholds, source mappings, and eligibility rules. It uses metadata attached to each Bucket (e.g., `bucket_type`, `allow_cash_fallback`) and an optional `taxable_eligibility` period to gate tax-advantaged sources.
 
-- Configured via `policies.json` with:
-  - `"thresholds"` (per-bucket top-off levels)
-  - `"liquidation": { "threshold": …, "buckets": […] }`
-  - `taxable_eligibility` (retirement gating date)
-- `generate_refills()` handles normal top-offs
-- `generate_liquidation()`:
-  - Calculates cash shortfall (`threshold - Cash.balance()`)
-  - Iterates the configured bucket order (skips Cash)
-  - Fully liquidates `"Property"`; partial otherwise
-  - Applies 10% penalty to tax-deferred buckets before eligibility
+Attributes:
+
+- `thresholds` (Dict[str, int])  
+  Maps each target bucket name to its minimum desired balance.
+
+- `sources` (Dict[str, List[str]])  
+  Lists source bucket names for each target bucket when topping up.
+
+- `amounts` (Dict[str, int])  
+  Specifies the per-period refill amount for each target bucket.
+
+- `taxable_eligibility` (Optional[pd.Period])  
+  Once the simulation reaches this month, tax-advantaged buckets become eligible refill sources.
+
+- `liquidation_threshold` (int)  
+  The minimum Cash balance; any shortfall triggers emergency liquidation.
+
+- `liquidation_buckets` (List[str])  
+  Ordered list of buckets to draw from when liquidating to cover Cash shortfall.
+
+Methods:
+
+- `generate_refills(buckets: Dict[str, Bucket], tx_month: pd.Period) → List[RefillTransaction]`
+
+  1. Normalizes `tx_month` and `taxable_eligibility` to monthly `pd.Period`.
+  2. For each target in `thresholds`:
+     - Skips if bucket missing or already at/above threshold.
+     - Determines `per_pass` from `amounts`; warns if zero.
+     - Iterates each source in `sources[target]`:  
+       • Skips missing buckets or, if pre-eligibility, tax-advantaged buckets.  
+       • Calculates `transfer` based on available balance and `allow_cash_fallback`.  
+       • Appends a `RefillTransaction(source, target, amount, is_tax_deferred, is_taxable)`.  
+       • Stops once the target’s refill need is met.
+
+- `generate_liquidation(buckets: Dict[str, Bucket], tx_month: pd.Period) → List[RefillTransaction]`
+  1. Computes `shortfall = liquidation_threshold - Cash.balance()`.
+  2. If `shortfall ≤ 0`, returns empty list.
+  3. Iterates over `liquidation_buckets` (skipping “Cash”):
+     - For “Property”:  
+       • Sells full balance; splits proceeds into a normal take (up to `amounts["Cash"]`) and a taxable take.  
+       • Emits two `RefillTransaction`s: one to “Cash” (taxable) and one to “Taxable.”
+     - For other buckets:  
+       • Takes `min(bucket.balance(), shortfall)`.  
+       • Applies a 10% penalty if the bucket is tax-deferred and `tx_month` is before `taxable_eligibility`.  
+       • Emits one `RefillTransaction(source, "Cash", amount, is_tax_deferred, is_taxable, penalty_rate)`.
+     - Decrements `shortfall`; stops once Cash is replenished to threshold.
 
 ---
 
@@ -166,39 +253,38 @@ This module provides the economic factors used by the application to simulate ma
 
 ## taxes.py
 
-This module encapsulates U.S. federal tax rules and produces a year’s tax liability for the engine to settle.
+`taxes.py` encapsulates U.S. federal tax rules and computes a year’s tax liability for the simulation engine. It exposes the `TaxCalculator` class, which applies married-filing-jointly ordinary income brackets, Social Security taxation rules, and long-term capital gains brackets. During calculation, it withdraws owed tax from the Cash bucket (permitting a negative balance) and then invokes a `ThresholdRefillPolicy` to pull from other buckets so that only Cash remains negative.
 
 ### TaxCalculator
 
-`TaxCalculator` computes:
+`TaxCalculator` computes federal tax on combined income—including ordinary income, Social Security benefits, withdrawals, and long-term capital gains—withdraws from Cash (allowing it to go negative), then uses a `ThresholdRefillPolicy` to pull from other buckets so only Cash remains negative.
 
-- Ordinary income tax on salary, Social Security benefits, and tax-deferred withdrawals
-- Long-term capital gains tax on realized gains
+Attributes:
 
-Any early-withdrawal penalties are tracked by the engine (via `RefillTransaction`) and added to the final tax bill outside of this class.
+- `refill_policy`: `ThresholdRefillPolicy` instance used to replenish Cash from other buckets
+- `ordinary_tax_brackets`: mapping of filing status to lists of ordinary income tax brackets
+- `capital_gains_tax_brackets`: mapping of filing status to capital gains tax brackets
 
-#### Methods
+Methods:
 
-- `__init__(self)`:  
-  Initializes tax-bracket tables for married filing jointly and links to the configured refill policy.
+- `__init__(refill_policy: ThresholdRefillPolicy, tax_brackets: Dict[str, Dict[str, List[Dict[str, float]]]]) → None`  
+  Initializes the tax calculator with a given refill policy and a dictionary containing both ordinary and capital gains tax brackets.
 
-- `_taxable_social_security(self, salary: int, ss_benefits: int) -> int`:  
-  Calculates the taxable portion of Social Security benefits based on combined income.
+- `_taxable_social_security(ss_benefits: int, other_income: int) → int`  
+  Calculates the taxable portion of Social Security benefits based on provisional income thresholds (0% up to \$32,000; 50% between \$32,001–\$44,000; 85% above \$44,000).
 
-- `calculate_tax(  
-  self,  
-  salary: int,  
-  ss_benefits: int,  
-  withdrawals: int,  
-  gains: int  
-) -> int`:  
-   Returns the total federal tax liability for the year by summing ordinary-income and capital-gains components.
+- `calculate_tax(salary: int = 0, ss_benefits: int = 0, withdrawals: int = 0, gains: int = 0) → int`  
+  Orchestrates the full tax calculation:
 
-- `_calculate_ordinary_tax(self, taxable_income: int) -> int`:  
-  Applies the 2025 ordinary-income tax brackets to compute tax on salary and withdrawals.
+  1. Computes ordinary income tax on salary + withdrawals + taxable SS.
+  2. Computes long-term capital gains tax layered on top of ordinary income.  
+     Returns the sum of both tax liabilities.
 
-- `_calculate_capital_gains_tax(self, gains: int) -> int`:  
-  Applies the 2025 long-term capital-gains brackets to compute tax on realized gains.
+- `_calculate_ordinary_tax(brackets: Dict[str, List[Dict[str, float]]], income: int) → int`  
+  Applies 2025 married-filing-jointly ordinary income tax brackets against the specified income to determine the ordinary income tax owed.
+
+- `_calculate_capital_gains_tax(ordinary_income: int, gains: int) → int`  
+  Applies 2025 long-term capital gains tax brackets on gains, layering them above the ordinary income to compute the gains tax.
 
 ---
 
@@ -239,9 +325,33 @@ The `get_taxable_gain()` method returns the amount of taxable gain from the tran
 
 ### RentalTransaction
 
-`RentalTransaction` represents a rental transaction that occurs when `Property` has zero balance. This will typically happen after a property liquidation. It contains the following attributes:
+`RentalTransaction` represents a conditional monthly expense (e.g. rent) that withdraws directly from the Cash bucket, but only when the Property bucket has zero balance.
 
-- `monthly_amount`: monthly amount of the transaction which is configured in profile.json as "Monthly Rent"
+Attributes:
+
+- `monthly_amount`: monthly expense amount (int)
+- `source_bucket`: name of the bucket to withdraw from ("Cash")
+- `condition_bucket`: name of the bucket whose zero balance triggers the withdrawal ("Property")
+
+Methods:
+
+- `apply(buckets: Dict[str, Bucket], tx_month: pd.Period) → None`  
+  Checks the balance of the condition_bucket; if it exists and its balance is zero (or if it’s missing), attempts to withdraw monthly_amount from the source_bucket. If either bucket is missing or the condition_bucket has a positive balance, no action is taken.
+
+### RothConversionTransaction
+
+`RothConversionTransaction` represents a Roth conversion transaction that occurs at a specific date and contains the following attributes:
+
+- `start_date`: date of the transaction
+- `amount`: amount of the transaction
+- `source_bucket`: source bucket of the transaction
+- `target_bucket`: target bucket of the transaction
+
+The `apply()` method applies the transaction to the given `buckets` by transferring the specified amount from the source bucket to the target bucket.
+
+The `get_withdrawal()` method returns the amount withdrawn from the source bucket.
+
+The `get_taxable_gain()` method returns the amount of taxable gain from the transaction.
 
 ### SalaryTransaction
 
@@ -272,20 +382,43 @@ The `get_withdrawal()` method returns the amount withdrawn from the source bucke
 
 The `get_taxable_gain()` method returns the amount of taxable gain from the transaction.
 
-### RothConversionTransaction
+### TaxDeferredTransaction
 
-`RothConversionTransaction` represents a Roth conversion transaction that occurs at a specific date and contains the following attributes:
+`TaxDeferredTransaction` represents a tax-deferred income stream that deposits a monthly base salary, a year-end remainder, and an annual bonus into a designated bucket until a specified retirement date. It inherits from Transaction and flags all deposits as tax-deferred.
 
-- `start_date`: date of the transaction
-- `amount`: amount of the transaction
-- `source_bucket`: source bucket of the transaction
-- `target_bucket`: target bucket of the transaction
+Attributes:
 
-The `apply()` method applies the transaction to the given `buckets` by transferring the specified amount from the source bucket to the target bucket.
+- `annual_gross`: Total gross salary for the year (int)
+- `annual_bonus`: One-time bonus amount paid once per year (int)
+- `bonus_date`: Date string (YYYY-MM-DD) when the bonus is paid
+- `target_bucket`: Name of the bucket receiving the deposits (str)
+- `retirement_date`: Date string (YYYY-MM-DD) after which no further deposits occur
 
-The `get_withdrawal()` method returns the amount withdrawn from the source bucket.
+Methods:
 
-The `get_taxable_gain()` method returns the amount of taxable gain from the transaction.
+- `apply(buckets: Dict[str, Bucket], tx_month: pd.Period) → None`  
+  Deposits the pro-rated monthly base salary (including any December remainder) and, if tx_month matches bonus_date, the annual bonus into the target bucket. No action once tx_month exceeds retirement_date.
+
+- `get_withdrawal(tx_month: pd.Period) → int`  
+  Returns the total amount that would be deposited for tx_month (monthly base + December remainder + bonus if applicable). Returns 0 after retirement_date.
+
+### TaxableTransaction
+
+`TaxableTransaction` represents a fully taxable income stream that deposits a monthly base salary, a year-end remainder, an annual bonus, and any realized investment gains into a designated bucket until a specified retirement date. It inherits from Transaction and flags all deposits as taxable.
+
+Attributes:
+
+- `annual_gross`: Total gross salary for the year (int)
+- `annual_bonus`: One-time bonus amount paid once per year (int)
+- `bonus_date`: Date string (YYYY-MM-DD) when the bonus is paid
+- `target_bucket`: Name of the bucket receiving the deposits (str)
+- `retirement_date`: Date string (YYYY-MM-DD) after which no further deposits occur
+- `gain_log`: Mapping of each monthly period (pd.Period) to realized gains (Dict[pd.Period, int])
+
+Methods:
+
+- `apply(buckets: Dict[str, Bucket], tx_month: pd.Period) → None`  
+  Deposits the pro-rated monthly base salary (including any December remainder) and, if tx_month matches bonus_date, the annual bonus. Additionally, looks up any realized gain in gain_log for tx_month and deposits that amount. No action once tx_month exceeds retirement_date.
 
 ---
 
