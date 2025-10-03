@@ -293,16 +293,10 @@ The `get_taxable_gain()` method returns the amount of taxable gain from the tran
 
 This module contains functions for generating interactive charts and exporting dataframes to CSV files.
 
-### plot_historical_balance()
+The `plot_historical_balance()` generates an interactive chart based on the historical dataframe. The chart shows the net worth over time on a line chart and the net worth gain/loss over time on a bar chart. This chart allows for visualization of the overall trend of the net worth over time and the specific months where the net worth increased or decreased.
 
-Generates an interactive chart based on the historical dataframe. The chart shows the net worth over time on a line chart and the net worth gain/loss over time on a bar chart. This chart allows for visualization of the overall trend of the net worth over time and the specific months where the net worth increased or decreased.
+The `plot_sample_forecast()` generates interactive charts based on the sampled simulation dataframes. These charts provide a visualization of the forecasted bucket balances over time for each sampled simulation. The chart allows for comparison of multiple simulations and helps identify patterns or trends in the data.
 
-### plot_sample_forecast()
-
-Generates interactive charts based on the sampled simulation dataframes. These charts provide a visualization of the forecasted bucket balances over time for each sampled simulation. The chart allows for comparison of multiple simulations and helps identify patterns or trends in the data.
-
-### plot_mc_networth()
-
-Generates interactive chart based on the monte carlo simulation dataframes. This chart provides a visualization of the forecasted net worth over time for each simulation including the median net worth and 15th and 85th percentile bounds. The chart allows for comparison of multiple simulations and helps identify patterns or trends in the data. The upper 85th percentile is hidden to reduce the range of the chart.
+The `plot_mc_networth()` generates interactive chart based on the monte carlo simulation dataframes. This chart provides a visualization of the forecasted net worth over time for each simulation including the median net worth and 15th and 85th percentile bounds. The chart allows for comparison of multiple simulations and helps identify patterns or trends in the data. The upper 85th percentile is hidden to reduce the range of the chart.
 
 ---
