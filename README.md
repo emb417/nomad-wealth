@@ -116,7 +116,6 @@ Each month the engine sequentially applies:
 - UI for tuning configurations: profile, holdings, gains, inflation, policies
 - UI for managing future transactions: fixed and recurring
 - UI for managing income sources: unemployement, salary, bonuses, social security
-- Include contributions to 401k as well as tax implications
 - Handle Required Minimium Distributions programatically instead of using date-based policy with static amounts
 - Handle Health Savings Account spending programatically, instead of using date-based recurring transactions
 - Handle unemployment and delayed salary expectations
