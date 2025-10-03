@@ -153,6 +153,34 @@ class RecurringTransaction(Transaction):
                     )
 
 
+class RentalTransaction(Transaction):
+    """
+    A conditional monthly expense (e.g. rent) that withdraws directly from Cash,
+    but only when Property has zero balance.
+    """
+
+    def __init__(
+        self,
+        monthly_amount: int,
+    ):
+        super().__init__()
+        self.monthly_amount = int(monthly_amount)
+        self.source_bucket = "Cash"
+        self.condition_bucket = "Property"
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        # only pay rent if property is gone
+        cond = buckets.get(self.condition_bucket)
+        if cond is None or cond.balance() > 0:
+            return
+
+        src = buckets.get(self.source_bucket)
+        if src is None:
+            return
+
+        src.withdraw(self.monthly_amount)
+
+
 class RothConversionTransaction(Transaction):
     """
     Gradually convert from Tax-Deferred → Roth bucket,

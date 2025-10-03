@@ -39,6 +39,7 @@ Defines simulation parameters:
 - `Annual Gross Income`: int
 - `Annual Bonus Date`: ISO-date string
 - `Annual Bonus Amount`: int
+- `Monthly Rent`: int
   Example:
 
 ```json
@@ -51,7 +52,8 @@ Defines simulation parameters:
   "Social Security Percentage": 0.5,
   "Annual Gross Income": 100000,
   "Annual Bonus Date": "2027-04-01",
-  "Annual Bonus Amount": 10000
+  "Annual Bonus Amount": 10000,
+  "Monthly Rent": 3000
 }
 ```
 

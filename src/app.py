@@ -20,6 +20,7 @@ from taxes import TaxCalculator
 from transactions import (
     FixedTransaction,
     RecurringTransaction,
+    RentalTransaction,
     SocialSecurityTransaction,
     SalaryTransaction,
     RothConversionTransaction,
@@ -186,6 +187,10 @@ def stage_init_components(
     fixed_tx = FixedTransaction(dfs["fixed"])
     recur_tx = RecurringTransaction(dfs["recurring"])
 
+    rental_tx = RentalTransaction(
+        monthly_amount=json_data["profile"]["Monthly Rent"],
+    )
+
     salary_tx = SalaryTransaction(
         annual_gross=profile["Annual Gross Income"],
         annual_bonus=profile["Annual Bonus Amount"],
@@ -208,7 +213,7 @@ def stage_init_components(
         target_bucket=policies_config["roth_conversion"]["Target"],
     )
 
-    transactions = [fixed_tx, recur_tx, salary_tx, ss_txn, roth_conv]
+    transactions = [fixed_tx, recur_tx, rental_tx, salary_tx, ss_txn, roth_conv]
 
     return buckets, refill_policy, tax_calc, market_gains, annual_infl, transactions
 

@@ -235,6 +235,12 @@ The `get_withdrawal()` method returns the amount withdrawn from the source bucke
 
 The `get_taxable_gain()` method returns the amount of taxable gain from the transaction.
 
+### RentalTransaction
+
+`RentalTransaction` represents a rental transaction that occurs when `Property` has zero balance. This will typically happen after a property liquidation. It contains the following attributes:
+
+- `monthly_amount`: monthly amount of the transaction which is configured in profile.json as "Monthly Rent"
+
 ### SalaryTransaction
 
 `SalaryTransaction` represents a salary transaction that occurs at a specific date and contains the following attributes:

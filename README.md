@@ -21,6 +21,7 @@ This Python framework offers a complete, policy-driven engine for Monte Carlo si
 - Inflation-aware market return simulation via user-defined gain tables
 - Threshold-driven refill policies with retirement-age gating to avoid penalties
 - Configurable emergency liquidation hierarchy across buckets
+- Automated recurring rental transactions after property liquidation event
 - Tax-aware withdrawals distinguishing ordinary income, capital gains, and penalties
 - Independent Roth conversion scheduling
 - Monte Carlo sampling with percentile bands and probability metrics
@@ -30,10 +31,16 @@ This Python framework offers a complete, policy-driven engine for Monte Carlo si
 
 ## 🚀 Quick Start
 
-1. Clone and install dependencies:
+1. Clone repo:
 
    ```bash
    git clone https://github.com/emb417/nomad-wealth
+   ```
+
+   - use a virtual environment to install dependencies.
+   - Or install dependencies manually:
+
+   ```bash
    cd nomad-wealth
    pip install -r requirements.txt
    ```
@@ -78,10 +85,10 @@ See [`export/README.md`](export/README.md) for details.
 
 Each month the engine sequentially applies:
 
-1. Core transactions (fixed, recurring, salary, SS, Roth)
+1. Core transactions (fixed, recurring, rental, salary, SS, Roth)
 2. Threshold-based refills (age-gated for tax-deferred sources)
 3. Market returns via inflation-aware gain sampling
-4. Emergency liquidation when cash falls below threshold
+4. Emergency liquidation when cash falls below threshold, bypassing age-gating if needed (i.e. tax-penalized)
 5. Monthly tax drip and tax collection
 6. Balance snapshot and tax aggregation
 7. January year-end tax payment and penalty integration
@@ -90,7 +97,6 @@ Each month the engine sequentially applies:
 
 ## 🛣️ Roadmap
 
-- Handle Liquidation event by adding "rent" or "lease" to expenses
 - Visualize historical totals using combo line (net worth) and bar (periodic gains) chart
 - Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
