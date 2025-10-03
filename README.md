@@ -6,20 +6,21 @@ This Python framework offers a complete, policy-driven engine for Monte Carlo si
 
 ## Why This Framework Matters
 
-- Scenario-driven forecasts that capture uncertainty in returns, cash flows, and tax events
-- Policy-first architecture: define thresholds, refill rules, and liquidation order in JSON
-- Tax-aware modeling that handles ordinary income, capital gains, early-withdrawal penalties, and Roth conversions
-- Inflation-adjusted gain sampling from user-supplied tables
-- Auditable, bucket-level transaction engine for transparent cash-flow tracking
-- Interactive Plotly charts and CSV outputs for deep analysis and reporting
+### Move Beyond Simple Averages for True Financial Resilience
 
-Monte Carlo Net Worth Forecast Example
+Traditional forecasting relies on single-point estimates or historical averages that gloss over real-world volatility and uncertainty. This framework embraces the inherent stochastic nature of markets and cash flows through Monte Carlo simulation, providing you with a full distribution of possible outcomes. You gain confidence in your plan's ability to withstand worst-case scenarios, not just the best or average.
 
-![Monte Carlo Net Worth Forecast](assets/mc_networth_forecast.png)
+### Financial Planning Driven by Your Rules, Not Only Assumptions
 
-Sample Simulation Forecast by Bucket Example
+Its policy-first architecture is a game-changer. Instead of hardcoding generic rules, you explicitly define all critical financial decisions—from monthly cash-flow triggers and bucket refill strategies to withdrawal order and liquidation thresholds—in declarative JSON. This makes your plan fully transparent, repeatable, and adaptable as your life circumstances or tax laws change.
 
-![Sim Forecast by Bucket](assets/sim_forecast_by_bucket.png)
+### Accurate Projections through Inflation and Tax Reality
+
+By incorporating inflation-adjusted gain sampling and a sophisticated tax engine that models capital gains, income tax, and specific withdrawal penalties, the framework paints a far more realistic picture of future net worth and sustainable withdrawal rates. You get projections based on real purchasing power, avoiding the pitfalls of over-optimistic nominal returns.
+
+### Gain Deep, Auditable Insight into Every Future Dollar
+
+The core auditable, bucket-level transaction engine provides unparalleled transparency. You can trace every simulated dollar in and out of specific accounts (e.g., Taxable, Roth, 401k), offering a clear, scientific basis for optimizing asset location and withdrawal strategies. This moves your planning from a black box to a fully verifiable, strategic model.
 
 ---
 
@@ -34,6 +35,14 @@ Sample Simulation Forecast by Bucket Example
 - Independent Roth conversion scheduling
 - Monte Carlo sampling with percentile bands and probability metrics
 - Interactive Plotly visualizations and CSV exports of net worth, bucket balances, and tax breakdowns
+
+Monte Carlo Net Worth Forecast Example
+
+![Monte Carlo Net Worth Forecast](assets/mc_networth_forecast.png)
+
+Sample Simulation Forecast by Bucket Example
+
+![Sim Forecast by Bucket](assets/sim_forecast_by_bucket.png)
 
 ---
 
