@@ -90,9 +90,9 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
 4. Adjust constants in `src/app.py`:
    - `SIMS` : the number of simulations, more simulations = more accuracy
    - `SIMS_SAMPLES` : a random number of simulations selected for inspection and exporting
+   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART` : show and save the historical networth chart including monthly gain/loss %
    - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART` : show and save the main networth chart
    - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES` : show and save the randomly selected sample simulations to see forecasts by bucket
-   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART` : show and save the historical networth chart including monthly gain/loss %
 5. Run the simulation:
 
    ```bash

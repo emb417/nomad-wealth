@@ -40,12 +40,12 @@ rng = np.random.default_rng()
 # Simulation settings
 SIMS = 100
 SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
+SHOW_HISTORICAL_NW_CHART = True
+SAVE_HISTORICAL_NW_CHART = False
 SHOW_SIMS_SAMPLES = True
 SAVE_SIMS_SAMPLES = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
-SHOW_HISTORICAL_NW_CHART = True
-SAVE_HISTORICAL_NW_CHART = False
 
 
 def create_bucket(

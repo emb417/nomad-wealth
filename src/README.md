@@ -33,12 +33,12 @@ The following settings can be adjusted in `app.py` to customize the simulation b
 
 - `SIMS`: number of Monte Carlo simulations to run (default: 100)
 - `SIMS_SAMPLES`: indices of the sample simulations to display (default: 3 randomly selected)
+- `SHOW_HISTORICAL_NW_CHART`: whether to display the historical net worth chart (default: True)
+- `SAVE_HISTORICAL_NW_CHART`: whether to save the historical net worth chart (default: False)
 - `SHOW_SIMS_SAMPLES`: whether to display the sample simulations (default: True)
 - `SAVE_SIMS_SAMPLES`: whether to save the sample simulations (default: False)
 - `SHOW_NETWORTH_CHART`: whether to display the net worth chart (default: True)
 - `SAVE_NETWORTH_CHART`: whether to save the net worth chart (default: False)
-- `SHOW_HISTORICAL_NW_CHART`: whether to display the historical net worth chart (default: True)
-- `SAVE_HISTORICAL_NW_CHART`: whether to save the historical net worth chart (default: False)
 
 These settings allow you to customize the simulation behavior to suit your needs.
 
@@ -426,7 +426,7 @@ Methods:
 
 This module contains functions for generating interactive charts and exporting dataframes to CSV files.
 
-The `plot_historical_balance()` generates an interactive chart based on the historical dataframe. The chart shows the net worth over time on a line chart and the net worth gain/loss over time on a bar chart. This chart allows for visualization of the overall trend of the net worth over time and the specific months where the net worth increased or decreased.
+The `plot_historical_balance()` generates an interactive chart based on the historical dataframe. The chart shows the net worth over time on a line chart and the net worth gain/loss over time on a bar chart. This chart allows for visualization of the overall trend of the net worth over time and the specific months where the net worth increased or decreased relative to the previous month and the previous year.
 
 The `plot_sample_forecast()` generates interactive charts based on the sampled simulation dataframes. These charts provide a visualization of the forecasted bucket balances over time for each sampled simulation. The chart allows for comparison of multiple simulations and helps identify patterns or trends in the data.
 

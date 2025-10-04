@@ -22,11 +22,17 @@ def plot_historical_balance(
         }
     )
 
-    net_worth_gain_loss = pd.DataFrame(
+    monthly_net_worth_gain_loss = pd.DataFrame(
         {
             "Date": hist_df["Date"],
-            "Net Worth Gain/Loss %": total_net_worth["Total Net Worth"]
-            .pct_change()
+            "Net Worth Gain": total_net_worth["Total Net Worth"].pct_change().fillna(0),
+        }
+    )
+    annual_net_worth_gain_loss = pd.DataFrame(
+        {
+            "Date": hist_df["Date"],
+            "Net Worth Gain": total_net_worth["Total Net Worth"]
+            .pct_change(12)
             .fillna(0),
         }
     )
@@ -36,7 +42,7 @@ def plot_historical_balance(
                 x=total_net_worth["Date"],
                 y=total_net_worth["Total Net Worth"],
                 marker=dict(color="black", opacity=0.5),
-                name="Total NW",
+                name="Net Worth",
                 mode="lines+markers",
                 line=dict(
                     shape="spline",
@@ -47,28 +53,38 @@ def plot_historical_balance(
                 opacity=0.75,
             ),
             go.Bar(
-                x=net_worth_gain_loss["Date"],
-                y=net_worth_gain_loss["Net Worth Gain/Loss %"],
+                x=monthly_net_worth_gain_loss["Date"],
+                y=monthly_net_worth_gain_loss["Net Worth Gain"],
                 marker=dict(
                     color=[
                         "darkgreen" if val > 0 else "darkred"
-                        for val in net_worth_gain_loss["Net Worth Gain/Loss %"]
+                        for val in monthly_net_worth_gain_loss["Net Worth Gain"]
                     ],
                     opacity=0.5,
                 ),
-                name="NW Gain/Loss %",
+                name="Monthly Gain",
+                yaxis="y2",
+            ),
+            go.Bar(
+                x=annual_net_worth_gain_loss["Date"],
+                y=annual_net_worth_gain_loss["Net Worth Gain"],
+                marker=dict(
+                    color=[
+                        "darkblue" if val > 0 else "darkorange"
+                        for val in annual_net_worth_gain_loss["Net Worth Gain"]
+                    ],
+                    opacity=0.5,
+                ),
+                name="Annual Gain",
                 yaxis="y2",
             ),
         ]
     )
     fig.update_layout(
-        title="Historical Net Worth (NW) and Monthly Gain/Loss %",
+        title="Historical Net Worth and Annual/Monthly Gain %",
         title_x=0.5,
-        xaxis_title="Date",
-        yaxis_title="Total NW",
         yaxis_tickformat="$,.0f",
         yaxis2=dict(
-            title="NW Gain/Loss %",
             overlaying="y",
             side="right",
             range=[-0.1, 0.3],
@@ -115,8 +131,6 @@ def plot_sample_forecast(
     )
     fig.update_layout(
         title=title,
-        xaxis_title="Date",
-        yaxis_title="Amount",
         yaxis_tickformat="$,.0f",
         template="plotly_white",
         hovermode="x unified",
@@ -215,59 +229,68 @@ def plot_mc_networth(
     )
     pct_liquidation = summary["Property Liquidations"] / SIMS
 
+    years = pct_df.index.to_list()
+    ages = [year - dob_year for year in years]
+
     fig = go.Figure()
 
-    # percentile lines
     fig.add_trace(
         go.Scatter(
-            x=pct_df.index,
-            y=pct_df["p85"],
-            line=dict(color="blue", width=2, dash="dash"),
-            name="Upper Bounds",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
+            x=years,
             y=pct_df["median"],
-            line=dict(color="green", width=2),
-            name="Median",
+            customdata=ages,
+            mode="markers",
+            marker=dict(size=0, opacity=0),
+            line=dict(width=0),
+            showlegend=False,
+            hovertemplate=("Age %{customdata:.0f}<extra></extra>"),
         )
     )
+
+    # 3) your real percentile / MC traces, but slim hovertemplate
+    def make_trace(name, x, y, **line_kwargs):
+        return go.Scatter(
+            x=x,
+            y=y,
+            name=name,
+            line=line_kwargs,
+            hovertemplate=f"{name}: %{{y:$,.0f}}<extra></extra>",
+        )
+
+    # Percentile lines
     fig.add_trace(
-        go.Scatter(
-            x=pct_df.index,
-            y=pct_df["p15"],
-            line=dict(color="blue", width=2, dash="dash"),
-            name="Lower Bounds",
+        make_trace(
+            "Upper Bounds", years, pct_df["p85"], color="blue", dash="dash", width=2
         )
     )
-    # cloud of filtered sims and samples (purple)
+    fig.add_trace(make_trace("Median", years, pct_df["median"], color="green", width=2))
+    fig.add_trace(
+        make_trace(
+            "Lower Bounds", years, pct_df["p15"], color="blue", dash="dash", width=2
+        )
+    )
+
+    # Monte-Carlo sample lines (purple only)
+    samples = set(mc_samples_df.columns)
     for col in mc_p85.columns:
-        if col in mc_samples_df.columns:
-            fig.add_trace(
-                go.Scatter(
-                    x=mc_p85.index,
-                    y=mc_p85[col],
-                    line=dict(color="purple", width=1),
-                    opacity=0.5,
-                    showlegend=False,
-                    hoverinfo="all",
-                    name=col,
-                )
+        is_sample = col in samples
+        color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
+        hover_kwargs = (
+            {"hovertemplate": f"{col}: %{{y:$,.0f}}<extra></extra>"}
+            if is_sample
+            else {"hoverinfo": "skip"}
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=mc_p85[col],
+                showlegend=False,
+                line=dict(color=color, width=1),
+                opacity=opacity,
+                **hover_kwargs,
             )
-        else:
-            fig.add_trace(
-                go.Scatter(
-                    x=mc_p85.index,
-                    y=mc_p85[col],
-                    line=dict(color="gray", width=1),
-                    opacity=0.2,
-                    showlegend=False,
-                    hoverinfo="skip",
-                    name=col,
-                )
-            )
+        )
 
     confidence_color = "green" if SIMS >= 1000 else "blue" if SIMS >= 100 else "red"
 
@@ -312,12 +335,11 @@ def plot_mc_networth(
     fig.update_layout(
         title=title,
         title_x=0.5,
-        xaxis_title="Year",
-        yaxis_title="Net Worth",
         yaxis_tickformat="$,.0f",
         template="plotly_white",
         showlegend=False,
         hovermode="x unified",
+        hoverlabel=dict(align="left"),
     )
 
     if show:
