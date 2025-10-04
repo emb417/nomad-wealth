@@ -140,7 +140,6 @@ Each month the engine sequentially applies:
 
 ## 🛣️ Roadmap
 
-- Visualize historical bucket balances using line (balance) and bar (periodic gains) charts
 - Visualize annual income sources using stacked bar chart
 - Visualize annual expenses using stacked bar chart
 - Visualize comparison of income to expenses
