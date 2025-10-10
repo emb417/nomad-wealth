@@ -11,6 +11,7 @@ from typing import Dict, List
 
 
 # Internal Imports
+from audit import FlowTracker
 from domain import AssetClass, Holding, Bucket
 from economic_factors import InflationGenerator, MarketGains
 from engine import ForecastEngine
@@ -29,6 +30,7 @@ from visualization import (
     plot_historical_balance,
     plot_sample_forecast,
     plot_mc_networth,
+    plot_flows,
 )
 
 logging.basicConfig(
@@ -38,8 +40,10 @@ logging.basicConfig(
 rng = np.random.default_rng()
 
 # Simulation settings
-SIMS = 100
+SIMS = 10
 SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
+SHOW_FLOW_CHART = True
+SAVE_FLOW_CHART = False
 SHOW_HISTORICAL_NW_CHART = True
 SAVE_HISTORICAL_NW_CHART = False
 SHOW_SIMS_SAMPLES = True
@@ -52,6 +56,7 @@ def create_bucket(
     name: str,
     starting_balance: int,
     holdings_config: List[Dict],
+    flow_tracker: FlowTracker,
     can_go_negative: bool = False,
     allow_cash_fallback: bool = False,
     bucket_type: str = "other",
@@ -71,6 +76,7 @@ def create_bucket(
     return Bucket(
         name=name,
         holdings=holdings,
+        flow_tracker=flow_tracker,
         can_go_negative=can_go_negative,
         allow_cash_fallback=allow_cash_fallback,
         bucket_type=bucket_type,
@@ -78,7 +84,7 @@ def create_bucket(
 
 
 def seed_buckets_from_config(
-    hist_df: pd.DataFrame, buckets_cfg: Dict
+    hist_df: pd.DataFrame, buckets_cfg: Dict, flow_tracker: FlowTracker
 ) -> Dict[str, Bucket]:
     """
     Build buckets from the columns of hist_df. Each column is expected to have a corresponding entry in buckets_cfg containing:
@@ -112,6 +118,7 @@ def seed_buckets_from_config(
                 name=col,
                 starting_balance=bal,
                 holdings_config=holdings_config,
+                flow_tracker=flow_tracker,
                 can_go_negative=can_go_negative,
                 allow_cash_fallback=allow_cash_fallback,
                 bucket_type=bucket_type,
@@ -153,7 +160,11 @@ def stage_prepare_timeframes(balance_df: pd.DataFrame, end_date: str):
 
 
 def stage_init_components(
-    json_data: Dict, dfs: Dict, hist_df: pd.DataFrame, future_df: pd.DataFrame
+    json_data: Dict,
+    dfs: Dict,
+    hist_df: pd.DataFrame,
+    future_df: pd.DataFrame,
+    flow_tracker: FlowTracker,
 ):
     gain_table = json_data["gain_table"]
     buckets_config = json_data["buckets"]
@@ -164,7 +175,7 @@ def stage_init_components(
     tax_brackets = json_data["tax_brackets"]
 
     # Build buckets from canonical buckets.json
-    buckets = seed_buckets_from_config(hist_df, buckets_config)
+    buckets = seed_buckets_from_config(hist_df, buckets_config, flow_tracker)
 
     # Taxable eligibility
     dob = profile.get("Date of Birth")
@@ -224,11 +235,49 @@ def stage_init_components(
     return buckets, refill_policy, tax_calc, market_gains, annual_infl, transactions
 
 
+def run_one_sim(
+    sim: int,
+    future_df: pd.DataFrame,
+    json_data: dict,
+    dfs: dict,
+    hist_df: pd.DataFrame,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+    """
+    Runs Monte Carlo sim# sim, returns (forecast_df, flow_df).
+    """
+    np.random.seed(sim)
+    flow_tracker = FlowTracker()
+
+    buckets, refill_policy, tax_calc, market_gains, inflation, transactions = (
+        stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker)
+    )
+
+    # wire up flow_tracker
+    for b in buckets.values():
+        b.flow_tracker = flow_tracker
+
+    engine = ForecastEngine(
+        buckets=buckets,
+        transactions=transactions,
+        refill_policy=refill_policy,
+        market_gains=market_gains,
+        inflation=inflation,
+        tax_calc=tax_calc,
+        profile=json_data["profile"],
+    )
+    forecast_df, taxes_df = engine.run(future_df)
+
+    flow_df = flow_tracker.to_dataframe()
+    flow_df["sim"] = sim
+
+    return forecast_df, taxes_df, flow_df
+
+
 def main():
-    start_time = time.time()
+    start = time.time()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # Load & prep data
+    # load & prep
     json_data, dfs = stage_load()
     hist_df, future_df = stage_prepare_timeframes(
         dfs["balance"], json_data["profile"]["End Date"]
@@ -238,7 +287,7 @@ def main():
         dfs["balance"], ts, SHOW_HISTORICAL_NW_CHART, SAVE_HISTORICAL_NW_CHART
     )
 
-    # Pre-allocate year → list of net worths
+    # for net‐worth distributions
     years = sorted(future_df["Date"].dt.year.unique())
     mc_dict = {year: [] for year in years}
     mc_samples_dict = {year: [] for year in years}
@@ -249,37 +298,33 @@ def main():
         "Maximum Property Liquidation Year": None,
     }
 
-    for sim in tqdm(range(SIMS), desc="Running Monte Carlo simulations..."):
-        np.random.seed(sim)
-
-        # re-init components so each sim starts fresh
-        (
-            buckets,
-            refill_policy,
-            tax_calc,
-            market_gains,
-            inflation,
-            transactions,
-        ) = stage_init_components(json_data, dfs, hist_df, future_df)
-
-        engine = ForecastEngine(
-            buckets=buckets,
-            transactions=transactions,
-            refill_policy=refill_policy,
-            market_gains=market_gains,
-            inflation=inflation,
-            tax_calc=tax_calc,
-            profile=json_data["profile"],
+    for sim in tqdm(range(SIMS), desc="Running Monte Carlo sims…"):
+        forecast_df, taxes_df, flow_df = run_one_sim(
+            sim, future_df, json_data, dfs, hist_df
         )
 
-        # run the forecast
-        forecast_df, taxes_df = engine.run(future_df)
         if sim in SIMS_SAMPLES:
+            monthly_df = (
+                forecast_df.assign(month_str=forecast_df["Date"].dt.strftime("%Y-%m"))
+                .groupby("month_str")
+                .last()
+                .drop(columns=["Date"], errors="ignore")
+            )
+
+            plot_flows(
+                sim=sim,
+                mc_monthly_df=monthly_df,
+                flow_df=flow_df,
+                ts=ts,
+                show=SHOW_FLOW_CHART,
+                save=SAVE_FLOW_CHART,
+            )
             plot_sample_forecast(
                 sim_index=sim,
                 hist_df=hist_df,
                 forecast_df=forecast_df,
                 taxes_df=taxes_df,
+                dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
                 ts=ts,
                 show=SHOW_SIMS_SAMPLES,
                 save=SAVE_SIMS_SAMPLES,
@@ -310,20 +355,17 @@ def main():
                 )
                 else summary["Maximum Property Liquidation Year"]
             )
-        # compute net worth and collect year-end values
+
         forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
         forecast_df["Year"] = forecast_df["Date"].dt.year
         ye_nw = forecast_df.groupby("Year")["NetWorth"].last().to_dict()
-
         for year, nw in ye_nw.items():
             mc_dict[year].append(nw)
             if sim in SIMS_SAMPLES:
                 mc_samples_dict[year].append(nw)
 
     mc_df = pd.DataFrame(mc_dict).T
-    mc_df.columns = [f"Sim {'{:04d}'.format(int(col) + 1)}" for col in mc_df.columns]
     mc_samples_df = pd.DataFrame(mc_samples_dict).T
-    mc_samples_df.columns = [f"Sim {sim+1:04d}" for sim in SIMS_SAMPLES]
 
     plot_mc_networth(
         mc_df=mc_df,
@@ -336,8 +378,7 @@ def main():
         save=SAVE_NETWORTH_CHART,
     )
 
-    end_time = time.time()
-    logging.info(f"Simulation completed in {(end_time - start_time):.1f} seconds.")
+    logging.info(f"Simulation completed in {(time.time() - start):.1f} seconds.")
 
 
 if __name__ == "__main__":

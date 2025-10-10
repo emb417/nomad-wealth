@@ -56,7 +56,8 @@ class RefillTransaction(Transaction):
             from_src, from_cash = src.withdraw_with_cash_fallback(self.amount, cash)
             applied = int((from_src or 0) + (from_cash or 0))
             if applied > 0:
-                tgt.deposit(applied)
+                tgt.deposit(from_src, src.name, tx_month)
+                tgt.deposit(from_cash, cash.name, tx_month)
             logging.debug(
                 f"[RefillApply] {tx_month} {self.source}->{self.target} planned={self.amount} "
                 f"from_src={from_src} from_cash={from_cash}"
@@ -78,7 +79,7 @@ class RefillTransaction(Transaction):
         withdrawn = src.partial_withdraw(self.amount)
         applied = int(withdrawn or 0)
         if applied > 0:
-            tgt.deposit(applied)
+            tgt.deposit(applied, src.name, tx_month)
             logging.debug(
                 f"[RefillApply] {tx_month} {self.source}->{self.target} withdrew={applied}"
             )

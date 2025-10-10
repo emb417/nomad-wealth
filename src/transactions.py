@@ -62,7 +62,7 @@ class FixedTransaction(Transaction):
 
             if amount >= 0:
                 # a true inflow
-                bucket.deposit(amount)
+                bucket.deposit(amount, row["Description"], tx_month)
             else:
                 # an outflow: try to withdraw from the bucket
                 needed = -amount
@@ -75,18 +75,18 @@ class FixedTransaction(Transaction):
                     in {"tax_free", "tax_deferred"}
                     and tx_month < self.taxable_eligibility
                 ):
-                    buckets["Cash"].withdraw(needed)
+                    buckets["Cash"].withdraw(needed, row["Description"], tx_month)
                     logging.debug(
                         f"[Pre-eligibility] {tx_month} — Routed withdrawal ${needed:,} from {bucket_name} to Cash (bucket_type={bucket.bucket_type})"
                     )
                     continue
 
-                withdrawn = bucket.withdraw(needed)
+                withdrawn = bucket.withdraw(needed, row["Description"], tx_month)
                 shortfall = needed - withdrawn
 
                 if shortfall > 0:
                     # route any shortfall back to Cash
-                    buckets["Cash"].withdraw(shortfall)
+                    buckets["Cash"].withdraw(shortfall, row["Description"], tx_month)
                     logging.debug(
                         f"[Fallback] {tx_month} — ${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
@@ -125,7 +125,7 @@ class RecurringTransaction(Transaction):
             bucket = buckets[bucket_name]
 
             if amount >= 0:
-                bucket.deposit(amount)
+                bucket.deposit(amount, row["Description"], tx_month)
             else:
                 needed = -amount
 
@@ -137,17 +137,17 @@ class RecurringTransaction(Transaction):
                     in {"tax_free", "tax_deferred"}
                     and tx_month < self.taxable_eligibility
                 ):
-                    buckets["Cash"].withdraw(needed)
+                    buckets["Cash"].withdraw(needed, row["Description"], tx_month)
                     logging.debug(
                         f"[Pre-eligibility] {tx_month} — Routed recurring withdrawal ${needed:,} from {bucket_name} to Cash (bucket_type={bucket.bucket_type})"
                     )
                     continue
 
-                withdrawn = bucket.withdraw(needed)
+                withdrawn = bucket.withdraw(needed, row["Description"], tx_month)
                 shortfall = needed - withdrawn
 
                 if shortfall > 0:
-                    buckets["Cash"].withdraw(shortfall)
+                    buckets["Cash"].withdraw(shortfall, row["Description"], tx_month)
                     logging.debug(
                         f"[Fallback] {tx_month} — ${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
@@ -178,7 +178,7 @@ class RentalTransaction(Transaction):
         if src is None:
             return
 
-        src.withdraw(self.monthly_amount)
+        src.withdraw(self.monthly_amount, "Rental", tx_month)
 
 
 class RothConversionTransaction(Transaction):
@@ -224,8 +224,8 @@ class RothConversionTransaction(Transaction):
             return
 
         self.amount = to_convert
-        withdrawn = src.withdraw(to_convert)
-        tgt.deposit(withdrawn)
+        withdrawn = src.withdraw(to_convert, "Roth Conversion", tx_month)
+        tgt.deposit(withdrawn, src.name, tx_month)
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self.amount if getattr(self, "is_tax_deferred", False) else 0
@@ -261,13 +261,13 @@ class SalaryTransaction(Transaction):
                 continue
 
             amount = int(round(total * pct))
-            bucket.deposit(amount)
+            bucket.deposit(amount, "Salary", tx_month)
 
         if tx_month == self.bonus_period:
             bucket = buckets.get(list(self.bucket_pcts.keys())[0])
             if bucket is None:
                 return
-            bucket.deposit(self.annual_bonus)
+            bucket.deposit(self.annual_bonus, "Salary Bonus", tx_month)
 
     def get_salary(self, tx_month: pd.Period) -> int:
         if tx_month > self.retirement_period:
@@ -296,7 +296,9 @@ class SocialSecurityTransaction(Transaction):
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         if tx_month >= self.start_month:
-            buckets[self.cash_bucket].deposit(self.cash_amt)
+            buckets[self.cash_bucket].deposit(
+                self.cash_amt, "Social Security", tx_month
+            )
 
     def get_social_security(self, tx_month: pd.Period) -> int:
         return self.monthly_amount if tx_month >= self.start_month else 0
@@ -326,10 +328,10 @@ class TaxDeferredTransaction(Transaction):
 
         bucket = buckets[self.bucket_name]
         amount = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
-        bucket.deposit(amount)
+        bucket.deposit(amount, "Salary", tx_month)
 
         if tx_month == self.bonus_period:
-            bucket.deposit(self.annual_bonus)
+            bucket.deposit(self.annual_bonus, "Salary Bonus", tx_month)
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         if tx_month > self.retirement_period:
@@ -364,15 +366,15 @@ class TaxableTransaction(Transaction):
 
         bucket = buckets[self.bucket_name]
         amount = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
-        bucket.deposit(amount)
+        bucket.deposit(amount, "Salary", tx_month)
 
         if tx_month == self.bonus_period:
-            bucket.deposit(self.annual_bonus)
+            bucket.deposit(self.annual_bonus, "Salary Bonus", tx_month)
 
         # deposit any realized gain
         gain = self.gain_log.get(tx_month, 0)
         if gain > 0:
-            bucket.deposit(gain)
+            bucket.deposit(gain, "Taxable Gain", tx_month)
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return self.gain_log.get(tx_month, 0)

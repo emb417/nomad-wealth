@@ -64,7 +64,9 @@ class ForecastEngine:
 
             # Taxes: Monthly withdraw from Cash into Tax Collection
             self.buckets["Cash"].withdraw(self.monthly_tax_drip)
-            self.buckets["Tax Collection"].deposit(self.monthly_tax_drip)
+            self.buckets["Tax Collection"].deposit(
+                self.monthly_tax_drip, "Cash", tx_month
+            )
 
             # Liqudiate based on policy
             liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
@@ -147,9 +149,13 @@ class ForecastEngine:
                         total_tax += pen
 
                     # pay full year’s bill
-                    paid_from_tc = self.buckets["Tax Collection"].withdraw(total_tax)
+                    paid_from_tc = self.buckets["Tax Collection"].withdraw(
+                        total_tax, "Taxes", tx_month
+                    )
                     remaining = total_tax - paid_from_tc
-                    paid_from_cash = self.buckets["Cash"].withdraw(remaining)
+                    paid_from_cash = self.buckets["Cash"].withdraw(
+                        remaining, "Taxes", tx_month
+                    )
 
                     logging.debug(
                         f"[Yearly Tax:{prev_year}] paid "
@@ -167,7 +173,9 @@ class ForecastEngine:
                         drained_amount = self.buckets["Tax Collection"].withdraw(
                             leftover
                         )
-                        self.buckets["Cash"].deposit(drained_amount)
+                        self.buckets["Cash"].deposit(
+                            drained_amount, "Tax Collection", tx_month
+                        )
                         logging.debug(
                             f"[TaxCollection Cleanup] Moved ${drained_amount:,} "
                             "back to Cash (no tax due next year)"

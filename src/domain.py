@@ -1,5 +1,8 @@
+import pandas as pd
 import numpy as np
 from typing import List, Optional, Tuple
+
+from audit import FlowTracker
 
 
 class AssetClass:
@@ -61,6 +64,7 @@ class Bucket:
         self,
         name: str,
         holdings: List[Holding],
+        flow_tracker: FlowTracker,
         can_go_negative: bool = False,
         allow_cash_fallback: bool = False,
         bucket_type: str = "other",
@@ -70,20 +74,20 @@ class Bucket:
         self.can_go_negative = can_go_negative
         self.allow_cash_fallback = allow_cash_fallback
         self.bucket_type = bucket_type
+        self.flow_tracker = flow_tracker
 
-    def deposit(self, amount: int, holding_name: Optional[str] = None) -> None:
+    def deposit(
+        self,
+        amount: int,
+        source: str,
+        tx_month: pd.Period,
+        flow_type: str = "deposit",
+    ) -> None:
         if amount == 0:
             return
 
-        if holding_name:
-            for h in self.holdings:
-                if h.asset_class.name == holding_name:
-                    h.amount += amount
-                    h.cost_basis += amount
-                    return
-            raise KeyError(
-                f"Holding '{holding_name}' not found in bucket '{self.name}'"
-            )
+        if self.flow_tracker and source and tx_month:
+            self.flow_tracker.record(source, self.name, amount, tx_month, flow_type)
 
         total_weight = sum(h.weight for h in self.holdings)
         remainder = amount
@@ -147,14 +151,25 @@ class Bucket:
 
         return to_withdraw
 
-    def withdraw(self, amount: int) -> int:
+    def withdraw(
+        self,
+        amount: int,
+        target: Optional[str] = None,
+        tx_month: Optional[pd.Period] = None,
+        flow_type: str = "withdraw",
+    ) -> int:
         """
         Remove up to `amount` from this bucket.
         - If can_go_negative is True, will attempt to take exactly `amount` and may push holdings negative.
         - Otherwise will cap at current balance.
         Returns the actual withdrawn (== amount if can_go_negative or enough balance).
         """
-        return self._withdraw_from_holdings(amount)
+        withdrawn = self._withdraw_from_holdings(amount)
+
+        if self.flow_tracker and target and tx_month:
+            self.flow_tracker.record(self.name, target, withdrawn, tx_month, flow_type)
+
+        return withdrawn
 
     def partial_withdraw(self, amount: int) -> int:
         """
@@ -195,6 +210,3 @@ class Bucket:
         # conservative: only withdraw what source can supply without going negative
         from_src = self.partial_withdraw(amount)
         return from_src, 0
-
-    def __repr__(self) -> str:
-        return f"<Bucket {self.name}: ${self.balance():,}>"

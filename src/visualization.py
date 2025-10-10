@@ -106,6 +106,7 @@ def plot_sample_forecast(
     hist_df: pd.DataFrame,
     forecast_df: pd.DataFrame,
     taxes_df: pd.DataFrame,
+    dob_year: int,
     ts: str,
     show: bool,
     save: bool,
@@ -117,18 +118,33 @@ def plot_sample_forecast(
     full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
     title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
 
-    fig = go.Figure(
-        data=[
-            go.Scatter(
-                x=full_df["Date"],
-                y=full_df[col],
-                mode="lines",
-                name=col,
-            )
-            for col in full_df.columns
-            if col != "Date"
-        ]
+    traces = [
+        go.Scatter(
+            x=full_df["Date"],
+            y=[
+                (date.year - dob_year) + (date.month - x.month) / 12
+                for x, date in zip(full_df["Date"], full_df["Date"])
+            ],
+            mode="lines",
+            name="Age",
+            line=dict(width=0, color="white"),
+            showlegend=False,
+            hovertemplate=("Age %{y:.0f}<extra></extra>"),
+        )
+    ]
+    traces.extend(
+        go.Scatter(
+            x=full_df["Date"],
+            y=full_df[col],
+            mode="lines",
+            name=col,
+        )
+        for col in full_df.columns
+        if col != "Date"
     )
+
+    fig = go.Figure(data=traces)
+
     fig.update_layout(
         title=title,
         yaxis_tickformat="$,.0f",
@@ -247,7 +263,6 @@ def plot_mc_networth(
         )
     )
 
-    # 3) your real percentile / MC traces, but slim hovertemplate
     def make_trace(name, x, y, **line_kwargs):
         return go.Scatter(
             x=x,
@@ -349,3 +364,155 @@ def plot_mc_networth(
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
+
+
+def plot_flows(
+    sim: int,
+    mc_monthly_df: pd.DataFrame,
+    flow_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    sim             : simulation index (int)
+    mc_monthly_df   : index='YYYY-MM', cols=real buckets, values=end-of-month balances
+    flow_df         : DataFrame with columns ['date','source','target','amount','type','sim']
+    """
+
+    # 1) Build a year‐column off your monthly balances
+    df_bal = mc_monthly_df.copy().reset_index().rename(columns={"index": "month_str"})
+    # month_str is 'YYYY-MM'
+    df_bal["date"] = pd.to_datetime(df_bal["month_str"] + "-01")
+    df_bal["year"] = df_bal["date"].dt.year
+
+    # 2) Prepare flows: parse source dates, extract year_src
+    df_fl = flow_df.copy()
+    # ensure 'date' is the 'YYYY-MM' string
+    df_fl["month_src_dt"] = df_fl["date"]
+    df_fl["year_src"] = df_fl["month_src_dt"].dt.year
+
+    # compute target = next calendar month (not used for grouping)
+    df_fl["month_tgt_dt"] = df_fl["month_src_dt"].shift(1)
+    df_fl["month_tgt"] = df_fl["month_tgt_dt"].dt.strftime("%Y-%m")
+
+    # 3) Synthetic buckets for unknown sources/targets
+    real_buckets = list(mc_monthly_df.columns)
+    df_fl["src_bucket"] = df_fl["source"].where(
+        df_fl["source"].isin(real_buckets), "Income"
+    )
+    df_fl["tgt_bucket"] = df_fl["target"].where(
+        df_fl["target"].isin(real_buckets), "Expense"
+    )
+
+    # 4) Determine calendar years present in balances
+    years = sorted(df_bal["year"].unique())
+
+    # 5) Extend bucket list if Income/Expense appear
+    buckets_ext = real_buckets.copy()
+    if df_fl["src_bucket"].eq("Income").any():
+        buckets_ext.append("Income")
+    if df_fl["tgt_bucket"].eq("Expense").any():
+        buckets_ext.append("Expense")
+
+    # 6) Color palette for nodes
+    palette = [
+        "#4C78A8",
+        "#F58518",
+        "#E45756",
+        "#72B7B2",
+        "#54A24B",
+        "#EECA3B",
+        "#B279A2",
+        "#FF9DA6",
+        "#9D755D",
+        "#BAB0AC",
+    ]
+    bucket_color = {b: palette[i % len(palette)] for i, b in enumerate(buckets_ext)}
+
+    frames = []
+    for yr in years:
+        # a) Node index map
+        node_idx = {b: i for i, b in enumerate(buckets_ext)}
+        labels = buckets_ext
+        N = len(buckets_ext)
+
+        # b) Node positions: x fixed at 0.5, y stacked evenly
+        node_x = [0.5] * N
+        node_y = [i / (N - 1) if N > 1 else 0.5 for i in range(N)]
+
+        # c) End-of-year balances
+        df_year_bal = df_bal[df_bal["year"] == yr].sort_values("date")
+        if not df_year_bal.empty:
+            last_row = df_year_bal.iloc[-1]
+            end_bal = last_row[real_buckets]
+        else:
+            end_bal = pd.Series(0, index=real_buckets)
+
+        customdata = [end_bal.get(b, 0) for b in buckets_ext]
+
+        # d) Aggregate flows by src_bucket→tgt_bucket for year_src==yr
+        sub_fl = df_fl[df_fl["year_src"] == yr]
+        agg = sub_fl.groupby(["src_bucket", "tgt_bucket"], as_index=False)[
+            "amount"
+        ].sum()
+        link_src = [node_idx[s] for s in agg["src_bucket"]]
+        link_tgt = [node_idx[t] for t in agg["tgt_bucket"]]
+        link_val = agg["amount"].tolist()
+        link_col = ["gray"] * len(link_val)
+
+        # e) Build Sankey trace
+        sankey = go.Sankey(
+            arrangement="fixed",
+            node=dict(
+                label=labels,
+                color=[bucket_color[b] for b in buckets_ext],
+                x=node_x,
+                y=node_y,
+                customdata=customdata,
+                hovertemplate=(
+                    "Bucket: %{label}<br>"
+                    "End-of-Year Balance: $%{customdata:,.0f}<extra></extra>"
+                ),
+                pad=15,
+                thickness=15,
+                line=dict(color="black", width=0.5),
+            ),
+            link=dict(
+                source=link_src,
+                target=link_tgt,
+                value=link_val,
+                color=link_col,
+            ),
+        )
+        frames.append(go.Frame(data=[sankey], name=str(yr)))
+
+    # 7) Assemble figure with a year slider
+    fig = go.Figure(data=frames[0].data, frames=frames)
+    steps = [
+        dict(
+            method="animate",
+            label=fr.name,
+            args=[
+                [fr.name],
+                {"mode": "immediate", "frame": {"duration": 500, "redraw": True}},
+            ],
+        )
+        for fr in frames
+    ]
+    slider = dict(active=0, pad={"t": 50}, steps=steps)
+
+    fig.update_layout(
+        sliders=[slider],
+        title_text=f"Sim {sim+1:04d}: Annual Bucket Balances & Flows",
+        font_size=12,
+    )
+
+    # 8) Show or save
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(f"{export_path}flows_{ts}.html")
+
+    return fig
