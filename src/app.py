@@ -302,18 +302,10 @@ def main():
         forecast_df, taxes_df, flow_df = run_one_sim(
             sim, future_df, json_data, dfs, hist_df
         )
-
         if sim in SIMS_SAMPLES:
-            monthly_df = (
-                forecast_df.assign(month_str=forecast_df["Date"].dt.strftime("%Y-%m"))
-                .groupby("month_str")
-                .last()
-                .drop(columns=["Date"], errors="ignore")
-            )
-
             plot_flows(
                 sim=sim,
-                mc_monthly_df=monthly_df,
+                forecast_df=forecast_df,
                 flow_df=flow_df,
                 ts=ts,
                 show=SHOW_FLOW_CHART,

@@ -2,7 +2,159 @@ import logging
 import pandas as pd
 import plotly.graph_objects as go
 
-from numpy import ndarray
+
+def plot_flows(
+    sim: int,
+    forecast_df: pd.DataFrame,
+    flow_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    forecast_df = forecast_df.copy()
+    forecast_df["Date"] = pd.to_datetime(forecast_df["Date"])
+    forecast_df = forecast_df[forecast_df["Date"].dt.month == 1].sort_values("Date")
+    bucket_names = [col for col in forecast_df.columns if col != "Date"]
+    years = forecast_df["Date"].dt.year.tolist()
+    transitions = [(years[i], years[i + 1]) for i in range(len(years) - 1)]
+
+    flow_df = flow_df.copy()
+    flow_df["date"] = flow_df["date"].dt.to_timestamp()
+    flow_df = flow_df[flow_df["sim"] == sim]
+    flow_df["year"] = flow_df["date"].dt.year
+
+    sankey_traces = []
+    for y0, y1 in transitions:
+        bal_start = forecast_df[forecast_df["Date"].dt.year == y0].iloc[0]
+        bal_end = forecast_df[forecast_df["Date"].dt.year == y1].iloc[0]
+
+        flows_y0 = flow_df[flow_df["year"] == y0].copy()
+        flows_y0["src_mapped"] = flows_y0["source"].where(
+            flows_y0["source"].isin(bucket_names), "Income"
+        )
+        flows_y0["tgt_mapped"] = flows_y0["target"].where(
+            flows_y0["target"].isin(bucket_names), "Expenses"
+        )
+        agg = (
+            flows_y0.groupby(["src_mapped", "tgt_mapped"])["amount"].sum().reset_index()
+        )
+
+        left_nodes = bucket_names + ["Income"]
+        right_nodes = bucket_names + ["Expenses"]
+        src_labels = [f"{b}\n{y0}" for b in left_nodes]
+        tgt_labels = [f"{b}\n{y1}" for b in right_nodes]
+        labels = src_labels + tgt_labels
+
+        src_idx = {b: i for i, b in enumerate(left_nodes)}
+        tgt_idx = {b: i + len(left_nodes) for i, b in enumerate(right_nodes)}
+
+        sources, targets, values = [], [], []
+
+        # ✅ Compute outflows per bucket
+        outflows = (
+            agg[agg["src_mapped"].isin(bucket_names)]
+            .groupby("src_mapped")["amount"]
+            .sum()
+            .reindex(bucket_names, fill_value=0)
+        )
+
+        # ✅ Show retained starting balances: bucket@Y → bucket@Y+1
+        for b in bucket_names:
+            retained = bal_start[b] - outflows.get(b, 0)
+            if retained > 0:
+                sources.append(src_idx[b])
+                targets.append(tgt_idx[b])
+                values.append(retained)
+
+        # ✅ Add flow_df transitions
+        for _, row in agg.iterrows():
+            s_label = row["src_mapped"]
+            t_label = row["tgt_mapped"]
+
+            if s_label == "Income" and t_label in bucket_names:
+                s = src_idx["Income"]
+                t = tgt_idx[t_label]
+            elif t_label == "Expenses" and s_label in bucket_names:
+                s = src_idx[s_label]
+                t = tgt_idx["Expenses"]
+            elif s_label in bucket_names and t_label in bucket_names:
+                s = src_idx[s_label]
+                t = tgt_idx[t_label]
+            else:
+                continue
+
+            v = row["amount"]
+            if v > 0:
+                sources.append(s)
+                targets.append(t)
+                values.append(v)
+
+        # ✅ Residuals: Income → bucket@Y+1
+        inflows = (
+            agg[agg["tgt_mapped"].isin(bucket_names)]
+            .groupby("tgt_mapped")["amount"]
+            .sum()
+            .reindex(bucket_names, fill_value=0)
+        )
+
+        for b in bucket_names:
+            residual = (
+                bal_end[b] - bal_start[b] - inflows.get(b, 0) + outflows.get(b, 0)
+            )
+            if residual != 0:
+                sources.append(src_idx["Income"])
+                targets.append(tgt_idx[b])
+                values.append(residual)
+
+        # Ensure Income and Expenses nodes are rendered
+        if src_idx["Income"] not in sources:
+            sources.append(src_idx["Income"])
+            targets.append(tgt_idx[bucket_names[0]])
+            values.append(0.0001)
+        if tgt_idx["Expenses"] not in targets:
+            sources.append(src_idx[bucket_names[0]])
+            targets.append(tgt_idx["Expenses"])
+            values.append(0.0001)
+
+        sankey = go.Sankey(
+            node=dict(
+                label=labels,
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+            ),
+            link=dict(source=sources, target=targets, value=values),
+            domain=dict(x=[0, 1], y=[0, 1]),
+            visible=(len(sankey_traces) == 0),
+        )
+        sankey_traces.append(sankey)
+
+    fig = go.Figure(data=sankey_traces)
+    steps = []
+    for i, (y0, y1) in enumerate(transitions):
+        vis = [False] * len(transitions)
+        vis[i] = True
+        steps.append(
+            dict(
+                method="update",
+                args=[{"visible": vis}, {"title": f"Flows: {y0} → {y1}"}],
+                label=f"{y0}→{y1}",
+            )
+        )
+    sliders = [
+        dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
+    ]
+    fig.update_layout(
+        title=f"Flows: {transitions[0][0]} → {transitions[0][1]}",
+        sliders=sliders,
+        margin=dict(l=50, r=50, t=80, b=50),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(f"{export_path}{sim}_sankey_{ts}.html")
 
 
 def plot_historical_balance(
@@ -164,7 +316,7 @@ def plot_sample_forecast(
         full_df.to_csv(bucket_csv, index=False)
         taxes_df.to_csv(taxes_csv, index=False)
         fig.write_html(html)
-        logging.info(f"Sim {sim_index+1:04d} | Saved sample forecast to {html}")
+        logging.debug(f"Sim {sim_index+1:04d} | Saved sample forecast to {html}")
 
 
 def plot_mc_networth(
@@ -364,155 +516,3 @@ def plot_mc_networth(
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
-
-
-def plot_flows(
-    sim: int,
-    mc_monthly_df: pd.DataFrame,
-    flow_df: pd.DataFrame,
-    ts: str,
-    show: bool,
-    save: bool,
-    export_path: str = "export/",
-):
-    """
-    sim             : simulation index (int)
-    mc_monthly_df   : index='YYYY-MM', cols=real buckets, values=end-of-month balances
-    flow_df         : DataFrame with columns ['date','source','target','amount','type','sim']
-    """
-
-    # 1) Build a year‐column off your monthly balances
-    df_bal = mc_monthly_df.copy().reset_index().rename(columns={"index": "month_str"})
-    # month_str is 'YYYY-MM'
-    df_bal["date"] = pd.to_datetime(df_bal["month_str"] + "-01")
-    df_bal["year"] = df_bal["date"].dt.year
-
-    # 2) Prepare flows: parse source dates, extract year_src
-    df_fl = flow_df.copy()
-    # ensure 'date' is the 'YYYY-MM' string
-    df_fl["month_src_dt"] = df_fl["date"]
-    df_fl["year_src"] = df_fl["month_src_dt"].dt.year
-
-    # compute target = next calendar month (not used for grouping)
-    df_fl["month_tgt_dt"] = df_fl["month_src_dt"].shift(1)
-    df_fl["month_tgt"] = df_fl["month_tgt_dt"].dt.strftime("%Y-%m")
-
-    # 3) Synthetic buckets for unknown sources/targets
-    real_buckets = list(mc_monthly_df.columns)
-    df_fl["src_bucket"] = df_fl["source"].where(
-        df_fl["source"].isin(real_buckets), "Income"
-    )
-    df_fl["tgt_bucket"] = df_fl["target"].where(
-        df_fl["target"].isin(real_buckets), "Expense"
-    )
-
-    # 4) Determine calendar years present in balances
-    years = sorted(df_bal["year"].unique())
-
-    # 5) Extend bucket list if Income/Expense appear
-    buckets_ext = real_buckets.copy()
-    if df_fl["src_bucket"].eq("Income").any():
-        buckets_ext.append("Income")
-    if df_fl["tgt_bucket"].eq("Expense").any():
-        buckets_ext.append("Expense")
-
-    # 6) Color palette for nodes
-    palette = [
-        "#4C78A8",
-        "#F58518",
-        "#E45756",
-        "#72B7B2",
-        "#54A24B",
-        "#EECA3B",
-        "#B279A2",
-        "#FF9DA6",
-        "#9D755D",
-        "#BAB0AC",
-    ]
-    bucket_color = {b: palette[i % len(palette)] for i, b in enumerate(buckets_ext)}
-
-    frames = []
-    for yr in years:
-        # a) Node index map
-        node_idx = {b: i for i, b in enumerate(buckets_ext)}
-        labels = buckets_ext
-        N = len(buckets_ext)
-
-        # b) Node positions: x fixed at 0.5, y stacked evenly
-        node_x = [0.5] * N
-        node_y = [i / (N - 1) if N > 1 else 0.5 for i in range(N)]
-
-        # c) End-of-year balances
-        df_year_bal = df_bal[df_bal["year"] == yr].sort_values("date")
-        if not df_year_bal.empty:
-            last_row = df_year_bal.iloc[-1]
-            end_bal = last_row[real_buckets]
-        else:
-            end_bal = pd.Series(0, index=real_buckets)
-
-        customdata = [end_bal.get(b, 0) for b in buckets_ext]
-
-        # d) Aggregate flows by src_bucket→tgt_bucket for year_src==yr
-        sub_fl = df_fl[df_fl["year_src"] == yr]
-        agg = sub_fl.groupby(["src_bucket", "tgt_bucket"], as_index=False)[
-            "amount"
-        ].sum()
-        link_src = [node_idx[s] for s in agg["src_bucket"]]
-        link_tgt = [node_idx[t] for t in agg["tgt_bucket"]]
-        link_val = agg["amount"].tolist()
-        link_col = ["gray"] * len(link_val)
-
-        # e) Build Sankey trace
-        sankey = go.Sankey(
-            arrangement="fixed",
-            node=dict(
-                label=labels,
-                color=[bucket_color[b] for b in buckets_ext],
-                x=node_x,
-                y=node_y,
-                customdata=customdata,
-                hovertemplate=(
-                    "Bucket: %{label}<br>"
-                    "End-of-Year Balance: $%{customdata:,.0f}<extra></extra>"
-                ),
-                pad=15,
-                thickness=15,
-                line=dict(color="black", width=0.5),
-            ),
-            link=dict(
-                source=link_src,
-                target=link_tgt,
-                value=link_val,
-                color=link_col,
-            ),
-        )
-        frames.append(go.Frame(data=[sankey], name=str(yr)))
-
-    # 7) Assemble figure with a year slider
-    fig = go.Figure(data=frames[0].data, frames=frames)
-    steps = [
-        dict(
-            method="animate",
-            label=fr.name,
-            args=[
-                [fr.name],
-                {"mode": "immediate", "frame": {"duration": 500, "redraw": True}},
-            ],
-        )
-        for fr in frames
-    ]
-    slider = dict(active=0, pad={"t": 50}, steps=steps)
-
-    fig.update_layout(
-        sliders=[slider],
-        title_text=f"Sim {sim+1:04d}: Annual Bucket Balances & Flows",
-        font_size=12,
-    )
-
-    # 8) Show or save
-    if show:
-        fig.show()
-    if save:
-        fig.write_html(f"{export_path}flows_{ts}.html")
-
-    return fig
