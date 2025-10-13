@@ -26,96 +26,57 @@ def plot_flows(
 
     sankey_traces = []
     for y0, y1 in transitions:
-        bal_start = forecast_df[forecast_df["Date"].dt.year == y0].iloc[0]
         bal_end = forecast_df[forecast_df["Date"].dt.year == y1].iloc[0]
-
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
-        flows_y0["src_mapped"] = flows_y0["source"].where(
-            flows_y0["source"].isin(bucket_names), "Income"
-        )
-        flows_y0["tgt_mapped"] = flows_y0["target"].where(
-            flows_y0["target"].isin(bucket_names), "Expenses"
-        )
-        agg = (
-            flows_y0.groupby(["src_mapped", "tgt_mapped"])["amount"].sum().reset_index()
-        )
+        agg = flows_y0.groupby(["source", "target"])["amount"].sum().reset_index()
 
-        left_nodes = bucket_names + ["Income"]
-        right_nodes = bucket_names + ["Expenses"]
-        src_labels = [f"{b}\n{y0}" for b in left_nodes]
-        tgt_labels = [f"{b}\n{y1}" for b in right_nodes]
-        labels = src_labels + tgt_labels
+        external_sources = sorted(set(agg["source"]) - set(bucket_names))
+        internal_sources = sorted(set(bucket_names))
+        sources_raw = internal_sources + external_sources
+        targets_raw = sorted(set(agg["target"]) | set(bucket_names) | {"Expenses"})
 
-        src_idx = {b: i for i, b in enumerate(left_nodes)}
-        tgt_idx = {b: i + len(left_nodes) for i, b in enumerate(right_nodes)}
+        source_nodes = [f"{s}@{y0}" for s in sources_raw]
+        target_nodes = [f"{t}@{y1}" for t in targets_raw]
+        labels = source_nodes + target_nodes
+
+        source_idx = {label: i for i, label in enumerate(source_nodes)}
+        target_idx = {
+            f"{t}@{y1}": i + len(source_nodes) for i, t in enumerate(targets_raw)
+        }
 
         sources, targets, values = [], [], []
 
-        # ✅ Compute outflows per bucket
-        outflows = (
-            agg[agg["src_mapped"].isin(bucket_names)]
-            .groupby("src_mapped")["amount"]
-            .sum()
-            .reindex(bucket_names, fill_value=0)
-        )
-
-        # ✅ Show retained starting balances: bucket@Y → bucket@Y+1
-        for b in bucket_names:
-            retained = bal_start[b] - outflows.get(b, 0)
-            if retained > 0:
-                sources.append(src_idx[b])
-                targets.append(tgt_idx[b])
-                values.append(retained)
-
-        # ✅ Add flow_df transitions
         for _, row in agg.iterrows():
-            s_label = row["src_mapped"]
-            t_label = row["tgt_mapped"]
-
-            if s_label == "Income" and t_label in bucket_names:
-                s = src_idx["Income"]
-                t = tgt_idx[t_label]
-            elif t_label == "Expenses" and s_label in bucket_names:
-                s = src_idx[s_label]
-                t = tgt_idx["Expenses"]
-            elif s_label in bucket_names and t_label in bucket_names:
-                s = src_idx[s_label]
-                t = tgt_idx[t_label]
-            else:
-                continue
-
+            s_label = f"{row['source']}@{y0}"
+            t_label = (
+                f"{row['target']}@{y1}"
+                if row["target"] in bucket_names
+                else f"Expenses@{y1}"
+            )
+            s = source_idx.get(s_label)
+            t = target_idx.get(t_label)
             v = row["amount"]
-            if v > 0:
+            if s is not None and t is not None and v > 0:
                 sources.append(s)
                 targets.append(t)
                 values.append(v)
 
-        # ✅ Residuals: Income → bucket@Y+1
         inflows = (
-            agg[agg["tgt_mapped"].isin(bucket_names)]
-            .groupby("tgt_mapped")["amount"]
+            agg[agg["target"].isin(bucket_names)]
+            .groupby("target")["amount"]
             .sum()
             .reindex(bucket_names, fill_value=0)
         )
-
         for b in bucket_names:
-            residual = (
-                bal_end[b] - bal_start[b] - inflows.get(b, 0) + outflows.get(b, 0)
-            )
-            if residual != 0:
-                sources.append(src_idx["Income"])
-                targets.append(tgt_idx[b])
+            residual = bal_end[b] - inflows.get(b, 0)
+            s_label = f"{b}@{y0}"
+            t_label = f"{b}@{y1}"
+            s = source_idx.get(s_label)
+            t = target_idx.get(t_label)
+            if residual != 0 and s is not None and t is not None:
+                sources.append(s)
+                targets.append(t)
                 values.append(residual)
-
-        # Ensure Income and Expenses nodes are rendered
-        if src_idx["Income"] not in sources:
-            sources.append(src_idx["Income"])
-            targets.append(tgt_idx[bucket_names[0]])
-            values.append(0.0001)
-        if tgt_idx["Expenses"] not in targets:
-            sources.append(src_idx[bucket_names[0]])
-            targets.append(tgt_idx["Expenses"])
-            values.append(0.0001)
 
         sankey = go.Sankey(
             node=dict(
@@ -125,7 +86,7 @@ def plot_flows(
                 line=dict(color="black", width=0.5),
             ),
             link=dict(source=sources, target=targets, value=values),
-            domain=dict(x=[0, 1], y=[0, 1]),
+            domain=dict(x=[0, 1]),
             visible=(len(sankey_traces) == 0),
         )
         sankey_traces.append(sankey)
@@ -149,17 +110,17 @@ def plot_flows(
         dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
     ]
     fig.update_layout(
-        sliders=sliders,
-        margin=dict(l=50, r=50, t=80, b=50),
         title={
             "text": f"Sim {sim+1:04d} | Flows: {transitions[0][0]} → {transitions[0][1]}"
         },
+        sliders=sliders,
+        margin=dict(l=50, r=50, t=80, b=50),
     )
 
     if show:
         fig.show()
     if save:
-        fig.write_html(f"{export_path}{sim}_sankey_{ts}.html")
+        fig.write_html(f"{export_path}{sim+1:04d}_sankey_{ts}.html")
 
 
 def plot_historical_balance(

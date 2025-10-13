@@ -46,6 +46,7 @@ class MarketGains:
     def apply(self, buckets: Dict[str, Bucket], forecast_date: pd.Timestamp) -> None:
         year = forecast_date.year
         rate = self.inflation[year]["rate"]
+        tx_month = pd.Period(forecast_date, freq="M")
 
         for bucket in buckets.values():
             for h in bucket.holdings:
@@ -63,7 +64,16 @@ class MarketGains:
                 else:
                     scenario = "Average"
 
-                # sample and apply gain
+                # sample gain
                 params = self.gain_table[cls_name][scenario]
                 gain = np.random.normal(params["avg"], params["std"])
-                h.amount = int(round(h.amount * (1 + gain)))
+                delta = int(round(h.amount * gain))
+
+                # apply gain
+                if delta != 0:
+                    bucket.deposit(
+                        amount=delta,
+                        source="MarketGain",
+                        tx_month=tx_month,
+                        flow_type="gain",
+                    )
