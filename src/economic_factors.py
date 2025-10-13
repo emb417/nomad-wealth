@@ -70,10 +70,17 @@ class MarketGains:
                 delta = int(round(h.amount * gain))
 
                 # apply gain
-                if delta != 0:
+                if delta > 0:
                     bucket.deposit(
                         amount=delta,
-                        source="MarketGain",
+                        source="Market Gains",
                         tx_month=tx_month,
                         flow_type="gain",
+                    )
+                elif delta < 0:
+                    bucket.deposit(
+                        amount=abs(delta),
+                        source="Market Losses",
+                        tx_month=tx_month,
+                        flow_type="loss",
                     )

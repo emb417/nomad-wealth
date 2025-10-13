@@ -126,10 +126,11 @@ def plot_sample_flow(
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
         agg = flows_y0.groupby(["source", "target"])["amount"].sum().reset_index()
 
+        sorted_buckets = sorted(bucket_names, key=lambda b: -bal_end[b])
         external_sources = sorted(set(agg["source"]) - set(bucket_names))
-        internal_sources = sorted(set(bucket_names))
-        sources_raw = internal_sources + external_sources
-        targets_raw = sorted(set(agg["target"]) | set(bucket_names) | {"Expenses"})
+        sources_raw = sorted_buckets + external_sources
+        external_targets = sorted(set(agg["target"]) - set(bucket_names))
+        targets_raw = sorted(set(sorted_buckets + external_targets))
 
         source_nodes = [f"{s}@{y0}" for s in sources_raw]
         target_nodes = [f"{t}@{y1}" for t in targets_raw]
@@ -144,11 +145,7 @@ def plot_sample_flow(
 
         for _, row in agg.iterrows():
             s_label = f"{row['source']}@{y0}"
-            t_label = (
-                f"{row['target']}@{y1}"
-                if row["target"] in bucket_names
-                else f"Expenses@{y1}"
-            )
+            t_label = f"{row['target']}@{y1}"
             s = source_idx.get(s_label)
             t = target_idx.get(t_label)
             v = row["amount"]
