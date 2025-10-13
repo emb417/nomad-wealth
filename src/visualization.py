@@ -3,7 +3,103 @@ import pandas as pd
 import plotly.graph_objects as go
 
 
-def plot_flows(
+def plot_historical_balance(
+    hist_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves the historical balance chart.
+    """
+    total_net_worth = pd.DataFrame(
+        {
+            "Date": pd.to_datetime(hist_df["Date"]),
+            "Total Net Worth": hist_df.drop("Date", axis=1).sum(axis=1),
+        }
+    )
+
+    monthly_net_worth_gain_loss = pd.DataFrame(
+        {
+            "Date": hist_df["Date"],
+            "Net Worth Gain": total_net_worth["Total Net Worth"].pct_change().fillna(0),
+        }
+    )
+    annual_net_worth_gain_loss = pd.DataFrame(
+        {
+            "Date": hist_df["Date"],
+            "Net Worth Gain": total_net_worth["Total Net Worth"]
+            .pct_change(12)
+            .fillna(0),
+        }
+    )
+    fig = go.Figure(
+        data=[
+            go.Scatter(
+                x=total_net_worth["Date"],
+                y=total_net_worth["Total Net Worth"],
+                marker=dict(color="black", opacity=0.5),
+                name="Net Worth",
+                mode="lines+markers",
+                line=dict(
+                    shape="spline",
+                    smoothing=1,
+                    width=2,
+                    color="black",
+                ),
+                opacity=0.75,
+            ),
+            go.Bar(
+                x=monthly_net_worth_gain_loss["Date"],
+                y=monthly_net_worth_gain_loss["Net Worth Gain"],
+                marker=dict(
+                    color=[
+                        "darkgreen" if val > 0 else "darkred"
+                        for val in monthly_net_worth_gain_loss["Net Worth Gain"]
+                    ],
+                    opacity=0.5,
+                ),
+                name="Monthly Gain",
+                yaxis="y2",
+            ),
+            go.Bar(
+                x=annual_net_worth_gain_loss["Date"],
+                y=annual_net_worth_gain_loss["Net Worth Gain"],
+                marker=dict(
+                    color=[
+                        "darkblue" if val > 0 else "darkorange"
+                        for val in annual_net_worth_gain_loss["Net Worth Gain"]
+                    ],
+                    opacity=0.5,
+                ),
+                name="Annual Gain",
+                yaxis="y2",
+            ),
+        ]
+    )
+    fig.update_layout(
+        title="Historical Net Worth and Annual/Monthly Gain %",
+        title_x=0.5,
+        yaxis_tickformat="$,.0f",
+        yaxis2=dict(
+            overlaying="y",
+            side="right",
+            range=[-0.1, 0.3],
+        ),
+        yaxis2_tickformat=",.2p",
+        template="plotly_white",
+        showlegend=False,
+        hovermode="x unified",
+    )
+    fig.update_yaxes(showgrid=False)
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(export_path + f"historical_nw_{ts}.html")
+
+
+def plot_sample_flow(
     sim: int,
     forecast_df: pd.DataFrame,
     flow_df: pd.DataFrame,
@@ -121,102 +217,6 @@ def plot_flows(
         fig.show()
     if save:
         fig.write_html(f"{export_path}{sim+1:04d}_sankey_{ts}.html")
-
-
-def plot_historical_balance(
-    hist_df: pd.DataFrame,
-    ts: str,
-    show: bool,
-    save: bool,
-    export_path: str = "export/",
-):
-    """
-    Renders and optionally saves the historical balance chart.
-    """
-    total_net_worth = pd.DataFrame(
-        {
-            "Date": pd.to_datetime(hist_df["Date"]),
-            "Total Net Worth": hist_df.drop("Date", axis=1).sum(axis=1),
-        }
-    )
-
-    monthly_net_worth_gain_loss = pd.DataFrame(
-        {
-            "Date": hist_df["Date"],
-            "Net Worth Gain": total_net_worth["Total Net Worth"].pct_change().fillna(0),
-        }
-    )
-    annual_net_worth_gain_loss = pd.DataFrame(
-        {
-            "Date": hist_df["Date"],
-            "Net Worth Gain": total_net_worth["Total Net Worth"]
-            .pct_change(12)
-            .fillna(0),
-        }
-    )
-    fig = go.Figure(
-        data=[
-            go.Scatter(
-                x=total_net_worth["Date"],
-                y=total_net_worth["Total Net Worth"],
-                marker=dict(color="black", opacity=0.5),
-                name="Net Worth",
-                mode="lines+markers",
-                line=dict(
-                    shape="spline",
-                    smoothing=1,
-                    width=2,
-                    color="black",
-                ),
-                opacity=0.75,
-            ),
-            go.Bar(
-                x=monthly_net_worth_gain_loss["Date"],
-                y=monthly_net_worth_gain_loss["Net Worth Gain"],
-                marker=dict(
-                    color=[
-                        "darkgreen" if val > 0 else "darkred"
-                        for val in monthly_net_worth_gain_loss["Net Worth Gain"]
-                    ],
-                    opacity=0.5,
-                ),
-                name="Monthly Gain",
-                yaxis="y2",
-            ),
-            go.Bar(
-                x=annual_net_worth_gain_loss["Date"],
-                y=annual_net_worth_gain_loss["Net Worth Gain"],
-                marker=dict(
-                    color=[
-                        "darkblue" if val > 0 else "darkorange"
-                        for val in annual_net_worth_gain_loss["Net Worth Gain"]
-                    ],
-                    opacity=0.5,
-                ),
-                name="Annual Gain",
-                yaxis="y2",
-            ),
-        ]
-    )
-    fig.update_layout(
-        title="Historical Net Worth and Annual/Monthly Gain %",
-        title_x=0.5,
-        yaxis_tickformat="$,.0f",
-        yaxis2=dict(
-            overlaying="y",
-            side="right",
-            range=[-0.1, 0.3],
-        ),
-        yaxis2_tickformat=",.2p",
-        template="plotly_white",
-        showlegend=False,
-        hovermode="x unified",
-    )
-    fig.update_yaxes(showgrid=False)
-    if show:
-        fig.show()
-    if save:
-        fig.write_html(export_path + f"historical_nw_{ts}.html")
 
 
 def plot_sample_forecast(

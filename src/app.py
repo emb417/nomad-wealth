@@ -29,8 +29,8 @@ from transactions import (
 from visualization import (
     plot_historical_balance,
     plot_sample_forecast,
+    plot_sample_flow,
     plot_mc_networth,
-    plot_flows,
 )
 
 logging.basicConfig(
@@ -42,12 +42,12 @@ rng = np.random.default_rng()
 # Simulation settings
 SIMS = 10
 SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
-SHOW_FLOW_CHART = True
-SAVE_FLOW_CHART = False
-SHOW_HISTORICAL_NW_CHART = True
-SAVE_HISTORICAL_NW_CHART = False
-SHOW_SIMS_SAMPLES = True
-SAVE_SIMS_SAMPLES = False
+SHOW_HISTORICAL_BALANCE_CHART = True
+SAVE_HISTORICAL_BALANCE_CHART = False
+SHOW_SAMPLES_FORECAST_CHART = True
+SAVE_SAMPLES_FORECAST_CHART = False
+SHOW_SAMPLES_FLOW_CHART = True
+SAVE_SAMPLES_FLOW_CHART = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
 
@@ -284,10 +284,9 @@ def main():
     )
 
     plot_historical_balance(
-        dfs["balance"], ts, SHOW_HISTORICAL_NW_CHART, SAVE_HISTORICAL_NW_CHART
+        dfs["balance"], ts, SHOW_HISTORICAL_BALANCE_CHART, SAVE_HISTORICAL_BALANCE_CHART
     )
 
-    # for net‐worth distributions
     years = sorted(future_df["Date"].dt.year.unique())
     mc_dict = {year: [] for year in years}
     mc_samples_dict = {year: [] for year in years}
@@ -303,13 +302,13 @@ def main():
             sim, future_df, json_data, dfs, hist_df
         )
         if sim in SIMS_SAMPLES:
-            plot_flows(
+            plot_sample_flow(
                 sim=sim,
                 forecast_df=forecast_df,
                 flow_df=flow_df,
                 ts=ts,
-                show=SHOW_FLOW_CHART,
-                save=SAVE_FLOW_CHART,
+                show=SHOW_SAMPLES_FLOW_CHART,
+                save=SAVE_SAMPLES_FLOW_CHART,
             )
             plot_sample_forecast(
                 sim_index=sim,
@@ -318,8 +317,8 @@ def main():
                 taxes_df=taxes_df,
                 dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
                 ts=ts,
-                show=SHOW_SIMS_SAMPLES,
-                save=SAVE_SIMS_SAMPLES,
+                show=SHOW_SAMPLES_FORECAST_CHART,
+                save=SAVE_SAMPLES_FORECAST_CHART,
             )
         property_liquidation_row = forecast_df.loc[forecast_df["Property"] == 0]
         if not property_liquidation_row.empty:
