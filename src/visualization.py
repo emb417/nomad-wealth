@@ -138,7 +138,10 @@ def plot_flows(
         steps.append(
             dict(
                 method="update",
-                args=[{"visible": vis}, {"title": f"Flows: {y0} → {y1}"}],
+                args=[
+                    {"visible": vis},
+                    {"title": {"text": f"Sim {sim+1:04d} | Flows: {y0} → {y1}"}},
+                ],
                 label=f"{y0}→{y1}",
             )
         )
@@ -146,9 +149,11 @@ def plot_flows(
         dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
     ]
     fig.update_layout(
-        title=f"Flows: {transitions[0][0]} → {transitions[0][1]}",
         sliders=sliders,
         margin=dict(l=50, r=50, t=80, b=50),
+        title={
+            "text": f"Sim {sim+1:04d} | Flows: {transitions[0][0]} → {transitions[0][1]}"
+        },
     )
 
     if show:
