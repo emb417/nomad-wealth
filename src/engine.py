@@ -63,9 +63,8 @@ class ForecastEngine:
             self.market_gains.apply(self.buckets, forecast_date)
 
             # Taxes: Monthly withdraw from Cash into Tax Collection
-            self.buckets["Cash"].withdraw(self.monthly_tax_drip)
-            self.buckets["Tax Collection"].deposit(
-                self.monthly_tax_drip, "Cash", tx_month
+            self.buckets["Cash"].transfer(
+                self.monthly_tax_drip, self.buckets["Tax Collection"], tx_month
             )
 
             # Liqudiate based on policy
@@ -170,14 +169,11 @@ class ForecastEngine:
                     self.annual_tax_estimate = next_est
                     self.monthly_tax_drip = int(next_est / 12)
                     if next_est == 0 and leftover > 0:
-                        drained_amount = self.buckets["Tax Collection"].withdraw(
-                            leftover
-                        )
-                        self.buckets["Cash"].deposit(
-                            drained_amount, "Tax Collection", tx_month
+                        self.buckets["Tax Collection"].transfer(
+                            leftover, self.buckets["Cash"], tx_month
                         )
                         logging.debug(
-                            f"[TaxCollection Cleanup] Moved ${drained_amount:,} "
+                            f"[TaxCollection Cleanup] Moved ${leftover:,} "
                             "back to Cash (no tax due next year)"
                         )
                     tax_records.append(

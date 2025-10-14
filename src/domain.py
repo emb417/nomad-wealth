@@ -76,6 +76,9 @@ class Bucket:
         self.bucket_type = bucket_type
         self.flow_tracker = flow_tracker
 
+    def balance(self) -> int:
+        return sum(h.amount for h in self.holdings)
+
     def deposit(
         self,
         amount: int,
@@ -101,14 +104,42 @@ class Bucket:
         self.holdings[-1].amount += remainder
         self.holdings[-1].cost_basis += remainder
 
-    def balance(self) -> int:
-        return sum(h.amount for h in self.holdings)
+    def transfer(
+        self,
+        amount: int,
+        target_bucket: "Bucket",
+        tx_month: pd.Period,
+        flow_type: str = "transfer",
+    ) -> int:
+        """
+        Transfer up to `amount` from this bucket to `target_bucket`.
+        Only one flow_tracker record is created to avoid double-counting.
+        Returns the actual amount transferred.
+        """
+        if amount <= 0 or not target_bucket:
+            return 0
 
-    def available_for_withdraw(self) -> int:
-        """
-        Positive available amount for conservative withdrawals (never negative).
-        """
-        return max(0, self.balance())
+        # Withdraw from self without recording flow
+        withdrawn = self._withdraw_from_holdings(amount)
+
+        # Deposit into target without recording flow
+        total_weight = sum(h.weight for h in target_bucket.holdings)
+        remainder = withdrawn
+        for h in target_bucket.holdings[:-1]:
+            share = int(round(withdrawn * (h.weight / total_weight)))
+            h.amount += share
+            h.cost_basis += share
+            remainder -= share
+        target_bucket.holdings[-1].amount += remainder
+        target_bucket.holdings[-1].cost_basis += remainder
+
+        # Record single transfer flow
+        if self.flow_tracker and tx_month:
+            self.flow_tracker.record(
+                self.name, target_bucket.name, withdrawn, tx_month, flow_type
+            )
+
+        return withdrawn
 
     def _withdraw_from_holdings(self, amount: int) -> int:
         """

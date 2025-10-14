@@ -10,11 +10,10 @@ from transactions import Transaction
 
 class RefillTransaction(Transaction):
     """
-    Conservative refill transaction:
-      - inherits Transaction for interface consistency
-      - delegates money movement to Bucket helpers (withdraw_with_cash_fallback / partial_withdraw)
+    Internal refill transaction:
+      - uses Bucket.transfer for clean internal movement
       - records tax flags only (tax accounting done elsewhere)
-      - estimates taxable gains for withdrawals from taxable buckets when cost-basis info is absent
+      - estimates taxable gains for withdrawals from taxable buckets
     """
 
     def __init__(
@@ -42,66 +41,33 @@ class RefillTransaction(Transaction):
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         src = buckets.get(self.source)
         tgt = buckets.get(self.target)
-        # reset runtime fields
         self._applied_amount = 0
         self._taxable_gain = 0
+        self._penalty_tax = 0
 
         if src is None or tgt is None or self.amount <= 0:
             return
 
-        cash = buckets.get("Cash")
-
-        # If source allows fallback, try combined withdraw then deposit once
-        if getattr(src, "allow_cash_fallback", False) and cash is not None:
-            from_src, from_cash = src.withdraw_with_cash_fallback(self.amount, cash)
-            applied = int((from_src or 0) + (from_cash or 0))
-            if applied > 0:
-                tgt.deposit(from_src, src.name, tx_month)
-                tgt.deposit(from_cash, cash.name, tx_month)
-            logging.debug(
-                f"[RefillApply] {tx_month} {self.source}->{self.target} planned={self.amount} "
-                f"from_src={from_src} from_cash={from_cash}"
-            )
-            self._applied_amount = applied
-
-            # estimate taxable gain portion for amounts withdrawn from a taxable source
-            bt = getattr(src, "bucket_type", None)
-            if bt == "taxable" and self.is_taxable:
-                # conservative heuristic: estimate 50% of proceeds are taxable gains
-                self._taxable_gain = int(round(self._applied_amount * 0.5))
-
-            if self.penalty_rate and self._applied_amount > 0:
-                self._penalty_tax = int(round(self._applied_amount * self.penalty_rate))
-
-            return
-
-        # Conservative: only take what the source can supply without going negative
-        withdrawn = src.partial_withdraw(self.amount)
-        applied = int(withdrawn or 0)
-        if applied > 0:
-            tgt.deposit(applied, src.name, tx_month)
-            logging.debug(
-                f"[RefillApply] {tx_month} {self.source}->{self.target} withdrew={applied}"
-            )
+        # Use internal transfer for refill
+        applied = src.transfer(self.amount, tgt, tx_month, flow_type="refill")
         self._applied_amount = applied
 
-        # estimate taxable gain portion for amounts withdrawn from a taxable source
-        bt = getattr(src, "bucket_type", None)
-        if bt == "taxable" and self.is_taxable and self._applied_amount > 0:
-            # conservative heuristic: estimate 50% of proceeds are taxable gains
-            self._taxable_gain = int(round(self._applied_amount * 0.5))
+        # Estimate taxable gain if applicable
+        if (
+            getattr(src, "bucket_type", None) == "taxable"
+            and self.is_taxable
+            and applied > 0
+        ):
+            self._taxable_gain = int(round(applied * 0.5))
 
-        if self.penalty_rate and self._applied_amount > 0:
-            self._penalty_tax = int(round(self._applied_amount * self.penalty_rate))
+        if self.penalty_rate and applied > 0:
+            self._penalty_tax = int(round(applied * self.penalty_rate))
 
-    # Report tax-relevant amounts to the engine's tax accumulation
     def get_withdrawal(self, tx_month: pd.Period) -> int:
-        # Report as tax-deferred withdrawal only when transaction is marked so
-        return self._applied_amount if getattr(self, "is_tax_deferred", False) else 0
+        return self._applied_amount if self.is_tax_deferred else 0
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
-        # Return the estimated taxable gain (0 if not applicable)
-        return int(self._taxable_gain or 0)
+        return self._taxable_gain
 
     def get_penalty_tax(self, tx_month: pd.Period) -> int:
         return self._penalty_tax
