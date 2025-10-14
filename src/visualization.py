@@ -108,6 +108,28 @@ def plot_sample_flow(
     save: bool,
     export_path: str = "export/",
 ):
+    def base_label(label):
+        return label.split(" (")[0]
+
+    color_palette = [
+        "#1f77b4",
+        "#ff7f0e",
+        "#2ca02c",
+        "#d62728",
+        "#9467bd",
+        "#8c564b",
+        "#e377c2",
+        "#7f7f7f",
+        "#bcbd22",
+        "#17becf",
+        "#000000",
+        "#f7b6d2",
+        "#c5b0d5",
+        "#c49c94",
+        "#dbdb8d",
+        "#9edae5",
+    ]
+
     forecast_df = forecast_df.copy()
     forecast_df["Date"] = pd.to_datetime(forecast_df["Date"])
     forecast_df = forecast_df[forecast_df["Date"].dt.month == 1].sort_values("Date")
@@ -120,40 +142,20 @@ def plot_sample_flow(
     flow_df = flow_df[flow_df["sim"] == sim]
     flow_df["year"] = flow_df["date"].dt.year
 
+    label_color_map = {}
+
     sankey_traces = []
     for y0, y1 in transitions:
         bal_end = forecast_df[forecast_df["Date"].dt.year == y1].iloc[0]
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
-        agg = flows_y0.groupby(["source", "target"])["amount"].sum().reset_index()
+        agg = (
+            flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
+        )
 
-        sorted_buckets = sorted(bucket_names, key=lambda b: -bal_end[b])
-        external_sources = sorted(set(agg["source"]) - set(bucket_names))
-        sources_raw = sorted_buckets + external_sources
-        external_targets = sorted(set(agg["target"]) - set(bucket_names))
-        targets_raw = sorted(set(sorted_buckets + external_targets))
+        sources_raw, targets_raw, values, colors = [], [], [], []
+        used_keys = set()
 
-        source_nodes = [f"{s}@{y0}" for s in sources_raw]
-        target_nodes = [f"{t}@{y1}" for t in targets_raw]
-        labels = source_nodes + target_nodes
-
-        source_idx = {label: i for i, label in enumerate(source_nodes)}
-        target_idx = {
-            f"{t}@{y1}": i + len(source_nodes) for i, t in enumerate(targets_raw)
-        }
-
-        sources, targets, values = [], [], []
-
-        for _, row in agg.iterrows():
-            s_label = f"{row['source']}@{y0}"
-            t_label = f"{row['target']}@{y1}"
-            s = source_idx.get(s_label)
-            t = target_idx.get(t_label)
-            v = row["amount"]
-            if s is not None and t is not None and v > 0:
-                sources.append(s)
-                targets.append(t)
-                values.append(v)
-
+        # Residuals
         inflows = (
             agg[agg["target"].isin(bucket_names)]
             .groupby("target")["amount"]
@@ -162,24 +164,79 @@ def plot_sample_flow(
         )
         for b in bucket_names:
             residual = bal_end[b] - inflows.get(b, 0)
-            s_label = f"{b}@{y0}"
-            t_label = f"{b}@{y1}"
-            s = source_idx.get(s_label)
-            t = target_idx.get(t_label)
-            if residual != 0 and s is not None and t is not None:
-                sources.append(s)
-                targets.append(t)
-                values.append(residual)
+            if residual != 0:
+                s_key = f"{b}@{y0}"
+                t_key = f"{b}@{y1}"
+                used_keys.update([s_key, t_key])
+                sources_raw.append(s_key)
+                targets_raw.append(t_key)
+                values.append(abs(residual))
+                colors.append("rgba(128,128,128,0.3)")
+
+        # Routed flows
+        for _, row in agg.iterrows():
+            v = row["amount"]
+            if v != 0:
+                s_key = f"{row['source']}@{y0}"
+                t_key = f"{row['target']}@{y1}"
+                used_keys.update([s_key, t_key])
+                sources_raw.append(s_key)
+                targets_raw.append(t_key)
+                values.append(abs(v))
+                if row["type"] in ["deposit", "gain"]:
+                    colors.append("rgba(0,128,0,0.4)")
+                elif row["type"] in ["withdraw", "loss"]:
+                    colors.append("rgba(255,0,0,0.4)")
+                else:
+                    colors.append("rgba(128,128,128,0.3)")
+
+        # Aggregate volume
+        volume_counter = {}
+        for s, v in zip(sources_raw, values):
+            volume_counter[s] = volume_counter.get(s, 0) + v
+        for t, v in zip(targets_raw, values):
+            volume_counter[t] = volume_counter.get(t, 0) + v
+
+        # Sort keys by volume
+        left_keys = sorted(
+            {k for k in volume_counter if k.endswith(f"@{y0}")},
+            key=lambda k: -volume_counter[k],
+        )
+        right_keys = sorted(
+            {k for k in volume_counter if k.endswith(f"@{y1}")},
+            key=lambda k: -volume_counter[k],
+        )
+        sorted_keys = left_keys + right_keys
+
+        # Build label list and index
+        key_to_label = {
+            k: f"{k.split('@')[0]} ({k.split('@')[1]})" for k in sorted_keys
+        }
+        labels = [key_to_label[k] for k in sorted_keys]
+        label_idx = {k: i for i, k in enumerate(sorted_keys)}
+
+        # Reindex sources and targets
+        sources = [label_idx[k] for k in sources_raw]
+        targets = [label_idx[k] for k in targets_raw]
+
+        # Assign node colors consistently by base label
+        for lbl in labels:
+            base = base_label(lbl)
+            if base not in label_color_map:
+                label_color_map[base] = color_palette[
+                    len(label_color_map) % len(color_palette)
+                ]
+        node_colors = [label_color_map[base_label(lbl)] for lbl in labels]
 
         sankey = go.Sankey(
             node=dict(
                 label=labels,
-                pad=15,
-                thickness=20,
+                pad=10,
+                thickness=40,
                 line=dict(color="black", width=0.5),
+                color=node_colors,
             ),
-            link=dict(source=sources, target=targets, value=values),
-            domain=dict(x=[0, 1]),
+            link=dict(source=sources, target=targets, value=values, color=colors),
             visible=(len(sankey_traces) == 0),
         )
         sankey_traces.append(sankey)
