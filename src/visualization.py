@@ -486,7 +486,7 @@ def plot_mc_networth(
         is_sample = col in samples
         color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
         hover_kwargs = (
-            {"hovertemplate": f"{col}: %{{y:$,.0f}}<extra></extra>"}
+            {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
             if is_sample
             else {"hoverinfo": "skip"}
         )
