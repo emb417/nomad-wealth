@@ -5,72 +5,7 @@ from typing import Dict, List, Optional
 
 # Internal Imports
 from domain import Bucket
-from transactions import Transaction
-
-
-class RefillTransaction(Transaction):
-    """
-    Internal refill transaction:
-      - uses Bucket.transfer for clean internal movement
-      - records tax flags only (tax accounting done elsewhere)
-      - estimates taxable gains for withdrawals from taxable buckets
-    """
-
-    def __init__(
-        self,
-        source: str,
-        target: str,
-        amount: int,
-        is_tax_deferred: bool = False,
-        is_taxable: bool = False,
-        penalty_rate: float = 0.0,
-    ):
-        super().__init__()
-        self.source = source
-        self.target = target
-        self.amount = int(amount)
-        self.is_tax_deferred = bool(is_tax_deferred)
-        self.is_taxable = bool(is_taxable)
-        self.penalty_rate = penalty_rate
-
-        # runtime-applied amounts and estimated gains (set by apply)
-        self._applied_amount: int = 0
-        self._taxable_gain: int = 0
-        self._penalty_tax: int = 0
-
-    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
-        src = buckets.get(self.source)
-        tgt = buckets.get(self.target)
-        self._applied_amount = 0
-        self._taxable_gain = 0
-        self._penalty_tax = 0
-
-        if src is None or tgt is None or self.amount <= 0:
-            return
-
-        # Use internal transfer for refill
-        applied = src.transfer(self.amount, tgt, tx_month, flow_type="refill")
-        self._applied_amount = applied
-
-        # Estimate taxable gain if applicable
-        if (
-            getattr(src, "bucket_type", None) == "taxable"
-            and self.is_taxable
-            and applied > 0
-        ):
-            self._taxable_gain = int(round(applied * 0.5))
-
-        if self.penalty_rate and applied > 0:
-            self._penalty_tax = int(round(applied * self.penalty_rate))
-
-    def get_withdrawal(self, tx_month: pd.Period) -> int:
-        return self._applied_amount if self.is_tax_deferred else 0
-
-    def get_taxable_gain(self, tx_month: pd.Period) -> int:
-        return self._taxable_gain
-
-    def get_penalty_tax(self, tx_month: pd.Period) -> int:
-        return self._penalty_tax
+from policies_transactions import RefillTransaction
 
 
 class ThresholdRefillPolicy:

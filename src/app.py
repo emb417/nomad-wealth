@@ -17,15 +17,17 @@ from economic_factors import InflationGenerator, MarketGains
 from engine import ForecastEngine
 from load_data import load_csv, load_json
 from policies import ThresholdRefillPolicy
-from taxes import TaxCalculator
-from transactions import (
+from policies_transactions import (
+    RentalTransaction,
+    RothConversionTransaction,
+    SalaryTransaction,
+    SocialSecurityTransaction,
+)
+from rules_transactions import (
     FixedTransaction,
     RecurringTransaction,
-    RentalTransaction,
-    SocialSecurityTransaction,
-    SalaryTransaction,
-    RothConversionTransaction,
 )
+from taxes import TaxCalculator
 from visualization import (
     plot_historical_balance,
     plot_sample_forecast,
@@ -230,9 +232,18 @@ def stage_init_components(
         target_bucket=policies_config["roth_conversion"]["Target"],
     )
 
-    transactions = [fixed_tx, recur_tx, rental_tx, salary_tx, ss_txn, roth_conv]
+    rule_txns = [fixed_tx, recur_tx]
+    policy_txns = [rental_tx, salary_tx, ss_txn, roth_conv]
 
-    return buckets, refill_policy, tax_calc, market_gains, annual_infl, transactions
+    return (
+        buckets,
+        refill_policy,
+        tax_calc,
+        market_gains,
+        annual_infl,
+        rule_txns,
+        policy_txns,
+    )
 
 
 def run_one_sim(
@@ -248,9 +259,15 @@ def run_one_sim(
     np.random.seed(sim)
     flow_tracker = FlowTracker()
 
-    buckets, refill_policy, tax_calc, market_gains, inflation, transactions = (
-        stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker)
-    )
+    (
+        buckets,
+        refill_policy,
+        tax_calc,
+        market_gains,
+        inflation,
+        rule_txns,
+        policy_txns,
+    ) = stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker)
 
     # wire up flow_tracker
     for b in buckets.values():
@@ -258,7 +275,8 @@ def run_one_sim(
 
     engine = ForecastEngine(
         buckets=buckets,
-        transactions=transactions,
+        rule_transactions=rule_txns,
+        policy_transactions=policy_txns,
         refill_policy=refill_policy,
         market_gains=market_gains,
         inflation=inflation,

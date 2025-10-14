@@ -8,15 +8,17 @@ from typing import Dict, List, Tuple
 from domain import Bucket
 from economic_factors import MarketGains
 from policies import ThresholdRefillPolicy
+from policies_transactions import PolicyTransaction
+from rules_transactions import RuleTransaction
 from taxes import TaxCalculator
-from transactions import Transaction
 
 
 class ForecastEngine:
     def __init__(
         self,
         buckets: Dict[str, Bucket],
-        transactions: List[Transaction],
+        rule_transactions: List[RuleTransaction],
+        policy_transactions: List[PolicyTransaction],
         refill_policy: ThresholdRefillPolicy,
         market_gains: MarketGains,
         inflation: Dict[int, Dict[str, float]],
@@ -24,7 +26,8 @@ class ForecastEngine:
         profile: Dict[str, int],
     ):
         self.buckets = buckets
-        self.transactions = transactions
+        self.rule_transactions = rule_transactions
+        self.policy_transactions = policy_transactions
         self.refill_policy = refill_policy
         self.market_gains = market_gains
         self.inflation = inflation
@@ -50,8 +53,12 @@ class ForecastEngine:
             tx_month = (forecast_date - MonthBegin(1)).to_period("M")
             year = forecast_date.year
 
-            # Core transactions
-            for tx in self.transactions:
+            # Rule-driven transactions
+            for tx in self.rule_transactions:
+                tx.apply(self.buckets, tx_month)
+
+            # Policy-driven transactions (e.g. salary, social security, Roth conversions)
+            for tx in self.policy_transactions:
                 tx.apply(self.buckets, tx_month)
 
             # Refill policy
@@ -75,28 +82,23 @@ class ForecastEngine:
             # Stats: Accumulate flows into yearly_tax_log
             monthly_salary = sum(
                 tx.get_salary(tx_month)
-                for tx in self.transactions
-                if callable(getattr(tx, "get_salary", None))
+                for tx in self.policy_transactions + refill_txns + liq_txns
             )
             monthly_ss = sum(
                 tx.get_social_security(tx_month)
-                for tx in self.transactions
-                if hasattr(tx, "get_social_security")
+                for tx in self.policy_transactions + refill_txns + liq_txns
             )
             monthly_deferred = sum(
                 tx.get_withdrawal(tx_month)
-                for tx in (*self.transactions, *refill_txns)
-                if tx.is_tax_deferred
+                for tx in self.policy_transactions + refill_txns + liq_txns
             )
             monthly_taxable = sum(
                 tx.get_taxable_gain(tx_month)
-                for tx in (*self.transactions, *refill_txns)
-                if tx.is_taxable
+                for tx in self.policy_transactions + refill_txns + liq_txns
             )
             monthly_penalty = sum(
                 tx.get_penalty_tax(tx_month)
-                for tx in (*self.transactions, *refill_txns, *liq_txns)
-                if callable(getattr(tx, "get_penalty_tax", None))
+                for tx in self.policy_transactions + refill_txns + liq_txns
             )
 
             if year not in yearly_tax_log:

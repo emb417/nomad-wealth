@@ -120,13 +120,13 @@ class Bucket:
             return 0
 
         # Withdraw from self without recording flow
-        withdrawn = self._withdraw_from_holdings(amount)
+        transferring = self._withdraw_from_holdings(amount)
 
         # Deposit into target without recording flow
         total_weight = sum(h.weight for h in target_bucket.holdings)
-        remainder = withdrawn
+        remainder = transferring
         for h in target_bucket.holdings[:-1]:
-            share = int(round(withdrawn * (h.weight / total_weight)))
+            share = int(round(transferring * (h.weight / total_weight)))
             h.amount += share
             h.cost_basis += share
             remainder -= share
@@ -136,10 +136,10 @@ class Bucket:
         # Record single transfer flow
         if self.flow_tracker and tx_month:
             self.flow_tracker.record(
-                self.name, target_bucket.name, withdrawn, tx_month, flow_type
+                self.name, target_bucket.name, transferring, tx_month, flow_type
             )
 
-        return withdrawn
+        return transferring
 
     def _withdraw_from_holdings(self, amount: int) -> int:
         """
