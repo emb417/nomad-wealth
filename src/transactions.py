@@ -224,7 +224,7 @@ class RothConversionTransaction(Transaction):
             return
 
         self.amount = to_convert
-        withdrawn = src.withdraw(to_convert, "Roth Conversion", tx_month)
+        withdrawn = src.partial_withdraw(to_convert)
         tgt.deposit(withdrawn, src.name, tx_month)
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
