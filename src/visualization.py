@@ -111,6 +111,9 @@ def plot_sample_flow(
     def base_label(label):
         return label.split(" (")[0]
 
+    def normalize_source(label):
+        return label.replace(" Gains", "").replace(" Losses", "")
+
     color_palette = [
         "#1f77b4",
         "#ff7f0e",
@@ -146,7 +149,9 @@ def plot_sample_flow(
 
     sankey_traces = []
     for y0, y1 in transitions:
-        bal_end = forecast_df[forecast_df["Date"].dt.year == y1].iloc[0]
+        bal_start = forecast_df[
+            forecast_df["Date"] == pd.Timestamp(f"{y0}-01-01")
+        ].iloc[0]
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
         agg = (
             flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
@@ -155,27 +160,50 @@ def plot_sample_flow(
         sources_raw, targets_raw, values, colors = [], [], [], []
         used_keys = set()
 
-        # Residuals
-        inflows = (
-            agg[agg["target"].isin(bucket_names)]
-            .groupby("target")["amount"]
-            .sum()
-            .reindex(bucket_names, fill_value=0)
-        )
+        # Rebuild left side from forecast balances
         for b in bucket_names:
-            residual = bal_end[b] - inflows.get(b, 0)
-            if residual != 0:
-                s_key = f"{b}@{y0}"
-                t_key = f"{b}@{y1}"
-                used_keys.update([s_key, t_key])
+            s_key = f"{b}@{y0}"
+            t_key = f"{b}@{y1}"
+            v = bal_start[b]
+            if v != 0:
                 sources_raw.append(s_key)
                 targets_raw.append(t_key)
-                values.append(abs(residual))
-                colors.append("rgba(128,128,128,0.3)")
+                values.append(v)
+                colors.append("rgba(0,0,0,0.1)")  # neutral base balance
+                used_keys.update([s_key, t_key])
 
-        # Routed flows
+        # Routed flows (excluding gain/loss)
         for _, row in agg.iterrows():
-            v = row["amount"]
+            if row["type"] not in ["gain", "loss"]:
+                v = row["amount"]
+                if v != 0:
+                    s_key = f"{row['source']}@{y0}"
+                    t_key = f"{row['target']}@{y1}"
+                    used_keys.update([s_key, t_key])
+                    sources_raw.append(s_key)
+                    targets_raw.append(t_key)
+                    values.append(abs(v))
+                    if row["type"] == "deposit":
+                        colors.append("rgba(0,128,0,0.4)")
+                    elif row["type"] == "withdraw":
+                        colors.append("rgba(255,0,0,0.4)")
+                    else:
+                        colors.append("rgba(128,128,128,0.3)")
+
+        # Net gain/loss routing with normalized source
+        gain_loss_rows = agg[agg["type"].isin(["gain", "loss"])].copy()
+        gain_loss_rows["source"] = gain_loss_rows["source"].apply(normalize_source)
+        gain_loss_rows["signed_amount"] = gain_loss_rows.apply(
+            lambda row: row["amount"] if row["type"] == "gain" else row["amount"],
+            axis=1,
+        )
+        agg_gain_loss = (
+            gain_loss_rows.groupby(["source", "target"])["signed_amount"]
+            .sum()
+            .reset_index()
+        )
+        for _, row in agg_gain_loss.iterrows():
+            v = row["signed_amount"]
             if v != 0:
                 s_key = f"{row['source']}@{y0}"
                 t_key = f"{row['target']}@{y1}"
@@ -183,12 +211,7 @@ def plot_sample_flow(
                 sources_raw.append(s_key)
                 targets_raw.append(t_key)
                 values.append(abs(v))
-                if row["type"] in ["deposit", "gain"]:
-                    colors.append("rgba(0,128,0,0.4)")
-                elif row["type"] in ["withdraw", "loss"]:
-                    colors.append("rgba(255,0,0,0.4)")
-                else:
-                    colors.append("rgba(128,128,128,0.3)")
+                colors.append("rgba(0,128,0,0.4)" if v > 0 else "rgba(255,0,0,0.4)")
 
         # Aggregate volume
         volume_counter = {}

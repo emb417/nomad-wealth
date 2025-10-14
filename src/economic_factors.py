@@ -79,7 +79,7 @@ class MarketGains:
                     )
                 elif delta < 0:
                     bucket.deposit(
-                        amount=abs(delta),
+                        amount=delta,
                         source="Market Losses",
                         tx_month=tx_month,
                         flow_type="loss",
