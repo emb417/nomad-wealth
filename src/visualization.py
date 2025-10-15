@@ -254,8 +254,8 @@ def plot_sample_flow(
         sankey = go.Sankey(
             node=dict(
                 label=labels,
-                pad=10,
-                thickness=40,
+                pad=15,
+                thickness=150,
                 line=dict(color="black", width=0.5),
                 color=node_colors,
                 hovertemplate=["%{label}<extra></extra>"],
