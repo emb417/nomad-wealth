@@ -72,7 +72,7 @@ class RefillTransaction(PolicyTransaction):
             return
 
         # Use internal transfer for refill
-        applied = src.transfer(self.amount, tgt, tx_month, flow_type="refill")
+        applied = src.transfer(self.amount, tgt, tx_month)
         self._applied_amount = applied
 
         # Estimate taxable gain if applicable

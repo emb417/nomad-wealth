@@ -186,6 +186,8 @@ def plot_sample_flow(
                         colors.append("rgba(0,128,0,0.4)")
                     elif row["type"] == "withdraw":
                         colors.append("rgba(255,0,0,0.4)")
+                    elif row["type"] == "transfer":
+                        colors.append("rgba(135,206,235,0.4)")
                     else:
                         colors.append("rgba(128,128,128,0.3)")
 
