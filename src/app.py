@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import time
 
+from concurrent.futures import ProcessPoolExecutor, as_completed
+from contextlib import contextmanager
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
 from pandas.tseries.offsets import MonthBegin
@@ -42,7 +44,7 @@ logging.basicConfig(
 rng = np.random.default_rng()
 
 # Simulation settings
-SIMS = 10
+SIMS = 100
 SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
 SHOW_HISTORICAL_BALANCE_CHART = True
 SAVE_HISTORICAL_BALANCE_CHART = False
@@ -52,6 +54,13 @@ SHOW_SAMPLES_FLOW_CHART = True
 SAVE_SAMPLES_FLOW_CHART = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
+
+
+@contextmanager
+def timed(label):
+    start = time.time()
+    yield
+    logging.info(f"{label} completed in {(time.time() - start):.1f} seconds.")
 
 
 def create_bucket(
@@ -291,103 +300,118 @@ def run_one_sim(
     return forecast_df, taxes_df, flow_df
 
 
+def run_simulation(sim, future_df, json_data, dfs, hist_df):
+    forecast_df, taxes_df, flow_df = run_one_sim(
+        sim, future_df, json_data, dfs, hist_df
+    )
+    forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
+    forecast_df["Year"] = forecast_df["Date"].dt.year
+    ye_nw = forecast_df.groupby("Year")["NetWorth"].last().to_dict()
+    return sim, forecast_df, taxes_df, flow_df, ye_nw
+
+
+def update_property_liquidation_summary(summary, forecast_df):
+    row = forecast_df.loc[forecast_df["Property"] == 0]
+    if row.empty:
+        return
+    date = row["Date"].iloc[0]
+    year = date.year
+    summary["Property Liquidations"] += 1
+    summary["Property Liquidation Dates"].append(date)
+    summary["Minimum Property Liquidation Year"] = (
+        year
+        if summary["Minimum Property Liquidation Year"] is None
+        else min(summary["Minimum Property Liquidation Year"], year)
+    )
+    summary["Maximum Property Liquidation Year"] = (
+        year
+        if summary["Maximum Property Liquidation Year"] is None
+        else max(summary["Maximum Property Liquidation Year"], year)
+    )
+
+
 def main():
-    start = time.time()
     ts = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-    # load & prep
-    json_data, dfs = stage_load()
-    hist_df, future_df = stage_prepare_timeframes(
-        dfs["balance"], json_data["profile"]["End Date"]
-    )
-
-    plot_historical_balance(
-        dfs["balance"], ts, SHOW_HISTORICAL_BALANCE_CHART, SAVE_HISTORICAL_BALANCE_CHART
-    )
-
-    years = sorted(future_df["Date"].dt.year.unique())
-    mc_dict = {year: [] for year in years}
-    mc_samples_dict = {year: [] for year in years}
-    summary = {
-        "Property Liquidations": 0,
-        "Property Liquidation Dates": [],
-        "Minimum Property Liquidation Year": None,
-        "Maximum Property Liquidation Year": None,
-    }
-
-    for sim in tqdm(range(SIMS), desc="Running Monte Carlo sims…"):
-        forecast_df, taxes_df, flow_df = run_one_sim(
-            sim, future_df, json_data, dfs, hist_df
+    with timed("Simulation"):
+        # load & prep
+        json_data, dfs = stage_load()
+        hist_df, future_df = stage_prepare_timeframes(
+            dfs["balance"], json_data["profile"]["End Date"]
         )
-        if sim in SIMS_SAMPLES:
-            plot_sample_flow(
-                sim=sim,
-                forecast_df=forecast_df,
-                flow_df=flow_df,
-                ts=ts,
-                show=SHOW_SAMPLES_FLOW_CHART,
-                save=SAVE_SAMPLES_FLOW_CHART,
-            )
-            plot_sample_forecast(
-                sim_index=sim,
-                hist_df=hist_df,
-                forecast_df=forecast_df,
-                taxes_df=taxes_df,
-                dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
-                ts=ts,
-                show=SHOW_SAMPLES_FORECAST_CHART,
-                save=SAVE_SAMPLES_FORECAST_CHART,
-            )
-        property_liquidation_row = forecast_df.loc[forecast_df["Property"] == 0]
-        if not property_liquidation_row.empty:
-            summary["Property Liquidations"] = (
-                summary.get("Property Liquidations", 0) + 1
-            )
-            summary["Property Liquidation Dates"].append(
-                property_liquidation_row["Date"].iloc[0]
-            )
-            summary["Minimum Property Liquidation Year"] = (
-                property_liquidation_row["Date"].iloc[0].year
-                if (
-                    summary["Minimum Property Liquidation Year"] is None
-                    or property_liquidation_row["Date"].iloc[0].year
-                    < summary["Minimum Property Liquidation Year"]
-                )
-                else summary["Minimum Property Liquidation Year"]
-            )
-            summary["Maximum Property Liquidation Year"] = (
-                property_liquidation_row["Date"].iloc[0].year
-                if (
-                    summary["Maximum Property Liquidation Year"] is None
-                    or property_liquidation_row["Date"].iloc[0].year
-                    > summary["Maximum Property Liquidation Year"]
-                )
-                else summary["Maximum Property Liquidation Year"]
-            )
 
-        forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
-        forecast_df["Year"] = forecast_df["Date"].dt.year
-        ye_nw = forecast_df.groupby("Year")["NetWorth"].last().to_dict()
-        for year, nw in ye_nw.items():
-            mc_dict[year].append(nw)
-            if sim in SIMS_SAMPLES:
-                mc_samples_dict[year].append(nw)
+        plot_historical_balance(
+            dfs["balance"],
+            ts,
+            SHOW_HISTORICAL_BALANCE_CHART,
+            SAVE_HISTORICAL_BALANCE_CHART,
+        )
 
-    mc_df = pd.DataFrame(mc_dict).T
-    mc_samples_df = pd.DataFrame(mc_samples_dict).T
+        dob_year = pd.to_datetime(json_data["profile"]["Date of Birth"]).year
+        eol_year = pd.to_datetime(json_data["profile"]["End Date"]).year
 
-    plot_mc_networth(
-        mc_df=mc_df,
-        mc_samples_df=mc_samples_df,
-        dob_year=pd.to_datetime(json_data["profile"]["Date of Birth"]).year,
-        eol_year=pd.to_datetime(json_data["profile"]["End Date"]).year,
-        summary=summary,
-        ts=ts,
-        show=SHOW_NETWORTH_CHART,
-        save=SAVE_NETWORTH_CHART,
-    )
+        years = sorted(future_df["Date"].dt.year.unique())
+        mc_dict = {year: [] for year in years}
+        mc_samples_dict = {sim: {} for sim in SIMS_SAMPLES}
+        summary = {
+            "Property Liquidations": 0,
+            "Property Liquidation Dates": [],
+            "Minimum Property Liquidation Year": None,
+            "Maximum Property Liquidation Year": None,
+        }
 
-    logging.info(f"Simulation completed in {(time.time() - start):.1f} seconds.")
+        with ProcessPoolExecutor() as executor:
+            futures = [
+                executor.submit(run_simulation, sim, future_df, json_data, dfs, hist_df)
+                for sim in range(SIMS)
+            ]
+
+            for future in tqdm(
+                as_completed(futures), total=SIMS, desc="Running Monte Carlo sims…"
+            ):
+                sim, forecast_df, taxes_df, flow_df, ye_nw = future.result()
+
+                if sim in SIMS_SAMPLES:
+                    clean_forecast_df = forecast_df.drop(columns=["NetWorth", "Year"])
+                    plot_sample_flow(
+                        sim=sim,
+                        forecast_df=clean_forecast_df,
+                        flow_df=flow_df,
+                        ts=ts,
+                        show=SHOW_SAMPLES_FLOW_CHART,
+                        save=SAVE_SAMPLES_FLOW_CHART,
+                    )
+                    plot_sample_forecast(
+                        sim_index=sim,
+                        hist_df=hist_df,
+                        forecast_df=clean_forecast_df,
+                        taxes_df=taxes_df,
+                        dob_year=dob_year,
+                        ts=ts,
+                        show=SHOW_SAMPLES_FORECAST_CHART,
+                        save=SAVE_SAMPLES_FORECAST_CHART,
+                    )
+
+                update_property_liquidation_summary(summary, forecast_df)
+
+                for year, nw in ye_nw.items():
+                    mc_dict[year].append(nw)
+                    if sim in SIMS_SAMPLES:
+                        mc_samples_dict[sim][year] = nw
+
+        mc_df = pd.DataFrame(mc_dict).T
+        mc_samples_df = pd.DataFrame(mc_samples_dict)
+
+        plot_mc_networth(
+            mc_df=mc_df,
+            mc_samples_df=mc_samples_df,
+            dob_year=dob_year,
+            eol_year=eol_year,
+            summary=summary,
+            ts=ts,
+            show=SHOW_NETWORTH_CHART,
+            save=SAVE_NETWORTH_CHART,
+        )
 
 
 if __name__ == "__main__":
