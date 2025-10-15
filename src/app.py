@@ -31,9 +31,10 @@ from rules_transactions import (
 )
 from taxes import TaxCalculator
 from visualization import (
+    plot_example_transactions_in_context,
+    plot_example_forecast,
+    plot_example_transactions,
     plot_historical_balance,
-    plot_sample_forecast,
-    plot_sample_flow,
     plot_mc_networth,
 )
 
@@ -41,19 +42,22 @@ logging.basicConfig(
     level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
 )
 
-rng = np.random.default_rng()
-
 # Simulation settings
-SIMS = 100
-SIMS_SAMPLES = np.sort(rng.choice(SIMS, size=3, replace=False))
+SIM_SIZE = 100
+SIM_EXAMPLE_SIZE = 1
 SHOW_HISTORICAL_BALANCE_CHART = True
 SAVE_HISTORICAL_BALANCE_CHART = False
-SHOW_SAMPLES_FORECAST_CHART = True
-SAVE_SAMPLES_FORECAST_CHART = False
-SHOW_SAMPLES_FLOW_CHART = True
-SAVE_SAMPLES_FLOW_CHART = False
+SHOW_EXAMPLE_FORECAST_CHART = True
+SAVE_EXAMPLE_FORECAST_CHART = False
+SHOW_EXAMPLE_TRANSACTIONS_CHART = True
+SAVE_EXAMPLE_TRANSACTIONS_CHART = False
+SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = True
+SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
+
+rng = np.random.default_rng()
+sim_examples = np.sort(rng.choice(SIM_SIZE, size=SIM_EXAMPLE_SIZE, replace=False))
 
 
 @contextmanager
@@ -352,7 +356,7 @@ def main():
 
         years = sorted(future_df["Date"].dt.year.unique())
         mc_dict = {year: [] for year in years}
-        mc_samples_dict = {sim: {} for sim in SIMS_SAMPLES}
+        mc_samples_dict = {sim: {} for sim in sim_examples}
         summary = {
             "Property Liquidations": 0,
             "Property Liquidation Dates": [],
@@ -363,40 +367,46 @@ def main():
         with ProcessPoolExecutor() as executor:
             futures = [
                 executor.submit(run_simulation, sim, future_df, json_data, dfs, hist_df)
-                for sim in range(SIMS)
+                for sim in range(SIM_SIZE)
             ]
 
             for future in tqdm(
-                as_completed(futures), total=SIMS, desc="Running Monte Carlo sims…"
+                as_completed(futures), total=SIM_SIZE, desc="Running Monte Carlo sims…"
             ):
                 sim, forecast_df, taxes_df, flow_df, ye_nw = future.result()
-
-                if sim in SIMS_SAMPLES:
+                if sim in sim_examples:
                     clean_forecast_df = forecast_df.drop(columns=["NetWorth", "Year"])
-                    plot_sample_flow(
+                    plot_example_transactions(
+                        flow_df=flow_df,
+                        sim=sim,
+                        ts=ts,
+                        show=SHOW_EXAMPLE_TRANSACTIONS_CHART,
+                        save=SAVE_EXAMPLE_TRANSACTIONS_CHART,
+                    )
+                    plot_example_transactions_in_context(
                         sim=sim,
                         forecast_df=clean_forecast_df,
                         flow_df=flow_df,
                         ts=ts,
-                        show=SHOW_SAMPLES_FLOW_CHART,
-                        save=SAVE_SAMPLES_FLOW_CHART,
+                        show=SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
+                        save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                     )
-                    plot_sample_forecast(
+                    plot_example_forecast(
                         sim_index=sim,
                         hist_df=hist_df,
                         forecast_df=clean_forecast_df,
                         taxes_df=taxes_df,
                         dob_year=dob_year,
                         ts=ts,
-                        show=SHOW_SAMPLES_FORECAST_CHART,
-                        save=SAVE_SAMPLES_FORECAST_CHART,
+                        show=SHOW_EXAMPLE_FORECAST_CHART,
+                        save=SAVE_EXAMPLE_FORECAST_CHART,
                     )
 
                 update_property_liquidation_summary(summary, forecast_df)
 
                 for year, nw in ye_nw.items():
                     mc_dict[year].append(nw)
-                    if sim in SIMS_SAMPLES:
+                    if sim in sim_examples:
                         mc_samples_dict[sim][year] = nw
 
         mc_df = pd.DataFrame(mc_dict).T

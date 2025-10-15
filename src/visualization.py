@@ -2,6 +2,429 @@ import logging
 import pandas as pd
 import plotly.graph_objects as go
 
+COLOR_PALETTE = [
+    "#1f77b4",
+    "#ff7f0e",
+    "#2ca02c",
+    "#d62728",
+    "#9467bd",
+    "#8c564b",
+    "#e377c2",
+    "#7f7f7f",
+    "#bcbd22",
+    "#17becf",
+    "#000000",
+    "#f7b6d2",
+    "#c5b0d5",
+    "#c49c94",
+    "#dbdb8d",
+    "#9edae5",
+]
+
+label_color_map = {}
+
+
+def base_label(label):
+    base = label.split("(")[0]
+    if "Gains" in base:
+        return base.replace(" Gains", "")
+    if "Losses" in base:
+        return base.replace(" Losses", "")
+    base = base.strip()
+    return base
+
+
+def normalize_source(label):
+    return label.replace(" Gains", "").replace(" Losses", "")
+
+
+def assign_node_colors_by_base_label(labels, color_palette):
+    for lbl in labels:
+        base = base_label(lbl)
+        if base not in label_color_map:
+            label_color_map[base] = color_palette[
+                len(label_color_map) % len(color_palette)
+            ]
+    return [label_color_map[base_label(lbl)] for lbl in labels]
+
+
+def plot_example_transactions(
+    flow_df: pd.DataFrame,
+    sim: int,
+    show: bool = True,
+    save: bool = False,
+    export_path: str = "export/",
+    ts: str = "",
+):
+    df = flow_df.copy()
+    df["date"] = df["date"].dt.to_timestamp()
+    df["year"] = df["date"].dt.year
+    df = df[df["sim"] == sim]
+
+    years = sorted(df["year"].unique())
+
+    sankey_traces = []
+
+    for i, year in enumerate(years):
+        df_year = df[df["year"] == year]
+        agg = (
+            df_year.groupby(["source", "target", "type"])["amount"].sum().reset_index()
+        )
+        agg = agg[agg["amount"] != 0]
+
+        gain_loss_rows = agg[agg["type"].isin(["gain", "loss"])].copy()
+        if not gain_loss_rows.empty:
+            gain_loss_rows["source"] = gain_loss_rows["source"].apply(normalize_source)
+            gain_loss_rows["signed_amount"] = gain_loss_rows.apply(
+                lambda row: row["amount"] if row["type"] == "gain" else row["amount"],
+                axis=1,
+            )
+            agg_gain_loss = (
+                gain_loss_rows.groupby(["source", "target"])["signed_amount"]
+                .sum()
+                .reset_index()
+            )
+            agg_gain_loss = agg_gain_loss[agg_gain_loss["signed_amount"] != 0]
+
+            # Replace original gain/loss rows with net flows
+            agg = agg[~agg["type"].isin(["gain", "loss"])]
+            net_flows = agg_gain_loss.copy()
+            net_flows["type"] = net_flows["signed_amount"].apply(
+                lambda x: "gain" if x > 0 else "loss"
+            )
+            net_flows["amount"] = net_flows["signed_amount"].abs()
+            agg = pd.concat(
+                [agg, net_flows[["source", "target", "type", "amount"]]],
+                ignore_index=True,
+            )
+
+        # Compute total volume per node
+        volume_counter = {}
+        for _, row in agg.iterrows():
+            volume_counter[row["source"]] = volume_counter.get(row["source"], 0) + abs(
+                row["amount"]
+            )
+            volume_counter[row["target"]] = volume_counter.get(row["target"], 0) + abs(
+                row["amount"]
+            )
+        sorted_keys = sorted(volume_counter, key=lambda k: -volume_counter[k])
+        labels = [f" {k} " for k in sorted_keys]
+        label_idx = {k: i for i, k in enumerate(sorted_keys)}
+        sources = [label_idx[row["source"]] for _, row in agg.iterrows()]
+        targets = [label_idx[row["target"]] for _, row in agg.iterrows()]
+        values = [abs(row["amount"]) for _, row in agg.iterrows()]
+
+        color_map = {
+            "deposit": "rgba(0,128,0,0.4)",
+            "withdraw": "rgba(255,0,0,0.4)",
+            "transfer": "rgba(135,206,235,0.4)",
+            "gain": "rgba(0,128,0,0.4)",
+            "loss": "rgba(255,0,0,0.4)",
+        }
+        colors = [
+            color_map.get(row["type"], "rgba(128,128,128,0.3)")
+            for _, row in agg.iterrows()
+        ]
+        node_colors = assign_node_colors_by_base_label(labels, COLOR_PALETTE)
+
+        sankey = go.Sankey(
+            node=dict(
+                label=labels,
+                pad=15,
+                thickness=20,
+                line=dict(color="black", width=0.5),
+                hoverinfo="none",
+                color=node_colors,
+            ),
+            link=dict(
+                source=sources,
+                target=targets,
+                value=values,
+                color=colors,
+                hovertemplate=" %{value:$,.0f}%{source.label}→%{target.label}<extra></extra>",
+            ),
+            visible=(i == 0),
+            name=f"{year}",
+        )
+        sankey_traces.append(sankey)
+
+    fig = go.Figure(data=sankey_traces)
+
+    # Slider steps
+    steps = []
+    for i, year in enumerate(years):
+        visibility = [j == i for j in range(len(sankey_traces))]
+        steps.append(
+            dict(
+                method="update",
+                args=[
+                    {"visible": visibility},
+                    {"title": {"text": f"Sim {sim+1:04d} | {year} Transactions"}},
+                ],
+                label=str(year),
+            )
+        )
+
+    fig.update_layout(
+        title={"text": f"Sim {sim+1:04d} | {years[0]} Transactions"},
+        sliders=[
+            {
+                "active": 0,
+                "currentvalue": {"visible": False},
+                "pad": {"t": 50},
+                "steps": steps,
+            }
+        ],
+        margin=dict(l=50, r=50, t=80, b=50),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(f"{export_path}{sim+1:04d}_flow_transitions_{ts}.html")
+
+
+def plot_example_transactions_in_context(
+    sim: int,
+    forecast_df: pd.DataFrame,
+    flow_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+
+    forecast_df = forecast_df.copy()
+    forecast_df["Date"] = pd.to_datetime(forecast_df["Date"])
+    forecast_df = forecast_df[forecast_df["Date"].dt.month == 1].sort_values("Date")
+    bucket_names = [col for col in forecast_df.columns if col != "Date"]
+    years = forecast_df["Date"].dt.year.tolist()
+    transitions = [(years[i], years[i + 1]) for i in range(len(years) - 1)]
+
+    flow_df = flow_df.copy()
+    flow_df["date"] = flow_df["date"].dt.to_timestamp()
+    flow_df = flow_df[flow_df["sim"] == sim]
+    flow_df["year"] = flow_df["date"].dt.year
+
+    sankey_traces = []
+    for y0, y1 in transitions:
+        bal_end = forecast_df[forecast_df["Date"] == pd.Timestamp(f"{y1}-01-01")].iloc[
+            0
+        ]
+        flows_y0 = flow_df[flow_df["year"] == y0].copy()
+        agg = (
+            flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
+        )
+
+        sources_raw, targets_raw, values, colors = [], [], [], []
+        used_keys = set()
+
+        # Balances
+        for b in bucket_names:
+            s_key = f"{b}@{y0}"
+            t_key = f"{b}@{y1}"
+            v = bal_end[b]
+            if v != 0:
+                sources_raw.append(s_key)
+                targets_raw.append(t_key)
+                values.append(v)
+                colors.append("rgba(0,0,0,0.1)")
+                used_keys.update([s_key, t_key])
+        # Routed flows (excluding gain/loss)
+        for _, row in agg.iterrows():
+            if row["type"] not in ["gain", "loss"]:
+                v = row["amount"]
+                if v != 0:
+                    s_key = f"{row['source']}@{y0}"
+                    t_key = f"{row['target']}@{y1}"
+                    used_keys.update([s_key, t_key])
+                    sources_raw.append(s_key)
+                    targets_raw.append(t_key)
+                    values.append(abs(v))
+                    if row["type"] == "deposit":
+                        colors.append("rgba(0,128,0,0.4)")
+                    elif row["type"] == "withdraw":
+                        colors.append("rgba(255,0,0,0.4)")
+                    elif row["type"] == "transfer":
+                        colors.append("rgba(135,206,235,0.4)")
+                    else:
+                        colors.append("rgba(128,128,128,0.3)")
+
+        # Net gain/loss routing with normalized source
+        gain_loss_rows = agg[agg["type"].isin(["gain", "loss"])].copy()
+        gain_loss_rows["source"] = gain_loss_rows["source"].apply(normalize_source)
+        gain_loss_rows["signed_amount"] = gain_loss_rows.apply(
+            lambda row: row["amount"] if row["type"] == "gain" else row["amount"],
+            axis=1,
+        )
+        agg_gain_loss = (
+            gain_loss_rows.groupby(["source", "target"])["signed_amount"]
+            .sum()
+            .reset_index()
+        )
+        for _, row in agg_gain_loss.iterrows():
+            v = row["signed_amount"]
+            if v != 0:
+                s_key = f"{row['source']}@{y0}"
+                t_key = f"{row['target']}@{y1}"
+                used_keys.update([s_key, t_key])
+                sources_raw.append(s_key)
+                targets_raw.append(t_key)
+                values.append(abs(v))
+                colors.append("rgba(0,128,0,0.4)" if v > 0 else "rgba(255,0,0,0.4)")
+
+        # Aggregate volume
+        volume_counter = {}
+        for s, v in zip(sources_raw, values):
+            volume_counter[s] = volume_counter.get(s, 0) + v
+        for t, v in zip(targets_raw, values):
+            volume_counter[t] = volume_counter.get(t, 0) + v
+
+        # Sort keys by volume
+        left_keys = sorted(
+            {k for k in volume_counter if k.endswith(f"@{y0}")},
+            key=lambda k: -volume_counter[k],
+        )
+        right_keys = sorted(
+            {k for k in volume_counter if k.endswith(f"@{y1}")},
+            key=lambda k: -volume_counter[k],
+        )
+        sorted_keys = left_keys + right_keys
+
+        # Build label list and index
+        key_to_label = {
+            k: f" {k.split('@')[0]} (Jan {k.split('@')[1]}) " for k in sorted_keys
+        }
+        labels = [key_to_label[k] for k in sorted_keys]
+        label_idx = {k: i for i, k in enumerate(sorted_keys)}
+
+        # Reindex sources and targets
+        sources = [label_idx[k] for k in sources_raw]
+        targets = [label_idx[k] for k in targets_raw]
+
+        # Assign node colors consistently by base label
+        node_colors = assign_node_colors_by_base_label(labels, COLOR_PALETTE)
+        sankey = go.Sankey(
+            node=dict(
+                label=labels,
+                pad=15,
+                thickness=150,
+                line=dict(color="black", width=0.5),
+                color=node_colors,
+                hovertemplate=["%{label}<extra></extra>"],
+            ),
+            link=dict(
+                source=sources,
+                target=targets,
+                value=values,
+                color=colors,
+                hovertemplate="%{source.label} → %{target.label}<br>  %{value:$,.0f}<extra></extra>",
+            ),
+            visible=(len(sankey_traces) == 0),
+        )
+        sankey_traces.append(sankey)
+
+    fig = go.Figure(data=sankey_traces)
+    steps = []
+    for i, (y0, y1) in enumerate(transitions):
+        vis = [False] * len(transitions)
+        vis[i] = True
+        steps.append(
+            dict(
+                method="update",
+                args=[
+                    {"visible": vis},
+                    {
+                        "title": {
+                            "text": f"Sim {sim+1:04d} | Jan {y0} → Jan {y1} Transactions In-Context"
+                        }
+                    },
+                ],
+                label=f"{y0}→{y1}",
+            )
+        )
+    sliders = [
+        dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
+    ]
+    fig.update_layout(
+        title={
+            "text": f"Sim {sim+1:04d} | Jan {transitions[0][0]} → Jan {transitions[0][1]} Transactions In-Context",
+        },
+        sliders=sliders,
+        margin=dict(l=50, r=50, t=80, b=50),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(f"{export_path}{sim+1:04d}_sankey_{ts}.html")
+
+
+def plot_example_forecast(
+    sim_index: int,
+    hist_df: pd.DataFrame,
+    forecast_df: pd.DataFrame,
+    taxes_df: pd.DataFrame,
+    dob_year: int,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves the bucket‐by‐bucket forecast for one simulation.
+    """
+    full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
+    title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
+
+    traces = [
+        go.Scatter(
+            x=full_df["Date"],
+            y=[
+                (date.year - dob_year) + (date.month - x.month) / 12
+                for x, date in zip(full_df["Date"], full_df["Date"])
+            ],
+            mode="lines",
+            name="Age",
+            line=dict(width=0, color="white"),
+            showlegend=False,
+            hovertemplate=("Age %{y:.0f}<extra></extra>"),
+        )
+    ]
+    traces.extend(
+        go.Scatter(
+            x=full_df["Date"],
+            y=full_df[col],
+            mode="lines",
+            name=col,
+        )
+        for col in full_df.columns
+        if col != "Date"
+    )
+
+    fig = go.Figure(data=traces)
+
+    fig.update_layout(
+        title=title,
+        yaxis_tickformat="$,.0f",
+        template="plotly_white",
+        hovermode="x unified",
+        legend=dict(orientation="h", x=0.5, y=1.1),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        prefix = f"{export_path}{sim_index+1:04d}_"
+        bucket_csv = f"{prefix}buckets_{ts}.csv"
+        taxes_csv = f"{prefix}taxes_{ts}.csv"
+        html = f"{prefix}buckets_{ts}.html"
+
+        full_df.to_csv(bucket_csv, index=False)
+        taxes_df.to_csv(taxes_csv, index=False)
+        fig.write_html(html)
+        logging.debug(f"Sim {sim_index+1:04d} | Saved sample forecast to {html}")
+
 
 def plot_historical_balance(
     hist_df: pd.DataFrame,
@@ -97,280 +520,6 @@ def plot_historical_balance(
         fig.show()
     if save:
         fig.write_html(export_path + f"historical_nw_{ts}.html")
-
-
-def plot_sample_flow(
-    sim: int,
-    forecast_df: pd.DataFrame,
-    flow_df: pd.DataFrame,
-    ts: str,
-    show: bool,
-    save: bool,
-    export_path: str = "export/",
-):
-    def base_label(label):
-        return label.split(" (")[0]
-
-    def normalize_source(label):
-        return label.replace(" Gains", "").replace(" Losses", "")
-
-    color_palette = [
-        "#1f77b4",
-        "#ff7f0e",
-        "#2ca02c",
-        "#d62728",
-        "#9467bd",
-        "#8c564b",
-        "#e377c2",
-        "#7f7f7f",
-        "#bcbd22",
-        "#17becf",
-        "#000000",
-        "#f7b6d2",
-        "#c5b0d5",
-        "#c49c94",
-        "#dbdb8d",
-        "#9edae5",
-    ]
-
-    forecast_df = forecast_df.copy()
-    forecast_df["Date"] = pd.to_datetime(forecast_df["Date"])
-    forecast_df = forecast_df[forecast_df["Date"].dt.month == 1].sort_values("Date")
-    bucket_names = [col for col in forecast_df.columns if col != "Date"]
-    years = forecast_df["Date"].dt.year.tolist()
-    transitions = [(years[i], years[i + 1]) for i in range(len(years) - 1)]
-
-    flow_df = flow_df.copy()
-    flow_df["date"] = flow_df["date"].dt.to_timestamp()
-    flow_df = flow_df[flow_df["sim"] == sim]
-    flow_df["year"] = flow_df["date"].dt.year
-
-    label_color_map = {}
-
-    sankey_traces = []
-    for y0, y1 in transitions:
-        bal_end = forecast_df[forecast_df["Date"] == pd.Timestamp(f"{y1}-01-01")].iloc[
-            0
-        ]
-        flows_y0 = flow_df[flow_df["year"] == y0].copy()
-        agg = (
-            flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
-        )
-
-        sources_raw, targets_raw, values, colors = [], [], [], []
-        used_keys = set()
-
-        # Balances
-        for b in bucket_names:
-            s_key = f"{b}@{y0}"
-            t_key = f"{b}@{y1}"
-            v = bal_end[b]
-            if v != 0:
-                sources_raw.append(s_key)
-                targets_raw.append(t_key)
-                values.append(v)
-                colors.append("rgba(0,0,0,0.1)")
-                used_keys.update([s_key, t_key])
-        # Routed flows (excluding gain/loss)
-        for _, row in agg.iterrows():
-            if row["type"] not in ["gain", "loss"]:
-                v = row["amount"]
-                if v != 0:
-                    s_key = f"{row['source']}@{y0}"
-                    t_key = f"{row['target']}@{y1}"
-                    used_keys.update([s_key, t_key])
-                    sources_raw.append(s_key)
-                    targets_raw.append(t_key)
-                    values.append(abs(v))
-                    if row["type"] == "deposit":
-                        colors.append("rgba(0,128,0,0.4)")
-                    elif row["type"] == "withdraw":
-                        colors.append("rgba(255,0,0,0.4)")
-                    elif row["type"] == "transfer":
-                        colors.append("rgba(135,206,235,0.4)")
-                    else:
-                        colors.append("rgba(128,128,128,0.3)")
-
-        # Net gain/loss routing with normalized source
-        gain_loss_rows = agg[agg["type"].isin(["gain", "loss"])].copy()
-        gain_loss_rows["source"] = gain_loss_rows["source"].apply(normalize_source)
-        gain_loss_rows["signed_amount"] = gain_loss_rows.apply(
-            lambda row: row["amount"] if row["type"] == "gain" else row["amount"],
-            axis=1,
-        )
-        agg_gain_loss = (
-            gain_loss_rows.groupby(["source", "target"])["signed_amount"]
-            .sum()
-            .reset_index()
-        )
-        for _, row in agg_gain_loss.iterrows():
-            v = row["signed_amount"]
-            if v != 0:
-                s_key = f"{row['source']}@{y0}"
-                t_key = f"{row['target']}@{y1}"
-                used_keys.update([s_key, t_key])
-                sources_raw.append(s_key)
-                targets_raw.append(t_key)
-                values.append(abs(v))
-                colors.append("rgba(0,128,0,0.4)" if v > 0 else "rgba(255,0,0,0.4)")
-
-        # Aggregate volume
-        volume_counter = {}
-        for s, v in zip(sources_raw, values):
-            volume_counter[s] = volume_counter.get(s, 0) + v
-        for t, v in zip(targets_raw, values):
-            volume_counter[t] = volume_counter.get(t, 0) + v
-
-        # Sort keys by volume
-        left_keys = sorted(
-            {k for k in volume_counter if k.endswith(f"@{y0}")},
-            key=lambda k: -volume_counter[k],
-        )
-        right_keys = sorted(
-            {k for k in volume_counter if k.endswith(f"@{y1}")},
-            key=lambda k: -volume_counter[k],
-        )
-        sorted_keys = left_keys + right_keys
-
-        # Build label list and index
-        key_to_label = {
-            k: f"  {k.split('@')[0]} (Jan {k.split('@')[1]})  " for k in sorted_keys
-        }
-        labels = [key_to_label[k] for k in sorted_keys]
-        label_idx = {k: i for i, k in enumerate(sorted_keys)}
-
-        # Reindex sources and targets
-        sources = [label_idx[k] for k in sources_raw]
-        targets = [label_idx[k] for k in targets_raw]
-
-        # Assign node colors consistently by base label
-        for lbl in labels:
-            base = base_label(lbl)
-            if base not in label_color_map:
-                label_color_map[base] = color_palette[
-                    len(label_color_map) % len(color_palette)
-                ]
-        node_colors = [label_color_map[base_label(lbl)] for lbl in labels]
-        sankey = go.Sankey(
-            node=dict(
-                label=labels,
-                pad=15,
-                thickness=150,
-                line=dict(color="black", width=0.5),
-                color=node_colors,
-                hovertemplate=["%{label}<extra></extra>"],
-            ),
-            link=dict(
-                source=sources,
-                target=targets,
-                value=values,
-                color=colors,
-                hovertemplate="%{source.label} → %{target.label}<br>Amount: %{value:$,.0f}<extra></extra>",
-            ),
-            visible=(len(sankey_traces) == 0),
-        )
-        sankey_traces.append(sankey)
-
-    fig = go.Figure(data=sankey_traces)
-    steps = []
-    for i, (y0, y1) in enumerate(transitions):
-        vis = [False] * len(transitions)
-        vis[i] = True
-        steps.append(
-            dict(
-                method="update",
-                args=[
-                    {"visible": vis},
-                    {
-                        "title": {
-                            "text": f"Sim {sim+1:04d} | Flows: Jan {y0} → Jan {y1}"
-                        }
-                    },
-                ],
-                label=f"{y0}→{y1}",
-            )
-        )
-    sliders = [
-        dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
-    ]
-    fig.update_layout(
-        title={
-            "text": f"Sim {sim+1:04d} | Flows: Jan {transitions[0][0]} → Jan {transitions[0][1]}"
-        },
-        sliders=sliders,
-        margin=dict(l=50, r=50, t=80, b=50),
-    )
-
-    if show:
-        fig.show()
-    if save:
-        fig.write_html(f"{export_path}{sim+1:04d}_sankey_{ts}.html")
-
-
-def plot_sample_forecast(
-    sim_index: int,
-    hist_df: pd.DataFrame,
-    forecast_df: pd.DataFrame,
-    taxes_df: pd.DataFrame,
-    dob_year: int,
-    ts: str,
-    show: bool,
-    save: bool,
-    export_path: str = "export/",
-):
-    """
-    Renders and optionally saves the bucket‐by‐bucket forecast for one simulation.
-    """
-    full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
-    title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
-
-    traces = [
-        go.Scatter(
-            x=full_df["Date"],
-            y=[
-                (date.year - dob_year) + (date.month - x.month) / 12
-                for x, date in zip(full_df["Date"], full_df["Date"])
-            ],
-            mode="lines",
-            name="Age",
-            line=dict(width=0, color="white"),
-            showlegend=False,
-            hovertemplate=("Age %{y:.0f}<extra></extra>"),
-        )
-    ]
-    traces.extend(
-        go.Scatter(
-            x=full_df["Date"],
-            y=full_df[col],
-            mode="lines",
-            name=col,
-        )
-        for col in full_df.columns
-        if col != "Date"
-    )
-
-    fig = go.Figure(data=traces)
-
-    fig.update_layout(
-        title=title,
-        yaxis_tickformat="$,.0f",
-        template="plotly_white",
-        hovermode="x unified",
-        legend=dict(orientation="h", x=0.5, y=1.1),
-    )
-
-    if show:
-        fig.show()
-    if save:
-        prefix = f"{export_path}{sim_index+1:04d}_"
-        bucket_csv = f"{prefix}buckets_{ts}.csv"
-        taxes_csv = f"{prefix}taxes_{ts}.csv"
-        html = f"{prefix}buckets_{ts}.html"
-
-        full_df.to_csv(bucket_csv, index=False)
-        taxes_df.to_csv(taxes_csv, index=False)
-        fig.write_html(html)
-        logging.debug(f"Sim {sim_index+1:04d} | Saved sample forecast to {html}")
 
 
 def plot_mc_networth(
