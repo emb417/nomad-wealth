@@ -234,7 +234,7 @@ def plot_sample_flow(
 
         # Build label list and index
         key_to_label = {
-            k: f"  {k.split('@')[0]} ({k.split('@')[1]})  " for k in sorted_keys
+            k: f"  {k.split('@')[0]} (Jan {k.split('@')[1]})  " for k in sorted_keys
         }
         labels = [key_to_label[k] for k in sorted_keys]
         label_idx = {k: i for i, k in enumerate(sorted_keys)}
@@ -281,7 +281,11 @@ def plot_sample_flow(
                 method="update",
                 args=[
                     {"visible": vis},
-                    {"title": {"text": f"Sim {sim+1:04d} | Flows: {y0} → {y1}"}},
+                    {
+                        "title": {
+                            "text": f"Sim {sim+1:04d} | Flows: Jan {y0} → Jan {y1}"
+                        }
+                    },
                 ],
                 label=f"{y0}→{y1}",
             )
@@ -291,7 +295,7 @@ def plot_sample_flow(
     ]
     fig.update_layout(
         title={
-            "text": f"Sim {sim+1:04d} | Flows: {transitions[0][0]} → {transitions[0][1]}"
+            "text": f"Sim {sim+1:04d} | Flows: Jan {transitions[0][0]} → Jan {transitions[0][1]}"
         },
         sliders=sliders,
         margin=dict(l=50, r=50, t=80, b=50),
