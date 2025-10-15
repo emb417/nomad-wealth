@@ -234,7 +234,7 @@ def plot_sample_flow(
 
         # Build label list and index
         key_to_label = {
-            k: f"{k.split('@')[0]} ({k.split('@')[1]})" for k in sorted_keys
+            k: f"  {k.split('@')[0]} ({k.split('@')[1]})  " for k in sorted_keys
         }
         labels = [key_to_label[k] for k in sorted_keys]
         label_idx = {k: i for i, k in enumerate(sorted_keys)}
