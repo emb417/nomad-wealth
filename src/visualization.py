@@ -149,9 +149,9 @@ def plot_sample_flow(
 
     sankey_traces = []
     for y0, y1 in transitions:
-        bal_start = forecast_df[
-            forecast_df["Date"] == pd.Timestamp(f"{y0}-01-01")
-        ].iloc[0]
+        bal_end = forecast_df[forecast_df["Date"] == pd.Timestamp(f"{y1}-01-01")].iloc[
+            0
+        ]
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
         agg = (
             flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
@@ -160,18 +160,17 @@ def plot_sample_flow(
         sources_raw, targets_raw, values, colors = [], [], [], []
         used_keys = set()
 
-        # Rebuild left side from forecast balances
+        # Balances
         for b in bucket_names:
             s_key = f"{b}@{y0}"
             t_key = f"{b}@{y1}"
-            v = bal_start[b]
+            v = bal_end[b]
             if v != 0:
                 sources_raw.append(s_key)
                 targets_raw.append(t_key)
                 values.append(v)
-                colors.append("rgba(0,0,0,0.1)")  # neutral base balance
+                colors.append("rgba(0,0,0,0.1)")
                 used_keys.update([s_key, t_key])
-
         # Routed flows (excluding gain/loss)
         for _, row in agg.iterrows():
             if row["type"] not in ["gain", "loss"]:
@@ -250,7 +249,6 @@ def plot_sample_flow(
                     len(label_color_map) % len(color_palette)
                 ]
         node_colors = [label_color_map[base_label(lbl)] for lbl in labels]
-
         sankey = go.Sankey(
             node=dict(
                 label=labels,
@@ -258,8 +256,15 @@ def plot_sample_flow(
                 thickness=40,
                 line=dict(color="black", width=0.5),
                 color=node_colors,
+                hovertemplate=["%{label}<extra></extra>"],
             ),
-            link=dict(source=sources, target=targets, value=values, color=colors),
+            link=dict(
+                source=sources,
+                target=targets,
+                value=values,
+                color=colors,
+                hovertemplate="%{source.label} → %{target.label}<br>Amount: %{value:$,.0f}<extra></extra>",
+            ),
             visible=(len(sankey_traces) == 0),
         )
         sankey_traces.append(sankey)
