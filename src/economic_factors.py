@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Dict, List
 
 # Internal Imports
-from domain import Bucket
+from buckets import Bucket
 
 
 class InflationGenerator:

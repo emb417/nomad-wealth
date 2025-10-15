@@ -1,7 +1,7 @@
 from typing import List, Dict
 
 # Internal Imports
-from policies import ThresholdRefillPolicy
+from policies_engine import ThresholdRefillPolicy
 
 
 class TaxCalculator:

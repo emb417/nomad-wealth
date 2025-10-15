@@ -4,7 +4,7 @@ import pandas as pd
 from typing import Dict, List, Optional
 
 # Internal Imports
-from domain import Bucket
+from buckets import Bucket
 from policies_transactions import RefillTransaction
 
 

@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Dict
 
 # Internal Imports
-from domain import Bucket
+from buckets import Bucket
 
 
 class PolicyTransaction(ABC):

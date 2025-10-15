@@ -5,7 +5,7 @@ import pandas as pd
 from abc import ABC, abstractmethod
 from typing import Dict, Optional
 
-from domain import Bucket
+from buckets import Bucket
 
 
 class RuleTransaction(ABC):
