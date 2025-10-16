@@ -380,7 +380,9 @@ def main():
             ]
 
             for future in tqdm(
-                as_completed(futures), total=SIM_SIZE, desc="Running Monte Carlo sims…"
+                as_completed(futures),
+                total=SIM_SIZE,
+                desc="Running Monte Carlo Simulation",
             ):
                 sim, forecast_df, taxes_df, flow_df, ye_nw = future.result()
                 if sim in sim_examples:
