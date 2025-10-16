@@ -614,6 +614,28 @@ def plot_mc_networth(
 
     fig = go.Figure()
 
+    # Monte-Carlo samples < p85, examples in purple
+    samples = set(mc_samples_df.columns)
+    for col in mc_p85.columns:
+        is_sample = col in samples
+        color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
+        hover_kwargs = (
+            {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
+            if is_sample
+            else {"hoverinfo": "skip"}
+        )
+
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=mc_p85[col],
+                showlegend=False,
+                line=dict(color=color, width=2),
+                opacity=opacity,
+                **hover_kwargs,
+            )
+        )
+
     fig.add_trace(
         go.Scatter(
             x=years,
@@ -648,28 +670,6 @@ def plot_mc_networth(
             "Lower Bounds", years, pct_df["p15"], color="blue", dash="dash", width=2
         )
     )
-
-    # Monte-Carlo sample lines (purple only)
-    samples = set(mc_samples_df.columns)
-    for col in mc_p85.columns:
-        is_sample = col in samples
-        color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
-        hover_kwargs = (
-            {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
-            if is_sample
-            else {"hoverinfo": "skip"}
-        )
-
-        fig.add_trace(
-            go.Scatter(
-                x=years,
-                y=mc_p85[col],
-                showlegend=False,
-                line=dict(color=color, width=1),
-                opacity=opacity,
-                **hover_kwargs,
-            )
-        )
 
     confidence_color = "green" if SIMS >= 1000 else "blue" if SIMS >= 100 else "red"
 
