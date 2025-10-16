@@ -205,7 +205,7 @@ def stage_init_components(
         liquidation_threshold=policies_config["liquidation"]["threshold"],
         liquidation_buckets=policies_config["liquidation"]["buckets"],
     )
-    tax_calc = TaxCalculator(refill_policy, tax_brackets)
+    tax_calc = TaxCalculator(tax_brackets)
 
     # apply gains
     years = sorted(future_df["Date"].dt.year.unique())

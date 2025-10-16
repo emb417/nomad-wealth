@@ -33,31 +33,27 @@ class ForecastEngine:
         self.inflation = inflation
         self.tax_calc = tax_calc
         self.profile = profile
-        self.annual_tax_estimate = int(
-            self.tax_calc.calculate_tax(
-                salary=profile["Annual Gross Income"],
-                ss_benefits=0,
-                withdrawals=0,
-                gains=0,
-            )
-        )
-        self.monthly_tax_drip = int(self.annual_tax_estimate / 12)
+        self.annual_tax_estimate = 0
+        self.monthly_tax_drip = 0
 
     def run(self, ledger_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         records = []
         tax_records = []
         yearly_tax_log = {}
+        quarterly_tax_log = {}
 
         for _, row in ledger_df.iterrows():
             forecast_date = pd.to_datetime(row["Date"])
             tx_month = (forecast_date - MonthBegin(1)).to_period("M")
             year = forecast_date.year
+            quarter = (forecast_date.month - 1) // 3 + 1
+            qkey = (year, quarter)
 
             # Rule-driven transactions
             for tx in self.rule_transactions:
                 tx.apply(self.buckets, tx_month)
 
-            # Policy-driven transactions (e.g. salary, social security, Roth conversions)
+            # Policy-driven transactions
             for tx in self.policy_transactions:
                 tx.apply(self.buckets, tx_month)
 
@@ -69,17 +65,17 @@ class ForecastEngine:
             # Market returns
             self.market_gains.apply(self.buckets, forecast_date)
 
-            # Taxes: Monthly withdraw from Cash into Tax Collection
+            # Monthly tax withholding
             self.buckets["Cash"].transfer(
                 self.monthly_tax_drip, self.buckets["Tax Collection"], tx_month
             )
 
-            # Liqudiate based on policy
+            # Emergency liquidation
             liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
             for tx in liq_txns:
                 tx.apply(self.buckets, tx_month)
 
-            # Stats: Accumulate flows into yearly_tax_log
+            # Monthly income and tax-relevant flows
             monthly_salary = sum(
                 tx.get_salary(tx_month)
                 for tx in self.policy_transactions + refill_txns + liq_txns
@@ -97,10 +93,11 @@ class ForecastEngine:
                 for tx in self.policy_transactions + refill_txns + liq_txns
             )
             monthly_penalty = sum(
-                tx.get_penalty_tax(tx_month)
+                tx.get_penalty_eligible_withdrawal(tx_month)
                 for tx in self.policy_transactions + refill_txns + liq_txns
             )
 
+            # Accumulate yearly totals
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
                     "TaxDeferredWithdrawals": 0,
@@ -116,11 +113,57 @@ class ForecastEngine:
             ylog["TaxableGains"] += monthly_taxable
             ylog["PenaltyTax"] += monthly_penalty
 
+            # Accumulate quarterly totals
+            if qkey not in quarterly_tax_log:
+                quarterly_tax_log[qkey] = {
+                    "Salary": 0,
+                    "SocialSecurity": 0,
+                    "TaxDeferredWithdrawals": 0,
+                    "TaxableGains": 0,
+                }
+            qlog = quarterly_tax_log[qkey]
+            qlog["Salary"] += monthly_salary
+            qlog["SocialSecurity"] += monthly_ss
+            qlog["TaxDeferredWithdrawals"] += monthly_deferred
+            qlog["TaxableGains"] += monthly_taxable
+
             # Snapshot balances
             snapshot = {"Date": forecast_date}
             for name, bucket in self.buckets.items():
                 snapshot[name] = bucket.balance()
             records.append(snapshot)
+
+            # Quarterly tax estimation
+            if forecast_date.month in {3, 6, 9, 12}:
+                ytd_log = {
+                    "Salary": 0,
+                    "SocialSecurity": 0,
+                    "TaxDeferredWithdrawals": 0,
+                    "TaxableGains": 0,
+                }
+                for q in range(1, quarter + 1):
+                    qlog = quarterly_tax_log.get((year, q))
+                    if qlog:
+                        for k in ytd_log:
+                            ytd_log[k] += qlog[k]
+
+                dob = self.profile.get("Date of Birth")
+                age = year - pd.to_datetime(dob).year if dob else None
+
+                tax_estimate = self.tax_calc.calculate_tax(
+                    salary=ytd_log["Salary"],
+                    ss_benefits=ytd_log["SocialSecurity"],
+                    withdrawals=ytd_log["TaxDeferredWithdrawals"],
+                    gains=ytd_log["TaxableGains"],
+                    age=age,
+                    standard_deduction=27700,
+                )
+
+                estimated_total = tax_estimate["total_tax"]
+                paid_so_far = self.buckets["Tax Collection"].balance()
+                remaining = max(estimated_total - paid_so_far, 0)
+                months_remaining = 12 - forecast_date.month
+                self.monthly_tax_drip = int(remaining / max(months_remaining, 1))
 
             # January: finalize prior‐year taxes
             if forecast_date.month == 1:
@@ -131,25 +174,29 @@ class ForecastEngine:
                     ss = prev_log["SocialSecurity"]
                     wdraw = prev_log["TaxDeferredWithdrawals"]
                     gain = prev_log["TaxableGains"]
-                    pen = prev_log["PenaltyTax"]
 
-                    # total tax
-                    total_tax = self.tax_calc.calculate_tax(
-                        salary=sal, ss_benefits=ss, withdrawals=wdraw, gains=gain
-                    )
-                    # ordinary = salary+SS+withdrawals only
-                    ord_tax = self.tax_calc.calculate_tax(
-                        salary=sal, ss_benefits=ss, withdrawals=wdraw, gains=0
-                    )
-                    capg_tax = total_tax - ord_tax
+                    dob = self.profile.get("Date of Birth")
+                    age = prev_year - pd.to_datetime(dob).year if dob else None
 
-                    if pen:
+                    tax_breakdown = self.tax_calc.calculate_tax(
+                        salary=sal,
+                        ss_benefits=ss,
+                        withdrawals=wdraw,
+                        gains=gain,
+                        age=age,
+                        standard_deduction=27700,
+                    )
+
+                    ord_tax = tax_breakdown["ordinary_tax"]
+                    capg_tax = tax_breakdown["capital_gains_tax"]
+                    pen_tax = tax_breakdown["penalty_tax"]
+                    total_tax = tax_breakdown["total_tax"]
+
+                    if pen_tax:
                         logging.debug(
-                            f"[Penalty] Adding ${pen:,} early‐withdrawal penalty for {prev_year}"
+                            f"[Penalty] ${pen_tax:,} early‐withdrawal penalty applied for {prev_year}"
                         )
-                        total_tax += pen
 
-                    # pay full year’s bill
                     paid_from_tc = self.buckets["Tax Collection"].withdraw(
                         total_tax, "Taxes", tx_month
                     )
@@ -162,10 +209,9 @@ class ForecastEngine:
                         f"[Yearly Tax:{prev_year}] paid "
                         f"${paid_from_tc:,} from TaxCollection + "
                         f"${paid_from_cash:,} from Cash "
-                        f"(ordinary ${ord_tax:,} + gains ${capg_tax:,})"
+                        f"(ordinary ${ord_tax:,} + gains ${capg_tax:,} + penalty ${pen_tax:,})"
                     )
 
-                    # Capture leftover in TaxCollection
                     leftover = self.buckets["Tax Collection"].balance()
                     next_est = max(total_tax - leftover, 0)
                     self.annual_tax_estimate = next_est
@@ -178,6 +224,7 @@ class ForecastEngine:
                             f"[TaxCollection Cleanup] Moved ${leftover:,} "
                             "back to Cash (no tax due next year)"
                         )
+
                     tax_records.append(
                         {
                             "Year": prev_year,
@@ -187,7 +234,7 @@ class ForecastEngine:
                             "SocialSecurity": ss,
                             "OrdinaryTax": ord_tax,
                             "CapitalGainsTax": capg_tax,
-                            "PenaltyTax": pen,
+                            "PenaltyTax": pen_tax,
                             "TotalTax": total_tax,
                         }
                     )

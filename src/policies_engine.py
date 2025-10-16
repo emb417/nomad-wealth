@@ -171,16 +171,13 @@ class ThresholdRefillPolicy:
                 take = min(src.balance(), shortfall)
 
             bt = getattr(src, "bucket_type", None)
-            if (
-                bt == "tax_deferred"
-                and self.taxable_eligibility
-                and tx_month < self.taxable_eligibility
-            ):
-                penalty_rate = 0.10
-            else:
-                penalty_rate = 0.0
             is_def = bt == "tax_deferred"
             is_tax = bt == "taxable"
+            is_penalty_applicable = (
+                is_def
+                and self.taxable_eligibility
+                and tx_month < self.taxable_eligibility
+            )
             txns.append(
                 RefillTransaction(
                     source=bucket_name,
@@ -188,7 +185,7 @@ class ThresholdRefillPolicy:
                     amount=take,
                     is_tax_deferred=is_def,
                     is_taxable=is_tax,
-                    penalty_rate=penalty_rate,
+                    is_penalty_applicable=bool(is_penalty_applicable),
                 )
             )
             shortfall -= take

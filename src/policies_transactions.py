@@ -24,10 +24,10 @@ class PolicyTransaction(ABC):
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return 0
 
-    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+    def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
         return 0
 
-    def get_penalty_tax(self, tx_month: pd.Period) -> int:
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0
 
 
@@ -46,7 +46,7 @@ class RefillTransaction(PolicyTransaction):
         amount: int,
         is_tax_deferred: bool = False,
         is_taxable: bool = False,
-        penalty_rate: float = 0.0,
+        is_penalty_applicable: bool = False,
     ):
         super().__init__()
         self.source = source
@@ -54,19 +54,16 @@ class RefillTransaction(PolicyTransaction):
         self.amount = int(amount)
         self.is_tax_deferred = bool(is_tax_deferred)
         self.is_taxable = bool(is_taxable)
-        self.penalty_rate = penalty_rate
-
+        self.is_penalty_applicable = bool(is_penalty_applicable)
         # runtime-applied amounts and estimated gains (set by apply)
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
-        self._penalty_tax: int = 0
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         src = buckets.get(self.source)
         tgt = buckets.get(self.target)
         self._applied_amount = 0
         self._taxable_gain = 0
-        self._penalty_tax = 0
 
         if src is None or tgt is None or self.amount <= 0:
             return
@@ -83,17 +80,18 @@ class RefillTransaction(PolicyTransaction):
         ):
             self._taxable_gain = int(round(applied * 0.5))
 
-        if self.penalty_rate and applied > 0:
-            self._penalty_tax = int(round(applied * self.penalty_rate))
-
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self._applied_amount if self.is_tax_deferred else 0
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return self._taxable_gain
 
-    def get_penalty_tax(self, tx_month: pd.Period) -> int:
-        return self._penalty_tax
+    def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
+        return (
+            self._applied_amount
+            if self.is_tax_deferred and self.is_penalty_applicable
+            else 0
+        )
 
 
 class RentalTransaction(PolicyTransaction):
