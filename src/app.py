@@ -205,7 +205,16 @@ def stage_init_components(
         liquidation_threshold=policies_config["liquidation"]["threshold"],
         liquidation_buckets=policies_config["liquidation"]["buckets"],
     )
-    tax_calc = TaxCalculator(tax_brackets)
+
+    ordinary_brackets = tax_brackets["ordinary"]
+    capital_gains_brackets = tax_brackets["capital_gains"]
+    social_security_brackets = tax_brackets["social_security_taxability"]
+
+    tax_calc = TaxCalculator(
+        ordinary_brackets=ordinary_brackets,
+        capital_gains_brackets=capital_gains_brackets,
+        social_security_brackets=social_security_brackets,
+    )
 
     # apply gains
     years = sorted(future_df["Date"].dt.year.unique())

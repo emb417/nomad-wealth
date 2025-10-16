@@ -1,7 +1,6 @@
-from typing import List, Dict, Optional
+import logging
 
-# Internal Imports
-from policies_engine import ThresholdRefillPolicy
+from typing import List, Dict, Optional
 
 
 class TaxCalculator:
@@ -12,28 +11,32 @@ class TaxCalculator:
 
     def __init__(
         self,
-        tax_brackets: Dict[str, Dict[str, List[Dict[str, float]]]],
+        ordinary_brackets: Dict[str, List[Dict[str, float]]],
+        capital_gains_brackets: Dict[str, List[Dict[str, float]]],
+        social_security_brackets: List[Dict[str, float]],
     ):
-        self.ordinary_tax_brackets = tax_brackets["ordinary"]
-        self.capital_gains_tax_brackets = tax_brackets["capital_gains"]
+        self.ordinary_tax_brackets = ordinary_brackets
+        self.capital_gains_tax_brackets = capital_gains_brackets
+        self.social_security_brackets = social_security_brackets
 
-    def _taxable_social_security(self, ss_benefits: int, other_income: int) -> int:
+    def _taxable_social_security(self, ss_benefits: int, agi: int) -> int:
         if ss_benefits <= 0:
             return 0
 
-        brackets = self.ordinary_tax_brackets.get("social_security_taxability", [])
+        brackets = self.social_security_brackets
         if not brackets:
+            logging.warning("Social Security taxability brackets not found")
             return 0  # fallback if config is missing
 
-        base_rate = brackets[1]["rate"] if len(brackets) > 1 else 0.5
-        provisional = other_income + int(base_rate * ss_benefits)
+        # Step 1: Compute provisional income using AGI + ½ SS
+        provisional = agi + int(0.5 * ss_benefits)
 
+        # Step 2: Determine maximum taxable portion
         max_rate = max(bracket["rate"] for bracket in brackets)
         max_taxable = int(max_rate * ss_benefits)
 
+        # Step 3: Layer provisional income through brackets
         taxable = 0
-        remaining = provisional
-
         for i, bracket in enumerate(brackets):
             lower = bracket["min_provisional"]
             upper = (
@@ -42,10 +45,10 @@ class TaxCalculator:
                 else float("inf")
             )
 
-            if remaining <= lower:
-                break
+            if provisional < lower:
+                continue
 
-            chunk = min(remaining, upper) - lower
+            chunk = min(provisional, upper) - lower
             taxable += chunk * bracket["rate"]
 
         return min(int(taxable), max_taxable)
@@ -59,21 +62,26 @@ class TaxCalculator:
         age: Optional[int] = None,
         standard_deduction: int = 27700,
     ) -> Dict[str, int]:
-        # Step 1: Ordinary income
-        other_income = salary + withdrawals
-        taxable_ss = self._taxable_social_security(ss_benefits, other_income)
-        ordinary_income = max(0, other_income + taxable_ss - standard_deduction)
+        # Step 1: Compute AGI including realized gains
+        agi = salary + withdrawals + gains
+
+        # Step 2: Compute taxable Social Security using AGI
+        taxable_ss = self._taxable_social_security(ss_benefits, agi)
+
+        # Step 3: Compute ordinary income after standard deduction
+        ordinary_income = max(0, salary + withdrawals + taxable_ss - standard_deduction)
 
         ordinary_tax = 0
         for bracket_name, bracket_list in self.ordinary_tax_brackets.items():
-            ordinary_tax += self._calculate_ordinary_tax(
-                {bracket_name: bracket_list}, ordinary_income
-            )
+            if bracket_name != "social_security_taxability":
+                ordinary_tax += self._calculate_ordinary_tax(
+                    {bracket_name: bracket_list}, ordinary_income
+                )
 
-        # Step 2: Capital gains tax (long-term only)
+        # Step 4: Capital gains tax (long-term only)
         gains_tax = self._calculate_capital_gains_tax(ordinary_income, gains)
 
-        # Step 3: Early withdrawal penalty
+        # Step 5: Early withdrawal penalty
         penalty_tax = 0
         if age is not None and age < 59.5 and withdrawals > 0:
             penalty_tax = int(0.10 * withdrawals)
