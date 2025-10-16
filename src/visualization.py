@@ -38,7 +38,7 @@ def normalize_source(label):
     return label.replace(" Gains", "").replace(" Losses", "")
 
 
-def assign_node_colors_by_base_label(labels, color_palette):
+def assign_colors_by_base_label(labels, color_palette):
     for lbl in labels:
         base = base_label(lbl)
         if base not in label_color_map:
@@ -125,7 +125,7 @@ def plot_example_transactions(
             color_map.get(row["type"], "rgba(128,128,128,0.3)")
             for _, row in agg.iterrows()
         ]
-        node_colors = assign_node_colors_by_base_label(labels, COLOR_PALETTE)
+        node_colors = assign_colors_by_base_label(labels, COLOR_PALETTE)
 
         sankey = go.Sankey(
             node=dict(
@@ -292,9 +292,7 @@ def plot_example_transactions_in_context(
         sorted_keys = left_keys + right_keys
 
         # Build label list and index
-        key_to_label = {
-            k: f" {k.split('@')[0]} (Jan {k.split('@')[1]}) " for k in sorted_keys
-        }
+        key_to_label = {k: f" {k.split('@')[0]} " for k in sorted_keys}
         labels = [key_to_label[k] for k in sorted_keys]
         label_idx = {k: i for i, k in enumerate(sorted_keys)}
 
@@ -303,7 +301,7 @@ def plot_example_transactions_in_context(
         targets = [label_idx[k] for k in targets_raw]
 
         # Assign node colors consistently by base label
-        node_colors = assign_node_colors_by_base_label(labels, COLOR_PALETTE)
+        node_colors = assign_colors_by_base_label(labels, COLOR_PALETTE)
         sankey = go.Sankey(
             node=dict(
                 label=labels,
@@ -377,6 +375,14 @@ def plot_example_forecast(
     full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
     title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
 
+    # Extract bucket labels (excluding Date)
+    bucket_labels = [col for col in full_df.columns if col != "Date"]
+
+    # Assign colors using base_label logic
+    color_list = assign_colors_by_base_label(bucket_labels, COLOR_PALETTE)
+    line_colors = dict(zip(bucket_labels, color_list))
+
+    # Age trace
     traces = [
         go.Scatter(
             x=full_df["Date"],
@@ -388,18 +394,21 @@ def plot_example_forecast(
             name="Age",
             line=dict(width=0, color="white"),
             showlegend=False,
-            hovertemplate=("Age %{y:.0f}<extra></extra>"),
+            hovertemplate="Age %{y:.0f}<extra></extra>",
         )
     ]
+
+    # Bucket traces
     traces.extend(
         go.Scatter(
             x=full_df["Date"],
             y=full_df[col],
             mode="lines",
             name=col,
+            line=dict(color=line_colors[col]),
+            hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
         )
-        for col in full_df.columns
-        if col != "Date"
+        for col in bucket_labels
     )
 
     fig = go.Figure(data=traces)
@@ -409,7 +418,7 @@ def plot_example_forecast(
         yaxis_tickformat="$,.0f",
         template="plotly_white",
         hovermode="x unified",
-        legend=dict(orientation="h", x=0.5, y=1.1),
+        legend=dict(orientation="h", x=0.5, y=1.05, xanchor="center"),
     )
 
     if show:

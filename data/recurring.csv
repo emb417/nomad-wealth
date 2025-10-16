@@ -1,0 +1,20 @@
+Start Date,End Date,Bucket,Amount,Description
+2025-08-01,2031-07-01,Cash,-3000,Mortgage
+2025-08-01,2037-04-01,Cash,-500,Health Insurance
+2025-08-01,2037-04-01,Cash,-15,Dental Insurance
+2025-08-01,2037-04-01,Cash,-5,Vision Insurance
+2025-09-01,2075-04-01,Cash,-1250,Food
+2025-09-01,2075-04-01,Cash,-1250,Goods
+2025-09-01,2075-04-01,Cash,-500,Home Maintenance
+2025-09-01,2075-04-01,Cash,-600,Utilities
+2025-09-01,2075-04-01,Cash,-500,Travel
+2025-09-01,2075-04-01,Cash,-500,Auto Maintenance
+2025-09-01,2030-04-01,Cash,-425,Health and Prescriptions
+2025-08-01,2026-12-01,Cash,-345,Voice and Data
+2025-09-01,2075-04-01,Cash,-200,Restaurants
+2025-09-01,2075-04-01,Cash,-290,Auto Insurance
+2027-01-01,2075-04-01,Cash,-250,Voice and Data
+2025-09-01,2075-04-01,Cash,-140,Entertainment
+2025-09-01,2075-04-01,Cash,-95,Subscriptions
+2031-08-01,2075-04-01,Cash,-650,Property Taxes
+2031-08-01,2075-04-01,Cash,-150,Home Insurance

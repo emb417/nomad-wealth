@@ -57,15 +57,41 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
 - Tax-aware withdrawals distinguishing ordinary income, capital gains, and penalties
 - Independent Roth conversion scheduling
 - Monte Carlo sampling with percentile bands and probability metrics
-- Interactive Plotly visualizations and CSV exports of net worth, bucket balances, and tax breakdowns
+- Interactive Plotly visualizations and CSV exports
 
-### Monte Carlo Net Worth Forecast Example
+### Historical Net Worth and Annual/Monthly Gain %
 
-![Monte Carlo Net Worth Forecast](assets/mc_networth_forecast.png)
+Chart your historical net worth and gain/loss % over time. Both annual and monthly gain/loss % are included to help identify the specific months where the net worth increased or decreased relative to the previous month and the previous year.
 
-### Sample Simulation Forecast by Bucket Example
+![Historical Net Worth](assets/historical.png)
 
-![Sim Forecast by Bucket](assets/sim_forecast_by_bucket.png)
+### Simulation Transactions
+
+See the simulated transactions for a given year to better understand the details of your plan. In this example, $20K will need to be moved from Fixed-Income to Cash to help pay for the monthly expenses during 2026.
+
+![Sim Transactions](assets/transactions.png)
+
+### Simulation Transactions in Context
+
+See the simulated transactions for a given year in context to the bucket balances to determine the impact of annual transactions. In this example, $20K will need to be moved from Fixed-Income to Cash to help pay for the monthly expenses during 2026. The chart helps you see these types of transactions in context to the overall bucket balances, to determine if the transactions pose a risk to your plan.
+
+![Sim Transactions in Context](assets/transactions_in_context.png)
+
+### Simulation Forecast by Bucket
+
+See the simulated forecasted balances per bucket across all years to better understand the details of your plan. In this example the Property had to be liquidated in 2042 and the proceeds moved to the Taxable bucket.
+
+![Sim Forecast by Bucket](assets/forecast_by_bucket.png)
+
+### Monte Carlo Net Worth Forecast
+
+See the Monte Carlo simulation net worth trajectories. Included:
+
+- Probablity of positive net worth at 20 and 10 years to the end date, and the final end date
+- The end date net worth at the 15th, median, average, and 85th percentile
+- The probability of property liquidation and the minimum, average and maximum age of liquidation
+
+![Monte Carlo Net Worth Forecast](assets/mc_networth.png)
 
 ---
 
@@ -77,7 +103,9 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
    git clone https://github.com/emb417/nomad-wealth
    ```
 
-   - use a virtual environment to install dependencies.
+2. Install the dependencies:
+
+   - Use a virtual environment to install dependencies.
    - Or install dependencies manually:
 
    ```bash
@@ -85,15 +113,7 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
    pip install -r requirements.txt
    ```
 
-2. Configure profiles and policies in `config/` (see [`config/README.md`](config/README.md))
-3. Supply historical balances and transactions in `data/` (see [`data/README.md`](data/README.md))
-4. Adjust constants in `src/app.py`:
-   - `SIMS` : the number of simulations, more simulations = more accuracy
-   - `SIMS_SAMPLES` : a random number of simulations selected for inspection and exporting
-   - `SHOW_HISTORICAL_NW_CHART`, `SAVE_HISTORICAL_NW_CHART` : show and save the historical networth chart including monthly gain/loss %
-   - `SHOW_NETWORTH_CHART`, `SAVE_NETWORTH_CHART` : show and save the main networth chart
-   - `SHOW_SIMS_SAMPLES`, `SAVE_SIMS_SAMPLES` : show and save the randomly selected sample simulations to see forecasts by bucket
-5. Run the simulation:
+3. Run the simulation:
 
    ```bash
    python src/app.py
@@ -140,11 +160,6 @@ Each month the engine sequentially applies:
 
 ## 🛣️ Roadmap
 
-- Visualize annual income sources using stacked bar chart
-- Visualize annual expenses using stacked bar chart
-- Visualize comparison of income to expenses
-- Visualize cash flows using multi-level sankey chart
-- Visualize tax liabilities per year per bucket
 - UI to enter balances and manage individual accounts and assign them to buckets
 - UI for tuning configurations: profile, holdings, gains, inflation, policies
 - UI for managing future transactions: fixed and recurring

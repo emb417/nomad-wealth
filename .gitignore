@@ -1,7 +1,3 @@
-# Ignore Import files: CSV and JSON
-*.csv
-config/profile.json
-
 # Ignore Export files: html and log files
 *.html
 *.log
