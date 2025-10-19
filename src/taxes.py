@@ -59,7 +59,7 @@ class TaxCalculator:
         ss_benefits: int = 0,
         withdrawals: int = 0,
         gains: int = 0,
-        age: Optional[int] = None,
+        age: Optional[float] = None,
         standard_deduction: int = 27700,
     ) -> Dict[str, int]:
         # Step 1: Compute AGI including realized gains

@@ -1,6 +1,8 @@
 import logging
+import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
+
 
 COLOR_PALETTE = [
     "#1f77b4",
@@ -13,12 +15,28 @@ COLOR_PALETTE = [
     "#7f7f7f",
     "#bcbd22",
     "#17becf",
-    "#000000",
-    "#f7b6d2",
+    "#aec7e8",
+    "#ffbb78",
+    "#98df8a",
+    "#ff9896",
     "#c5b0d5",
     "#c49c94",
+    "#f7b6d2",
+    "#c7c7c7",
     "#dbdb8d",
     "#9edae5",
+    "#393b79",
+    "#637939",
+    "#8c6d31",
+    "#843c39",
+    "#7b4173",
+    "#5254a3",
+    "#6b6ecf",
+    "#9c9ede",
+    "#17becf",
+    "#bcbd22",
+    "#e6550d",
+    "#31a354",
 ]
 
 label_color_map = {}
@@ -363,7 +381,7 @@ def plot_example_forecast(
     hist_df: pd.DataFrame,
     forecast_df: pd.DataFrame,
     taxes_df: pd.DataFrame,
-    dob_year: int,
+    dob: str,
     ts: str,
     show: bool,
     save: bool,
@@ -373,6 +391,9 @@ def plot_example_forecast(
     Renders and optionally saves the bucket‐by‐bucket forecast for one simulation.
     """
     full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
+    cols = list(full_df.columns)
+    cols.insert(1, cols.pop(cols.index("Net Worth")))
+    full_df = full_df[cols]
     title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
 
     # Extract bucket labels (excluding Date)
@@ -386,15 +407,12 @@ def plot_example_forecast(
     traces = [
         go.Scatter(
             x=full_df["Date"],
-            y=[
-                (date.year - dob_year) + (date.month - x.month) / 12
-                for x, date in zip(full_df["Date"], full_df["Date"])
-            ],
+            y=[(date - pd.to_datetime(dob)).days / 365 for date in full_df["Date"]],
             mode="lines",
             name="Age",
             line=dict(width=0, color="white"),
             showlegend=False,
-            hovertemplate="Age %{y:.0f}<extra></extra>",
+            hovertemplate="Age %{y:.1f}<extra></extra>",
         )
     ]
 
@@ -405,7 +423,10 @@ def plot_example_forecast(
             y=full_df[col],
             mode="lines",
             name=col,
-            line=dict(color=line_colors[col]),
+            line=dict(
+                color="gray" if col == "Net Worth" else line_colors[col],
+                dash="dot" if col == "Net Worth" else None,
+            ),
             hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
         )
         for col in bucket_labels
@@ -533,9 +554,9 @@ def plot_historical_balance(
 
 def plot_mc_networth(
     mc_df: pd.DataFrame,
-    mc_samples_df: pd.DataFrame,
-    dob_year: int,
-    eol_year: int,
+    sim_examples: np.ndarray,
+    dob: str,
+    eol: str,
     summary: dict,
     ts: str,
     show: bool,
@@ -552,19 +573,22 @@ def plot_mc_networth(
        ...
     }
     """
-    SIMS = len(mc_df.columns)
+    sim_size = len(mc_df.columns)
     # compute percentiles
     pct_df = mc_df.quantile([0.15, 0.5, 0.85], axis=1).T
     pct_df.columns = ["p15", "median", "p85"]
     pct_df["mean"] = pct_df.mean(axis=1)
+    dob_year = pd.to_datetime(dob).year
+    eol_year = pd.to_datetime(eol).year
+    eol_age = eol_year - dob_year
 
     # probability of positive net worth at final year
     age_metrics = {
-        "age_minus_20": eol_year - 20 - dob_year,
+        "age_minus_20": eol_age - 20,
         "age_minus_20_pct": (mc_df.loc[eol_year - 20] > 0).mean(),
-        "age_minus_10": eol_year - 10 - dob_year,
+        "age_minus_10": eol_age - 10,
         "age_minus_10_pct": (mc_df.loc[eol_year - 10] > 0).mean(),
-        "age_end": eol_year - dob_year,
+        "age_end": eol_age,
         "age_end_pct": (mc_df.loc[eol_year] > 0).mean(),
     }
 
@@ -607,17 +631,27 @@ def plot_mc_networth(
         if summary["Maximum Property Liquidation Year"] is not None
         else None
     )
-    pct_liquidation = summary["Property Liquidations"] / SIMS
+    pct_liquidation = summary["Property Liquidations"] / sim_size
 
     years = pct_df.index.to_list()
     ages = [year - dob_year for year in years]
 
     fig = go.Figure()
-
+    fig.add_trace(
+        go.Scatter(
+            x=years,
+            y=pct_df["median"],
+            customdata=ages,
+            mode="markers",
+            marker=dict(size=0, opacity=0),
+            line=dict(width=0),
+            showlegend=False,
+            hovertemplate=("Age %{customdata:.0f}<extra></extra>"),
+        )
+    )
     # Monte-Carlo samples < p85, examples in purple
-    samples = set(mc_samples_df.columns)
     for col in mc_p85.columns:
-        is_sample = col in samples
+        is_sample = col in sim_examples
         color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
         hover_kwargs = (
             {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
@@ -635,19 +669,6 @@ def plot_mc_networth(
                 **hover_kwargs,
             )
         )
-
-    fig.add_trace(
-        go.Scatter(
-            x=years,
-            y=pct_df["median"],
-            customdata=ages,
-            mode="markers",
-            marker=dict(size=0, opacity=0),
-            line=dict(width=0),
-            showlegend=False,
-            hovertemplate=("Age %{customdata:.0f}<extra></extra>"),
-        )
-    )
 
     def make_trace(name, x, y, **line_kwargs):
         return go.Scatter(
@@ -671,7 +692,9 @@ def plot_mc_networth(
         )
     )
 
-    confidence_color = "green" if SIMS >= 1000 else "blue" if SIMS >= 100 else "red"
+    confidence_color = (
+        "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
+    )
 
     def getPNWColor(value):
         return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
@@ -692,7 +715,7 @@ def plot_mc_networth(
 
     title = (
         f"Monte Carlo Net Worth Forecast"
-        f" | <span style='color: {confidence_color}'>{SIMS} Simulations</span>"
+        f" | <span style='color: {confidence_color}'>{sim_size} Simulations</span>"
         f"<br><br>Postive Net Worth: <span style='color: {getPNWColor(age_metrics['age_minus_20_pct'])}'>{age_metrics['age_minus_20_pct']:.1%}"
         f" @ {age_metrics['age_minus_20']} y.o.</span>"
         f" | <span style='color: {getPNWColor(age_metrics['age_minus_10_pct'])}'>{age_metrics['age_minus_10_pct']:.1%}"

@@ -32,9 +32,9 @@ class ForecastEngine:
         self.market_gains = market_gains
         self.inflation = inflation
         self.tax_calc = tax_calc
-        self.profile = profile
         self.annual_tax_estimate = 0
         self.monthly_tax_drip = 0
+        self.dob = profile.get("Date of Birth")
 
     def run(self, ledger_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         records = []
@@ -147,15 +147,16 @@ class ForecastEngine:
                         for k in ytd_log:
                             ytd_log[k] += qlog[k]
 
-                dob = self.profile.get("Date of Birth")
-                age = year - pd.to_datetime(dob).year if dob else None
-
                 tax_estimate = self.tax_calc.calculate_tax(
                     salary=ytd_log["Salary"],
                     ss_benefits=ytd_log["SocialSecurity"],
                     withdrawals=ytd_log["TaxDeferredWithdrawals"],
                     gains=ytd_log["TaxableGains"],
-                    age=age,
+                    age=(
+                        (forecast_date - pd.to_datetime(self.dob)).days / 365
+                        if self.dob
+                        else None
+                    ),
                     standard_deduction=27700,
                 )
 
@@ -175,15 +176,14 @@ class ForecastEngine:
                     wdraw = prev_log["TaxDeferredWithdrawals"]
                     gain = prev_log["TaxableGains"]
 
-                    dob = self.profile.get("Date of Birth")
-                    age = prev_year - pd.to_datetime(dob).year if dob else None
-
                     tax_breakdown = self.tax_calc.calculate_tax(
                         salary=sal,
                         ss_benefits=ss,
                         withdrawals=wdraw,
                         gains=gain,
-                        age=age,
+                        age=(
+                            (year - pd.to_datetime(self.dob).year) if self.dob else None
+                        ),
                         standard_deduction=27700,
                     )
 

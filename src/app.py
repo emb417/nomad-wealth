@@ -317,10 +317,7 @@ def run_simulation(sim, future_df, json_data, dfs, hist_df):
     forecast_df, taxes_df, flow_df = run_one_sim(
         sim, future_df, json_data, dfs, hist_df
     )
-    forecast_df["NetWorth"] = forecast_df.drop(columns=["Date"]).sum(axis=1)
-    forecast_df["Year"] = forecast_df["Date"].dt.year
-    ye_nw = forecast_df.groupby("Year")["NetWorth"].last().to_dict()
-    return sim, forecast_df, taxes_df, flow_df, ye_nw
+    return sim, forecast_df, taxes_df, flow_df
 
 
 def update_property_liquidation_summary(summary, forecast_df):
@@ -349,9 +346,8 @@ def main():
     with timed("Simulation"):
         # load & prep
         json_data, dfs = stage_load()
-        hist_df, future_df = stage_prepare_timeframes(
-            dfs["balance"], json_data["profile"]["End Date"]
-        )
+        dob = pd.to_datetime(json_data["profile"]["Date of Birth"])
+        eol = pd.to_datetime(json_data["profile"]["End Date"])
 
         plot_historical_balance(
             dfs["balance"],
@@ -360,18 +356,16 @@ def main():
             SAVE_HISTORICAL_BALANCE_CHART,
         )
 
-        dob_year = pd.to_datetime(json_data["profile"]["Date of Birth"]).year
-        eol_year = pd.to_datetime(json_data["profile"]["End Date"]).year
+        hist_df, future_df = stage_prepare_timeframes(dfs["balance"], eol)
 
-        years = sorted(future_df["Date"].dt.year.unique())
-        mc_dict = {year: [] for year in years}
-        mc_samples_dict = {sim: {} for sim in sim_examples}
         summary = {
             "Property Liquidations": 0,
             "Property Liquidation Dates": [],
             "Minimum Property Liquidation Year": None,
             "Maximum Property Liquidation Year": None,
         }
+
+        mc_by_sim = {}
 
         with ProcessPoolExecutor() as executor:
             futures = [
@@ -384,9 +378,18 @@ def main():
                 total=SIM_SIZE,
                 desc="Running Monte Carlo Simulation",
             ):
-                sim, forecast_df, taxes_df, flow_df, ye_nw = future.result()
+                sim, forecast_df, taxes_df, flow_df = future.result()
+
+                update_property_liquidation_summary(summary, forecast_df)
+
+                forecast_df["Net Worth"] = forecast_df.iloc[:, 1:].sum(axis=1)
+                forecast_df["Year"] = forecast_df["Date"].dt.year
+
+                # Store year-end net worth per simulation
+                ye_nw_series = forecast_df.groupby("Year")["Net Worth"].last()
+                mc_by_sim[sim] = ye_nw_series
+
                 if sim in sim_examples:
-                    clean_forecast_df = forecast_df.drop(columns=["NetWorth", "Year"])
                     plot_example_transactions(
                         flow_df=flow_df,
                         sim=sim,
@@ -396,7 +399,7 @@ def main():
                     )
                     plot_example_transactions_in_context(
                         sim=sim,
-                        forecast_df=clean_forecast_df,
+                        forecast_df=forecast_df.drop(columns=["Net Worth", "Year"]),
                         flow_df=flow_df,
                         ts=ts,
                         show=SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
@@ -405,29 +408,22 @@ def main():
                     plot_example_forecast(
                         sim_index=sim,
                         hist_df=hist_df,
-                        forecast_df=clean_forecast_df,
+                        forecast_df=forecast_df.drop(columns=["Year"]),
                         taxes_df=taxes_df,
-                        dob_year=dob_year,
+                        dob=dob,
                         ts=ts,
                         show=SHOW_EXAMPLE_FORECAST_CHART,
                         save=SAVE_EXAMPLE_FORECAST_CHART,
                     )
 
-                update_property_liquidation_summary(summary, forecast_df)
-
-                for year, nw in ye_nw.items():
-                    mc_dict[year].append(nw)
-                    if sim in sim_examples:
-                        mc_samples_dict[sim][year] = nw
-
-        mc_df = pd.DataFrame(mc_dict).T
-        mc_samples_df = pd.DataFrame(mc_samples_dict)
+        # Build DataFrame: rows = simulations, columns = years
+        mc_df = pd.DataFrame.from_dict(mc_by_sim, orient="index").sort_index().T
 
         plot_mc_networth(
             mc_df=mc_df,
-            mc_samples_df=mc_samples_df,
-            dob_year=dob_year,
-            eol_year=eol_year,
+            sim_examples=sim_examples,
+            dob=dob,
+            eol=eol,
             summary=summary,
             ts=ts,
             show=SHOW_NETWORTH_CHART,
