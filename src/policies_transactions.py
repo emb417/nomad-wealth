@@ -174,6 +174,9 @@ class RothConversionTransaction(PolicyTransaction):
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return self.amount if getattr(self, "is_taxable", False) else 0
 
+    def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0  # Roth conversions are exempt from early withdrawal penalties
+
 
 class SalaryTransaction(PolicyTransaction):
     def __init__(

@@ -8,7 +8,7 @@ from typing import Dict, List, Tuple
 from buckets import Bucket
 from economic_factors import MarketGains
 from policies_engine import ThresholdRefillPolicy
-from policies_transactions import PolicyTransaction
+from policies_transactions import PolicyTransaction, RothConversionTransaction
 from rules_transactions import RuleTransaction
 from taxes import TaxCalculator
 
@@ -84,9 +84,17 @@ class ForecastEngine:
                 tx.get_social_security(tx_month)
                 for tx in self.policy_transactions + refill_txns + liq_txns
             )
-            monthly_deferred = sum(
+            monthly_roth_conversions = sum(
                 tx.get_withdrawal(tx_month)
-                for tx in self.policy_transactions + refill_txns + liq_txns
+                for tx in self.policy_transactions
+                if isinstance(tx, RothConversionTransaction)
+            )
+            monthly_deferred = (
+                sum(
+                    tx.get_withdrawal(tx_month)
+                    for tx in self.policy_transactions + refill_txns + liq_txns
+                )
+                - monthly_roth_conversions
             )
             monthly_taxable = sum(
                 tx.get_taxable_gain(tx_month)
@@ -100,6 +108,7 @@ class ForecastEngine:
             # Accumulate yearly totals
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
+                    "Roth Conversions": 0,
                     "Tax-Deferred Withdrawals": 0,
                     "Taxable Gains": 0,
                     "Salary": 0,
@@ -107,6 +116,7 @@ class ForecastEngine:
                     "Penalty Tax": 0,
                 }
             ylog = yearly_tax_log[year]
+            ylog["Roth Conversions"] += monthly_roth_conversions
             ylog["Salary"] += monthly_salary
             ylog["Social Security"] += monthly_ss
             ylog["Tax-Deferred Withdrawals"] += monthly_deferred
@@ -175,6 +185,7 @@ class ForecastEngine:
                     ss = prev_log["Social Security"]
                     wdraw = prev_log["Tax-Deferred Withdrawals"]
                     gain = prev_log["Taxable Gains"]
+                    roth = prev_log.get("Roth Conversions", 0)
 
                     tax_breakdown = self.tax_calc.calculate_tax(
                         salary=sal,
@@ -233,6 +244,7 @@ class ForecastEngine:
                     tax_records.append(
                         {
                             "Year": prev_year,
+                            "Roth Conversions": roth,
                             "Tax-Deferred Withdrawals": wdraw,
                             "Taxable Gains": gain,
                             "Salary": sal,
