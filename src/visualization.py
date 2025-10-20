@@ -476,21 +476,35 @@ def plot_example_forecast(
         )
     ]
 
-    # Bucket traces
-    traces.extend(
-        go.Scatter(
-            x=full_df["Date"],
-            y=full_df[col],
-            mode="lines",
-            name=col,
-            line=dict(
-                color="gray" if col == "Net Worth" else line_colors[col],
-                dash="dot" if col == "Net Worth" else None,
-            ),
-            hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
+    # Bucket traces with percent share
+    for col in bucket_labels:
+        if col == "Net Worth":
+            share_data = [100.0] * len(full_df)  # Net Worth is always 100% of itself
+        else:
+            share_data = (
+                (full_df[col] / full_df["Net Worth"])
+                .replace([np.inf, -np.inf], np.nan)
+                .fillna(0)
+                .mul(100)
+                .round(2)
+            )
+
+        traces.append(
+            go.Scatter(
+                x=full_df["Date"],
+                y=full_df[col],
+                mode="lines",
+                name=col,
+                line=dict(
+                    color="gray" if col == "Net Worth" else line_colors[col],
+                    dash="dot" if col == "Net Worth" else None,
+                ),
+                customdata=share_data,
+                hovertemplate=(
+                    f"{col}: %{{y:$,.0f}}" + " (%{customdata:.0f}%)<extra></extra>"
+                ),
+            )
         )
-        for col in bucket_labels
-    )
 
     fig = go.Figure(data=traces)
 
