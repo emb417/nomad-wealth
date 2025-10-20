@@ -840,15 +840,33 @@ def plot_mc_networth(
     # Percentile lines
     fig.add_trace(
         make_trace(
-            "Upper Bounds", years, pct_df["p85"], color="blue", dash="dash", width=2
+            "85th Percentile", years, pct_df["p85"], color="blue", dash="dash", width=2
         )
     )
     fig.add_trace(make_trace("Median", years, pct_df["median"], color="green", width=2))
     fig.add_trace(
         make_trace(
-            "Lower Bounds", years, pct_df["p15"], color="blue", dash="dash", width=2
+            "15th Percentile", years, pct_df["p15"], color="blue", dash="dash", width=2
         )
     )
+
+    for y, label, color in [
+        (pct_df["p15"][eol_year], "15th Percentile", "blue"),
+        (pct_df["median"][eol_year], "Median", "green"),
+        (pct_df["p85"][eol_year], "85th Percentile", "blue"),
+    ]:
+        fig.add_annotation(
+            x=eol_year,
+            y=y,
+            text=f"{label}: ${y:,.0f}",
+            showarrow=False,
+            font=dict(color=color),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor=color,
+            borderwidth=1,
+            xanchor="right",
+            yanchor="bottom",
+        )
 
     confidence_color = (
         "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
@@ -929,7 +947,6 @@ def plot_mc_tax_bars(
 
     p15 = total_taxes.quantile(0.15)
     median = total_taxes.median()
-    mean = total_taxes.mean()
     p85 = total_taxes.quantile(0.85)
 
     # Use "Sim {n}" format for x-axis labels
@@ -965,16 +982,6 @@ def plot_mc_tax_bars(
     fig.add_trace(
         go.Scatter(
             x=sim_labels,
-            y=[mean] * sim_size,
-            mode="lines",
-            name="Mean",
-            line=dict(color="teal", dash="dot"),
-            hovertemplate="Mean: %{y:$,.0f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=sim_labels,
             y=[median] * sim_size,
             mode="lines",
             name="Median",
@@ -997,7 +1004,6 @@ def plot_mc_tax_bars(
     for y, label, color in [
         (p15, "15th Percentile", "blue"),
         (median, "Median", "green"),
-        (mean, "Mean", "teal"),
         (p85, "85th Percentile", "blue"),
     ]:
         fig.add_annotation(
@@ -1006,7 +1012,7 @@ def plot_mc_tax_bars(
             text=f" {label}: ${y:,.0f} ",
             showarrow=False,
             font=dict(color=color),
-            bgcolor="rgba(255,255,255,0.8)",
+            bgcolor="rgba(255,255,255,0.9)",
             bordercolor=color,
             borderwidth=1,
         )
