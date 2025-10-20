@@ -62,13 +62,14 @@ class TaxCalculator:
         age: Optional[float] = None,
         standard_deduction: int = 27700,
     ) -> Dict[str, int]:
-        # Step 1: Compute AGI including realized gains
-        agi = salary + withdrawals + gains
+        # Compute taxable Social Security
+        taxable_ss = self._taxable_social_security(
+            ss_benefits, salary + withdrawals + gains
+        )
+        # Compute AGI including realized gains
+        agi = salary + withdrawals + gains + taxable_ss
 
-        # Step 2: Compute taxable Social Security using AGI
-        taxable_ss = self._taxable_social_security(ss_benefits, agi)
-
-        # Step 3: Compute ordinary income after standard deduction
+        # Compute ordinary income after standard deduction
         ordinary_income = max(0, salary + withdrawals + taxable_ss - standard_deduction)
 
         ordinary_tax = 0
@@ -78,10 +79,10 @@ class TaxCalculator:
                     {bracket_name: bracket_list}, ordinary_income
                 )
 
-        # Step 4: Capital gains tax (long-term only)
+        # Capital gains tax (long-term only)
         gains_tax = self._calculate_capital_gains_tax(ordinary_income, gains)
 
-        # Step 5: Early withdrawal penalty
+        # Early withdrawal penalty
         penalty_tax = 0
         if age is not None and age < 59.5 and withdrawals > 0:
             penalty_tax = int(0.10 * withdrawals)
@@ -89,10 +90,13 @@ class TaxCalculator:
         total_tax = int(ordinary_tax + gains_tax + penalty_tax)
 
         return {
+            "agi": int(agi),
+            "taxable_ss": int(taxable_ss),
+            "ordinary_income": int(ordinary_income),
             "ordinary_tax": int(ordinary_tax),
             "capital_gains_tax": int(gains_tax),
             "penalty_tax": int(penalty_tax),
-            "total_tax": total_tax,
+            "total_tax": int(total_tax),
         }
 
     def _calculate_ordinary_tax(

@@ -31,8 +31,9 @@ from rules_transactions import (
 )
 from taxes import TaxCalculator
 from visualization import (
-    plot_example_transactions_in_context,
     plot_example_forecast,
+    plot_example_taxes,
+    plot_example_transactions_in_context,
     plot_example_transactions,
     plot_historical_balance,
     plot_mc_networth,
@@ -49,6 +50,8 @@ SHOW_HISTORICAL_BALANCE_CHART = True
 SAVE_HISTORICAL_BALANCE_CHART = False
 SHOW_EXAMPLE_FORECAST_CHART = True
 SAVE_EXAMPLE_FORECAST_CHART = False
+SHOW_EXAMPLE_TAXES_CHART = True
+SAVE_EXAMPLE_TAXES_CHART = False
 SHOW_EXAMPLE_TRANSACTIONS_CHART = True
 SAVE_EXAMPLE_TRANSACTIONS_CHART = False
 SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = True
@@ -314,6 +317,9 @@ def run_one_sim(
 
 
 def run_simulation(sim, future_df, json_data, dfs, hist_df):
+    """
+    Wrapper for run_one_sim to inject simulation index into the result.
+    """
     forecast_df, taxes_df, flow_df = run_one_sim(
         sim, future_df, json_data, dfs, hist_df
     )
@@ -405,11 +411,18 @@ def main():
                         show=SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                         save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                     )
+                    plot_example_taxes(
+                        taxes_df=taxes_df,
+                        sim=sim,
+                        dob=dob,
+                        ts=ts,
+                        show=SHOW_EXAMPLE_TAXES_CHART,
+                        save=SAVE_EXAMPLE_TAXES_CHART,
+                    )
                     plot_example_forecast(
-                        sim_index=sim,
+                        sim=sim,
                         hist_df=hist_df,
                         forecast_df=forecast_df.drop(columns=["Year"]),
-                        taxes_df=taxes_df,
                         dob=dob,
                         ts=ts,
                         show=SHOW_EXAMPLE_FORECAST_CHART,

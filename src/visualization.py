@@ -66,6 +66,67 @@ def assign_colors_by_base_label(labels, color_palette):
     return [label_color_map[base_label(lbl)] for lbl in labels]
 
 
+def plot_example_taxes(
+    taxes_df: pd.DataFrame,
+    sim: int,
+    dob: pd.Timestamp,
+    show: bool = True,
+    save: bool = False,
+    export_path: str = "export/",
+    ts: str = "",
+):
+    title = f"Sim {sim+1:04d} | Taxes"
+
+    # Extract bucket labels (excluding Date)
+    bucket_labels = [col for col in taxes_df.columns if col != "Year"]
+
+    # Age trace
+    traces = [
+        go.Scatter(
+            x=taxes_df["Year"],
+            y=[(year - pd.to_datetime(dob).year) for year in taxes_df["Year"]],
+            mode="lines",
+            name="Age",
+            line=dict(width=0, color="white"),
+            showlegend=False,
+            hovertemplate="Age %{y:.1f}<extra></extra>",
+        )
+    ]
+
+    # Bucket traces
+    traces.extend(
+        go.Scatter(
+            x=taxes_df["Year"],
+            y=taxes_df[col],
+            mode="lines",
+            name=col,
+            hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
+        )
+        for col in bucket_labels
+    )
+
+    fig = go.Figure(data=traces)
+
+    fig.update_layout(
+        title=title,
+        yaxis_tickformat="$,.0f",
+        template="plotly_white",
+        hovermode="x unified",
+        legend=dict(orientation="h", x=0.5, y=1.05, xanchor="center"),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        prefix = f"{export_path}{sim+1:04d}_"
+        taxes_csv = f"{prefix}taxes_{ts}.csv"
+        html = f"{prefix}buckets_{ts}.html"
+
+        taxes_df.to_csv(taxes_csv, index=False)
+        fig.write_html(html)
+        logging.debug(f"Sim {sim+1:04d} | Saved sample forecast to {html}")
+
+
 def plot_example_transactions(
     flow_df: pd.DataFrame,
     sim: int,
@@ -377,10 +438,9 @@ def plot_example_transactions_in_context(
 
 
 def plot_example_forecast(
-    sim_index: int,
+    sim: int,
     hist_df: pd.DataFrame,
     forecast_df: pd.DataFrame,
-    taxes_df: pd.DataFrame,
     dob: str,
     ts: str,
     show: bool,
@@ -394,7 +454,7 @@ def plot_example_forecast(
     cols = list(full_df.columns)
     cols.insert(1, cols.pop(cols.index("Net Worth")))
     full_df = full_df[cols]
-    title = f"Sim {sim_index+1:04d} | Forecast by Bucket"
+    title = f"Sim {sim+1:04d} | Forecast by Bucket"
 
     # Extract bucket labels (excluding Date)
     bucket_labels = [col for col in full_df.columns if col != "Date"]
@@ -445,15 +505,13 @@ def plot_example_forecast(
     if show:
         fig.show()
     if save:
-        prefix = f"{export_path}{sim_index+1:04d}_"
+        prefix = f"{export_path}{sim+1:04d}_"
         bucket_csv = f"{prefix}buckets_{ts}.csv"
-        taxes_csv = f"{prefix}taxes_{ts}.csv"
         html = f"{prefix}buckets_{ts}.html"
 
         full_df.to_csv(bucket_csv, index=False)
-        taxes_df.to_csv(taxes_csv, index=False)
         fig.write_html(html)
-        logging.debug(f"Sim {sim_index+1:04d} | Saved sample forecast to {html}")
+        logging.debug(f"Sim {sim+1:04d} | Saved sample forecast to {html}")
 
 
 def plot_historical_balance(
