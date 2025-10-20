@@ -711,7 +711,7 @@ def plot_historical_bucket_gains(
 
 
 def plot_mc_networth(
-    mc_df: pd.DataFrame,
+    mc_networth_df: pd.DataFrame,
     sim_examples: np.ndarray,
     dob: str,
     eol: str,
@@ -731,9 +731,9 @@ def plot_mc_networth(
        ...
     }
     """
-    sim_size = len(mc_df.columns)
+    sim_size = len(mc_networth_df.columns)
     # compute percentiles
-    pct_df = mc_df.quantile([0.15, 0.5, 0.85], axis=1).T
+    pct_df = mc_networth_df.quantile([0.15, 0.5, 0.85], axis=1).T
     pct_df.columns = ["p15", "median", "p85"]
     pct_df["mean"] = pct_df.mean(axis=1)
     dob_year = pd.to_datetime(dob).year
@@ -743,25 +743,25 @@ def plot_mc_networth(
     # probability of positive net worth at final year
     age_metrics = {
         "age_minus_20": eol_age - 20,
-        "age_minus_20_pct": (mc_df.loc[eol_year - 20] > 0).mean(),
+        "age_minus_20_pct": (mc_networth_df.loc[eol_year - 20] > 0).mean(),
         "age_minus_10": eol_age - 10,
-        "age_minus_10_pct": (mc_df.loc[eol_year - 10] > 0).mean(),
+        "age_minus_10_pct": (mc_networth_df.loc[eol_year - 10] > 0).mean(),
         "age_end": eol_age,
-        "age_end_pct": (mc_df.loc[eol_year] > 0).mean(),
+        "age_end_pct": (mc_networth_df.loc[eol_year] > 0).mean(),
     }
 
-    # filter mc_df based on final net worth for chart
+    # filter mc_networth_df based on final net worth for chart
     pct_p15_final_nw = pct_df["p15"][eol_year]
     pct_mean_final_nw = pct_df["mean"][eol_year]
     pct_median_final_nw = pct_df["median"][eol_year]
     pct_p85_final_nw = pct_df["p85"][eol_year]
-    mc_df_filtered = mc_df.loc[mc_df.index == eol_year]
+    mc_networth_df_filtered = mc_networth_df.loc[mc_networth_df.index == eol_year]
     columns_to_drop = [
         column_name
-        for column_name in mc_df_filtered.columns
-        if mc_df_filtered[column_name].iloc[0] > pct_p85_final_nw
+        for column_name in mc_networth_df_filtered.columns
+        if mc_networth_df_filtered[column_name].iloc[0] > pct_p85_final_nw
     ]
-    mc_p85 = mc_df.drop(columns=columns_to_drop)
+    mc_p85 = mc_networth_df.drop(columns=columns_to_drop)
     networth = {
         "p15": "{:,.0f}".format(int(pct_p15_final_nw)),
         "Median": "{:,.0f}".format(int(pct_median_final_nw)),
@@ -905,7 +905,137 @@ def plot_mc_networth(
     if show:
         fig.show()
     if save:
-        mc_df.to_csv(f"{export_path}mc_networth_{ts}.csv", index_label="Year")
+        mc_networth_df.to_csv(f"{export_path}mc_networth_{ts}.csv", index_label="Year")
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
+
+
+def plot_mc_tax_bars(
+    mc_tax_df: pd.DataFrame,
+    sim_examples: np.ndarray,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves a bar chart of total taxes per simulation.
+    """
+    sim_size = len(mc_tax_df.columns)
+    mc_tax_df = mc_tax_df.copy()
+    mc_tax_df.index = pd.Index(mc_tax_df.index).astype(int)
+    total_taxes = mc_tax_df.sum()
+
+    p15 = total_taxes.quantile(0.15)
+    median = total_taxes.median()
+    mean = total_taxes.mean()
+    p85 = total_taxes.quantile(0.85)
+
+    # Use "Sim {n}" format for x-axis labels
+    sim_labels = [f"Sim {int(sim)+1:04d}" for sim in total_taxes.index]
+
+    bar_colors = [
+        "purple" if sim in sim_examples else "gray" for sim in total_taxes.index
+    ]
+    hover_texts = [f"Total Taxes: ${total:,.0f}" for sim, total in total_taxes.items()]
+
+    fig = go.Figure(
+        go.Bar(
+            x=sim_labels,
+            y=total_taxes.values,
+            marker_color=bar_colors,
+            opacity=0.5,
+            hovertext=hover_texts,
+            hovertemplate="%{hovertext}<extra></extra>",
+        )
+    )
+
+    # Reference lines using same x labels
+    fig.add_trace(
+        go.Scatter(
+            x=sim_labels,
+            y=[p85] * sim_size,
+            mode="lines",
+            name="85th Percentile",
+            line=dict(color="blue", dash="dash"),
+            hovertemplate="85th Percentile: %{y:$,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=sim_labels,
+            y=[mean] * sim_size,
+            mode="lines",
+            name="Mean",
+            line=dict(color="teal", dash="dot"),
+            hovertemplate="Mean: %{y:$,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=sim_labels,
+            y=[median] * sim_size,
+            mode="lines",
+            name="Median",
+            line=dict(color="green", width=2),
+            hovertemplate="Median: %{y:$,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=sim_labels,
+            y=[p15] * sim_size,
+            mode="lines",
+            name="15th Percentile",
+            line=dict(color="blue", dash="dash"),
+            hovertemplate="15th Percentile: %{y:$,.0f}<extra></extra>",
+        )
+    )
+
+    # Annotate reference lines
+    for y, label, color in [
+        (p15, "15th Percentile", "blue"),
+        (median, "Median", "green"),
+        (mean, "Mean", "teal"),
+        (p85, "85th Percentile", "blue"),
+    ]:
+        fig.add_annotation(
+            x=sim_labels[-1],
+            y=y,
+            text=f" {label}: ${y:,.0f} ",
+            showarrow=False,
+            font=dict(color=color),
+            bgcolor="rgba(255,255,255,0.8)",
+            bordercolor=color,
+            borderwidth=1,
+        )
+
+    confidence_color = (
+        "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
+    )
+
+    title = (
+        f"Total Tax Burden per Simulation"
+        f" | <span style='color: {confidence_color}'>{sim_size} Simulations</span>"
+    )
+
+    fig.update_layout(
+        title=title,
+        title_x=0.5,
+        yaxis=dict(tickformat="$,.0f"),
+        template="plotly_white",
+        hoverlabel=dict(align="left"),
+        hovermode="x unified",
+        showlegend=False,
+    )
+
+    if show:
+        fig.show()
+    if save:
+        total_taxes.to_csv(
+            f"{export_path}mc_tax_totals_{ts}.csv", index_label="Simulation"
+        )
+        html = f"{export_path}mc_tax_totals_{ts}.html"
+        fig.write_html(html)
+        logging.info(f"Monte Carlo tax totals saved to {html}")

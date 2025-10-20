@@ -38,6 +38,7 @@ from visualization import (
     plot_historical_balance,
     plot_historical_bucket_gains,
     plot_mc_networth,
+    plot_mc_tax_bars,
 )
 
 logging.basicConfig(
@@ -61,6 +62,8 @@ SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = True
 SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
 SHOW_NETWORTH_CHART = True
 SAVE_NETWORTH_CHART = False
+SHOW_TAXES_CHART = True
+SAVE_TAXES_CHART = False
 
 rng = np.random.default_rng()
 sim_examples = np.sort(rng.choice(SIM_SIZE, size=SIM_EXAMPLE_SIZE, replace=False))
@@ -380,7 +383,8 @@ def main():
             "Maximum Property Liquidation Year": None,
         }
 
-        mc_by_sim = {}
+        mc_networth_by_sim = {}
+        mc_tax_by_sim = {}
 
         with ProcessPoolExecutor() as executor:
             futures = [
@@ -402,7 +406,9 @@ def main():
 
                 # Store year-end net worth per simulation
                 ye_nw_series = forecast_df.groupby("Year")["Net Worth"].last()
-                mc_by_sim[sim] = ye_nw_series
+                mc_networth_by_sim[sim] = ye_nw_series
+                tax_series = taxes_df.set_index("Year")["Total Tax"]
+                mc_tax_by_sim[sim] = tax_series
 
                 if sim in sim_examples:
                     plot_example_transactions(
@@ -439,10 +445,21 @@ def main():
                     )
 
         # Build DataFrame: rows = simulations, columns = years
-        mc_df = pd.DataFrame.from_dict(mc_by_sim, orient="index").sort_index().T
+        mc_networth_df = (
+            pd.DataFrame.from_dict(mc_networth_by_sim, orient="index").sort_index().T
+        )
+        mc_tax_df = pd.DataFrame.from_dict(mc_tax_by_sim, orient="index").sort_index().T
+
+        plot_mc_tax_bars(
+            mc_tax_df=mc_tax_df,
+            sim_examples=sim_examples,
+            ts=ts,
+            show=SHOW_TAXES_CHART,
+            save=SAVE_TAXES_CHART,
+        )
 
         plot_mc_networth(
-            mc_df=mc_df,
+            mc_networth_df=mc_networth_df,
             sim_examples=sim_examples,
             dob=dob,
             eol=eol,
