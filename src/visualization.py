@@ -66,7 +66,7 @@ def assign_colors_by_base_label(labels, color_palette):
     return [label_color_map[base_label(lbl)] for lbl in labels]
 
 
-def plot_example_taxes(
+def plot_example_income_taxes(
     taxes_df: pd.DataFrame,
     sim: int,
     dob: pd.Timestamp,
@@ -75,7 +75,7 @@ def plot_example_taxes(
     export_path: str = "export/",
     ts: str = "",
 ):
-    title = f"Sim {sim+1:04d} | Taxes"
+    title = f"Sim {sim+1:04d} | Income & Taxes"
 
     # Extract bucket labels (excluding Date)
     bucket_labels = [col for col in taxes_df.columns if col != "Year"]
@@ -119,8 +119,8 @@ def plot_example_taxes(
         fig.show()
     if save:
         prefix = f"{export_path}{sim+1:04d}_"
-        taxes_csv = f"{prefix}taxes_{ts}.csv"
-        html = f"{prefix}buckets_{ts}.html"
+        taxes_csv = f"{prefix}income_taxes_{ts}.csv"
+        html = f"{prefix}income_taxes_{ts}.html"
 
         taxes_df.to_csv(taxes_csv, index=False)
         fig.write_html(html)
