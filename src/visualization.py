@@ -624,6 +624,92 @@ def plot_historical_balance(
         fig.write_html(export_path + f"historical_nw_{ts}.html")
 
 
+def plot_historical_bucket_gains(
+    hist_df: pd.DataFrame,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves the historical buckets chart,
+    showing monthly and annual percent gain/loss per bucket.
+    """
+    import plotly.graph_objects as go
+
+    df = hist_df.copy()
+    df["Date"] = pd.to_datetime(df["Date"])
+    df.set_index("Date", inplace=True)
+
+    # Identify bucket columns
+    bucket_cols = [col for col in df.columns]
+
+    # Monthly percent change
+    monthly_pct = df[bucket_cols].pct_change().fillna(0)
+    monthly_pct.reset_index(inplace=True)
+
+    # Annual percent change (12-month rolling)
+    annual_pct = df[bucket_cols].pct_change(periods=12).fillna(0)
+    annual_pct.reset_index(inplace=True)
+
+    # Build traces
+    traces = []
+
+    for col in bucket_cols:
+        monthly_vals = monthly_pct[col].values
+        dates = monthly_pct["Date"]
+
+        # Get corresponding balance values from original df
+        balance_vals = df[col].reindex(dates).fillna(0).values
+
+        rgba_colors = []
+        for val in monthly_vals:
+            if val > 0:
+                base = "0,128,0"  # green
+            elif val < 0:
+                base = "178,34,34"  # red
+            else:
+                base = "0,0,0"  # black
+
+            alpha = round(min(abs(val) / 0.1, 1), 2)
+            rgba_colors.append(f"rgba({base},{alpha})")
+
+        traces.append(
+            go.Bar(
+                x=dates,
+                y=monthly_vals,
+                name=col,
+                marker=dict(color=rgba_colors),
+                yaxis="y",
+                customdata=balance_vals,
+                hovertemplate=(
+                    f"{col}: %{{y:.2%}} " f"(%{{customdata:$,.0f}})<extra></extra>"
+                ),
+            )
+        )
+
+    fig = go.Figure(data=traces)
+
+    fig.update_layout(
+        title="Historical Monthly Gain %",
+        title_x=0.5,
+        yaxis=dict(
+            tickformat=".2%",
+            range=[-0.25, 0.25],
+        ),
+        template="plotly_white",
+        hovermode="x unified",
+        showlegend=False,
+    )
+
+    fig.update_yaxes(showgrid=False)
+
+    if show:
+        fig.show()
+    if save:
+        fig.write_html(export_path + f"historical_buckets_{ts}.html")
+
+
 def plot_mc_networth(
     mc_df: pd.DataFrame,
     sim_examples: np.ndarray,

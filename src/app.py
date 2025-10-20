@@ -36,6 +36,7 @@ from visualization import (
     plot_example_transactions_in_context,
     plot_example_transactions,
     plot_historical_balance,
+    plot_historical_bucket_gains,
     plot_mc_networth,
 )
 
@@ -48,6 +49,8 @@ SIM_SIZE = 100
 SIM_EXAMPLE_SIZE = 1
 SHOW_HISTORICAL_BALANCE_CHART = True
 SAVE_HISTORICAL_BALANCE_CHART = False
+SHOW_HISTORICAL_BUCKET_GAINS_CHART = True
+SAVE_HISTORICAL_BUCKET_GAINS_CHART = False
 SHOW_EXAMPLE_FORECAST_CHART = True
 SAVE_EXAMPLE_FORECAST_CHART = False
 SHOW_EXAMPLE_INCOME_TAXES_CHART = True
@@ -360,6 +363,12 @@ def main():
             ts,
             SHOW_HISTORICAL_BALANCE_CHART,
             SAVE_HISTORICAL_BALANCE_CHART,
+        )
+        plot_historical_bucket_gains(
+            dfs["balance"],
+            ts,
+            SHOW_HISTORICAL_BUCKET_GAINS_CHART,
+            SAVE_HISTORICAL_BUCKET_GAINS_CHART,
         )
 
         hist_df, future_df = stage_prepare_timeframes(dfs["balance"], eol)
