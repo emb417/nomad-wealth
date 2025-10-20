@@ -59,19 +59,23 @@ class TaxCalculator:
         ss_benefits: int = 0,
         withdrawals: int = 0,
         gains: int = 0,
+        roth: int = 0,
         age: Optional[float] = None,
         standard_deduction: int = 27700,
     ) -> Dict[str, int]:
         # Compute taxable Social Security
-        taxable_ss = self._taxable_social_security(
-            ss_benefits, salary + withdrawals + gains
-        )
-        # Compute AGI including realized gains
-        agi = salary + withdrawals + gains + taxable_ss
+        provisional_income = salary + withdrawals + roth + gains
+        taxable_ss = self._taxable_social_security(ss_benefits, provisional_income)
+
+        # Compute AGI including all taxable income
+        agi = salary + withdrawals + roth + gains + taxable_ss
 
         # Compute ordinary income after standard deduction
-        ordinary_income = max(0, salary + withdrawals + taxable_ss - standard_deduction)
+        ordinary_income = max(
+            0, salary + withdrawals + roth + taxable_ss - standard_deduction
+        )
 
+        # Ordinary tax
         ordinary_tax = 0
         for bracket_name, bracket_list in self.ordinary_tax_brackets.items():
             if bracket_name != "social_security_taxability":
@@ -79,10 +83,10 @@ class TaxCalculator:
                     {bracket_name: bracket_list}, ordinary_income
                 )
 
-        # Capital gains tax (long-term only)
+        # Capital gains tax
         gains_tax = self._calculate_capital_gains_tax(ordinary_income, gains)
 
-        # Early withdrawal penalty
+        # Early withdrawal penalty (only on penalty-eligible withdrawals)
         penalty_tax = 0
         if age is not None and age < 59.5 and withdrawals > 0:
             penalty_tax = int(0.10 * withdrawals)
@@ -91,11 +95,12 @@ class TaxCalculator:
 
         return {
             "agi": int(agi),
-            "taxable_ss": int(taxable_ss),
+            "capital_gains_tax": int(gains_tax),
             "ordinary_income": int(ordinary_income),
             "ordinary_tax": int(ordinary_tax),
-            "capital_gains_tax": int(gains_tax),
             "penalty_tax": int(penalty_tax),
+            "roth_conversions": int(roth),
+            "taxable_ss": int(taxable_ss),
             "total_tax": int(total_tax),
         }
 

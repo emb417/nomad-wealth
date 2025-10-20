@@ -108,34 +108,36 @@ class ForecastEngine:
             # Accumulate yearly totals
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
-                    "Roth Conversions": 0,
                     "Tax-Deferred Withdrawals": 0,
                     "Taxable Gains": 0,
-                    "Salary": 0,
-                    "Social Security": 0,
                     "Penalty Tax": 0,
+                    "Roth Conversions": 0,
+                    "Social Security": 0,
+                    "Salary": 0,
                 }
             ylog = yearly_tax_log[year]
-            ylog["Roth Conversions"] += monthly_roth_conversions
-            ylog["Salary"] += monthly_salary
-            ylog["Social Security"] += monthly_ss
             ylog["Tax-Deferred Withdrawals"] += monthly_deferred
             ylog["Taxable Gains"] += monthly_taxable
             ylog["Penalty Tax"] += monthly_penalty
+            ylog["Roth Conversions"] += monthly_roth_conversions
+            ylog["Social Security"] += monthly_ss
+            ylog["Salary"] += monthly_salary
 
             # Accumulate quarterly totals
             if qkey not in quarterly_tax_log:
                 quarterly_tax_log[qkey] = {
-                    "Salary": 0,
-                    "Social Security": 0,
                     "Tax-Deferred Withdrawals": 0,
                     "Taxable Gains": 0,
+                    "Roth Conversions": 0,
+                    "Social Security": 0,
+                    "Salary": 0,
                 }
             qlog = quarterly_tax_log[qkey]
-            qlog["Salary"] += monthly_salary
-            qlog["Social Security"] += monthly_ss
             qlog["Tax-Deferred Withdrawals"] += monthly_deferred
             qlog["Taxable Gains"] += monthly_taxable
+            qlog["Roth Conversions"] += monthly_roth_conversions
+            qlog["Social Security"] += monthly_ss
+            qlog["Salary"] += monthly_salary
 
             # Snapshot balances
             snapshot = {"Date": forecast_date}
@@ -146,10 +148,11 @@ class ForecastEngine:
             # Quarterly tax estimation
             if forecast_date.month in {3, 6, 9, 12}:
                 ytd_log = {
-                    "Salary": 0,
-                    "Social Security": 0,
                     "Tax-Deferred Withdrawals": 0,
                     "Taxable Gains": 0,
+                    "Roth Conversions": 0,
+                    "Social Security": 0,
+                    "Salary": 0,
                 }
                 for q in range(1, quarter + 1):
                     qlog = quarterly_tax_log.get((year, q))
@@ -162,6 +165,7 @@ class ForecastEngine:
                     ss_benefits=ytd_log["Social Security"],
                     withdrawals=ytd_log["Tax-Deferred Withdrawals"],
                     gains=ytd_log["Taxable Gains"],
+                    roth=ytd_log["Roth Conversions"],
                     age=(
                         (forecast_date - pd.to_datetime(self.dob)).days / 365
                         if self.dob
@@ -192,6 +196,7 @@ class ForecastEngine:
                         ss_benefits=ss,
                         withdrawals=wdraw,
                         gains=gain,
+                        roth=roth,
                         age=(
                             (year - pd.to_datetime(self.dob).year) if self.dob else None
                         ),
@@ -244,18 +249,18 @@ class ForecastEngine:
                     tax_records.append(
                         {
                             "Year": prev_year,
-                            "Roth Conversions": roth,
+                            "Adjusted Gross Income (AGI)": agi,
+                            "Ordinary Income": ordinary_income,
+                            "Total Tax": total_tax,
                             "Tax-Deferred Withdrawals": wdraw,
+                            "Penalty Tax": pen_tax,
                             "Taxable Gains": gain,
+                            "Capital Gains Tax": capg_tax,
+                            "Roth Conversions": roth,
                             "Salary": sal,
                             "Social Security": ss,
                             "Taxable Social Security": taxable_ss,
-                            "Adjusted Gross Income (AGI)": agi,
-                            "Ordinary Income": ordinary_income,
                             "Ordinary Tax": ord_tax,
-                            "Capital Gains Tax": capg_tax,
-                            "Penalty Tax": pen_tax,
-                            "Total Tax": total_tax,
                         }
                     )
 
