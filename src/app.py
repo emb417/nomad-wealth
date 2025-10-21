@@ -81,6 +81,29 @@ def timed(label):
     logging.info(f"{label} completed in {(time.time() - start):.1f} seconds.")
 
 
+def build_description_inflation_modifiers(
+    base_inflation: Dict[int, Dict[str, float]],
+    inflation_profiles: Dict[str, Dict[str, float]],
+    inflation_defaults: Dict[str, float],
+    years: List[int],
+) -> Dict[str, Dict[int, Dict[str, float]]]:
+    modifiers = {}
+    for desc, profile in inflation_profiles.items():
+        # avoid name collision with outer profile object
+        sensitivity = (
+            profile.get("avg", inflation_defaults["avg"]) / inflation_defaults["avg"]
+        )
+        adjusted = {}
+        modifier = 1.0
+        for year in years:
+            base_rate = base_inflation[year]["rate"]
+            adjusted_rate = base_rate * sensitivity
+            modifier *= 1 + adjusted_rate
+            adjusted[year] = {"rate": adjusted_rate, "modifier": modifier}
+        modifiers[desc] = adjusted
+    return modifiers
+
+
 def create_bucket(
     name: str,
     starting_balance: int,
@@ -206,11 +229,11 @@ def stage_init_components(
     # Build buckets from canonical buckets.json
     buckets = seed_buckets_from_config(hist_df, buckets_config, flow_tracker)
 
-    # Taxable eligibility
+    # Penalty tax eligibility period
     dob = profile.get("Date of Birth")
     eligibility = retirement_period_from_dob(dob) if dob else None
 
-    # Refill policy & tax calculator (taxable_eligibility uses same retirement cutoff)
+    # Refill policy
     refill_policy = ThresholdRefillPolicy(
         thresholds=policies_config["thresholds"],
         source_by_target=policies_config["sources"],
@@ -220,42 +243,33 @@ def stage_init_components(
         liquidation_buckets=policies_config["liquidation"]["buckets"],
     )
 
+    # Tax calculator
     ordinary_brackets = tax_brackets["ordinary"]
     capital_gains_brackets = tax_brackets["capital_gains"]
     social_security_brackets = tax_brackets["social_security_taxability"]
-
     tax_calc = TaxCalculator(
         ordinary_brackets=ordinary_brackets,
         capital_gains_brackets=capital_gains_brackets,
         social_security_brackets=social_security_brackets,
     )
 
+    # base inflation and modifiers
     inflation_defaults = inflation_rate.get("default", {"avg": 0.02, "std": 0.01})
     inflation_profiles = inflation_rate.get("profiles", {})
-
-    # apply gains
     years = sorted(future_df["Date"].dt.year.unique())
     infl_gen = InflationGenerator(
         years, avg=inflation_defaults["avg"], std=inflation_defaults["std"]
     )
     base_inflation = infl_gen.generate()
+    description_inflation_modifiers = build_description_inflation_modifiers(
+        base_inflation, inflation_profiles, inflation_defaults, years
+    )
+
+    # gains
     market_gains = MarketGains(gain_table, inflation_thresholds, base_inflation)
 
     # transactions
     fixed_tx = FixedTransaction(dfs["fixed"])
-
-    description_inflation_modifiers = {}
-
-    for desc, inflation_profile in inflation_profiles.items():
-        sensitivity = inflation_profile["avg"] / inflation_defaults["avg"]
-        adjusted = {}
-        modifier = 1.0
-        for year in years:
-            base_rate = base_inflation[year]["rate"]
-            adjusted_rate = base_rate * sensitivity
-            modifier *= 1 + adjusted_rate
-            adjusted[year] = {"rate": adjusted_rate, "modifier": modifier}
-        description_inflation_modifiers[desc] = adjusted
 
     recur_tx = RecurringTransaction(
         df=dfs["recurring"],
@@ -263,8 +277,11 @@ def stage_init_components(
         description_inflation_modifiers=description_inflation_modifiers,
     )
 
+    rental_profile = description_inflation_modifiers.get("Rental", {})
     rental_tx = RentalTransaction(
         monthly_amount=json_data["profile"]["Monthly Rent"],
+        annual_infl=rental_profile,
+        description_key="Rental",
     )
 
     salary_tx = SalaryTransaction(

@@ -15,6 +15,7 @@
     "Entertainment": { "avg": 0.028, "std": 0.02 },
     "Subscriptions": { "avg": 0.02, "std": 0.01 },
     "Property Taxes": { "avg": 0.03, "std": 0.015 },
-    "Home Insurance": { "avg": 0.05, "std": 0.03 }
+    "Home Insurance": { "avg": 0.05, "std": 0.03 },
+    "Rental": { "avg": 0.025, "std": 0.01 }
   }
 }

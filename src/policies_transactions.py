@@ -95,22 +95,37 @@ class RefillTransaction(PolicyTransaction):
 
 
 class RentalTransaction(PolicyTransaction):
-    """
-    A conditional monthly expense (e.g. rent) that withdraws directly from Cash,
-    but only when Property has zero balance.
-    """
-
     def __init__(
         self,
         monthly_amount: int,
+        annual_infl: Dict[int, Dict[str, float]],
+        description_key: str = "Rental",
     ):
         super().__init__()
         self.monthly_amount = int(monthly_amount)
         self.source_bucket = "Cash"
         self.condition_bucket = "Property"
+        self.annual_infl = annual_infl
+        self.description_key = description_key
+        self.nominal_monthly_amount = int(monthly_amount)
+
+    def _inflated_amount_for_month(self, tx_month: pd.Period) -> int:
+        if not self.annual_infl:
+            return self.nominal_monthly_amount
+
+        base_year = min(self.annual_infl.keys())
+        # if we have a recorded start year for the transaction, you could store it; otherwise use the first available year
+        start_year = base_year
+        current_year = tx_month.start_time.year
+        base_modifier = self.annual_infl.get(start_year, {}).get("modifier", 1.0)
+        current_modifier = self.annual_infl.get(current_year, {}).get("modifier", 1.0)
+        try:
+            inflation_multiplier = current_modifier / base_modifier
+        except Exception:
+            inflation_multiplier = 1.0
+        return int(round(self.nominal_monthly_amount * inflation_multiplier))
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
-        # only pay rent if property is gone
         cond = buckets.get(self.condition_bucket)
         if cond is None or cond.balance() > 0:
             return
@@ -119,7 +134,8 @@ class RentalTransaction(PolicyTransaction):
         if src is None:
             return
 
-        src.withdraw(self.monthly_amount, "Rental", tx_month)
+        amt = self._inflated_amount_for_month(tx_month)
+        src.withdraw(amt, "Rental", tx_month)
 
 
 class RothConversionTransaction(PolicyTransaction):
