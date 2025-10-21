@@ -48,21 +48,25 @@ logging.basicConfig(
 # Simulation settings
 SIM_SIZE = 100
 SIM_EXAMPLE_SIZE = 1
-SHOW_HISTORICAL_BALANCE_CHART = True
+SHOW_HISTORICAL = True
+SHOW_MONTE_CARLO = True
+
+# Visualization settings (overrides)
+SHOW_HISTORICAL_BALANCE_CHART = False
 SAVE_HISTORICAL_BALANCE_CHART = False
-SHOW_HISTORICAL_BUCKET_GAINS_CHART = True
+SHOW_HISTORICAL_BUCKET_GAINS_CHART = False
 SAVE_HISTORICAL_BUCKET_GAINS_CHART = False
-SHOW_EXAMPLE_FORECAST_CHART = True
+SHOW_EXAMPLE_FORECAST_CHART = False
 SAVE_EXAMPLE_FORECAST_CHART = False
-SHOW_EXAMPLE_INCOME_TAXES_CHART = True
+SHOW_EXAMPLE_INCOME_TAXES_CHART = False
 SAVE_EXAMPLE_INCOME_TAXES_CHART = False
-SHOW_EXAMPLE_TRANSACTIONS_CHART = True
+SHOW_EXAMPLE_TRANSACTIONS_CHART = False
 SAVE_EXAMPLE_TRANSACTIONS_CHART = False
-SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = True
+SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
 SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
-SHOW_NETWORTH_CHART = True
+SHOW_NETWORTH_CHART = False
 SAVE_NETWORTH_CHART = False
-SHOW_TAXES_CHART = True
+SHOW_TAXES_CHART = False
 SAVE_TAXES_CHART = False
 
 rng = np.random.default_rng()
@@ -361,17 +365,21 @@ def main():
         dob = pd.to_datetime(json_data["profile"]["Date of Birth"])
         eol = pd.to_datetime(json_data["profile"]["End Date"])
 
-        plot_historical_balance(
-            dfs["balance"],
-            ts,
-            SHOW_HISTORICAL_BALANCE_CHART,
-            SAVE_HISTORICAL_BALANCE_CHART,
-        )
         plot_historical_bucket_gains(
             dfs["balance"],
             ts,
-            SHOW_HISTORICAL_BUCKET_GAINS_CHART,
+            (
+                SHOW_HISTORICAL_BUCKET_GAINS_CHART
+                if not SHOW_HISTORICAL
+                else SHOW_HISTORICAL
+            ),
             SAVE_HISTORICAL_BUCKET_GAINS_CHART,
+        )
+        plot_historical_balance(
+            dfs["balance"],
+            ts,
+            SHOW_HISTORICAL_BALANCE_CHART if not SHOW_HISTORICAL else SHOW_HISTORICAL,
+            SAVE_HISTORICAL_BALANCE_CHART,
         )
 
         hist_df, future_df = stage_prepare_timeframes(dfs["balance"], eol)
@@ -454,7 +462,7 @@ def main():
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=SHOW_TAXES_CHART,
+            show=SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
             save=SAVE_TAXES_CHART,
         )
 
@@ -465,7 +473,7 @@ def main():
             eol=eol,
             summary=summary,
             ts=ts,
-            show=SHOW_NETWORTH_CHART,
+            show=SHOW_NETWORTH_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
             save=SAVE_NETWORTH_CHART,
         )
 

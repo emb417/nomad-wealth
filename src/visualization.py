@@ -647,13 +647,23 @@ def plot_historical_bucket_gains(
     # Monthly percent change
     monthly_pct = df[bucket_cols].pct_change().fillna(0)
     monthly_pct.reset_index(inplace=True)
-
-    # Annual percent change (12-month rolling)
-    annual_pct = df[bucket_cols].pct_change(periods=12).fillna(0)
-    annual_pct.reset_index(inplace=True)
+    monthly_networth_change = df[bucket_cols].sum(axis=1).pct_change().fillna(0)
+    monthly_networth_total = df[bucket_cols].sum(axis=1).values
 
     # Build traces
     traces = []
+
+    traces.append(
+        go.Scatter(
+            x=monthly_pct["Date"],
+            y=monthly_networth_change.values,
+            mode="markers",
+            name="Net Worth",
+            marker=dict(color="black", size=20, symbol="line-ew-open"),
+            customdata=monthly_networth_total,
+            hovertemplate="Net Worth: %{y:.2%} to %{customdata:$,.0f}<extra></extra>",
+        )
+    )
 
     for col in bucket_cols:
         monthly_vals = monthly_pct[col].values
@@ -683,7 +693,7 @@ def plot_historical_bucket_gains(
                 yaxis="y",
                 customdata=balance_vals,
                 hovertemplate=(
-                    f"{col}: %{{y:.2%}} " f"(%{{customdata:$,.0f}})<extra></extra>"
+                    f"{col}: %{{y:.2%}} " f"to %{{customdata:$,.0f}}<extra></extra>"
                 ),
             )
         )
@@ -691,7 +701,7 @@ def plot_historical_bucket_gains(
     fig = go.Figure(data=traces)
 
     fig.update_layout(
-        title="Historical Monthly Gain %",
+        title="Historical Monthly Gain % per Bucket",
         title_x=0.5,
         yaxis=dict(
             tickformat=".2%",
@@ -898,10 +908,6 @@ def plot_mc_networth(
         f" @ {age_metrics['age_minus_10']} y.o.</span>"
         f" | <span style='color: {getPNWColor(age_metrics['age_end_pct'])}'>{age_metrics['age_end_pct']:.1%}"
         f" @ {age_metrics['age_end']} y.o.</span>"
-        f"<br><br>EOL Net Worth: <span style='color: {getEOLNWColor(pct_p15_final_nw)}'>p15 &#36;{networth['p15']}</span>"
-        f" | <span style='color: {getEOLNWColor(pct_median_final_nw)}'>Median &#36;{networth['Median']}</span>"
-        f" | <span style='color: {getEOLNWColor(pct_mean_final_nw)}'>Average &#36;{networth['Average']}</span>"
-        f" | <span style='color: {getEOLNWColor(pct_p85_final_nw)}'>p85 &#36;{networth['p85']}</span>"
         f"<br><br>Property Liquidations: <span style='color: {getPropertyLiquidationColor(pct_liquidation)}'>{pct_liquidation:.1%} of Sims</span>"
     )
     if pct_liquidation != 0:
