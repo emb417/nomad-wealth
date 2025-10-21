@@ -51,11 +51,13 @@ The core auditable, bucket-level transaction engine provides unparalleled transp
 
 - Fixed and recurring transaction ingestion from CSV
 - Inflation-aware market return simulation via user-defined gain tables
-- Threshold-driven refill policies with retirement-age gating to avoid penalties
-- Configurable emergency liquidation hierarchy across buckets
-- Automated recurring rental transactions after property liquidation event
+- Inflation-sensitive recurring expenses with per-description modifiers
+- Indexed rental and Social Security income streams with category-specific inflation profiles
+- Required Minimum Distributions (RMDs) modeled as tax-deferred transfers with age-based triggers
 - Tax-aware withdrawals distinguishing ordinary income, capital gains, and penalties
 - Independent Roth conversion scheduling
+- Threshold-driven refill policies with retirement-age gating to avoid penalties
+- Configurable emergency liquidation hierarchy across buckets
 - Monte Carlo sampling with percentile bands and probability metrics
 - Interactive Plotly visualizations and CSV exports
 
@@ -149,7 +151,12 @@ See [`export/README.md`](export/README.md) for details.
 Each month the engine sequentially applies:
 
 1. Rule-driven transactions (fixed and inflation-aware recurring expenses)
-2. Policy-driven transactions (rental, salary, SS, Roth Conversion)
+2. Policy-driven transactions (rental, RMDs, salary, SS, Roth Conversion)
+   - Rental income indexed to inflation
+   - Social Security income with inflation modifiers and cash routing
+   - Required Minimum Distributions (RMDs) from tax-deferred buckets with tax-aware treatment
+   - Salary and bonus income with retirement-aware gating
+   - Roth conversions with source-target routing and tax tracking
 3. Refill policy (age-gated for tax-deferred sources)
 4. Market returns via inflation-aware gain sampling
 5. Monthly tax drip and tax collection
@@ -165,7 +172,6 @@ Each month the engine sequentially applies:
 - UI for tuning configurations: profile, holdings, gains, inflation, policies
 - UI for managing future transactions: fixed and recurring
 - UI for managing income sources: unemployement, salary, bonuses, social security
-- Handle Required Minimium Distributions programatically instead of using date-based policy with static amounts
 - Handle Health Savings Account spending programatically, instead of using date-based recurring transactions
 - Handle unemployment and delayed salary expectations
 - Handle self-employment taxes
