@@ -71,7 +71,12 @@ class FixedTransaction(RuleTransaction):
 
 class RecurringTransaction(RuleTransaction):
     def __init__(
-        self, df: pd.DataFrame, taxable_eligibility: Optional[pd.Period] = None
+        self,
+        df: pd.DataFrame,
+        taxable_eligibility: Optional[pd.Period] = None,
+        description_inflation_modifiers: Optional[
+            Dict[str, Dict[int, Dict[str, float]]]
+        ] = None,
     ):
         self.df = df.copy()
         self.df["Start Date"] = pd.to_datetime(self.df["Start Date"])
@@ -85,6 +90,7 @@ class RecurringTransaction(RuleTransaction):
                 else None
             )
         )
+        self.description_inflation_modifiers = description_inflation_modifiers or {}
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         for _, row in self.df.iterrows():
@@ -98,7 +104,25 @@ class RecurringTransaction(RuleTransaction):
                 logging.warning(f"{tx_month} — Bucket '{bucket_name}' not found")
                 continue
 
-            amount = int(row["Amount"])
+            base_year = row["Start Date"].year
+            current_year = tx_month.start_time.year
+            amount = float(row["Amount"])
+            desc = row["Description"]
+            inflation_dict = self.description_inflation_modifiers.get(desc, {})
+
+            try:
+                base_modifier = inflation_dict.get(base_year, {}).get("modifier", 1.0)
+                current_modifier = inflation_dict.get(current_year, {}).get(
+                    "modifier", 1.0
+                )
+                inflation_multiplier = current_modifier / base_modifier
+                amount *= inflation_multiplier
+            except Exception as e:
+                logging.warning(
+                    f"{tx_month} — Inflation adjustment failed for '{desc}': {e}"
+                )
+
+            amount = int(round(amount))
             bucket = buckets[bucket_name]
 
             if amount >= 0:

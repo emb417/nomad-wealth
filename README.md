@@ -148,13 +148,14 @@ See [`export/README.md`](export/README.md) for details.
 
 Each month the engine sequentially applies:
 
-1. Core transactions (fixed, recurring, rental, salary, SS, Roth)
-2. Threshold-based refills (age-gated for tax-deferred sources)
-3. Market returns via inflation-aware gain sampling
-4. Emergency liquidation when cash falls below threshold, bypassing age-gating if needed (i.e. tax-penalized)
+1. Rule-driven transactions (fixed and inflation-aware recurring expenses)
+2. Policy-driven transactions (rental, salary, SS, Roth Conversion)
+3. Refill policy (age-gated for tax-deferred sources)
+4. Market returns via inflation-aware gain sampling
 5. Monthly tax drip and tax collection
-6. Balance snapshot and tax aggregation
-7. January year-end tax payment and penalty integration
+6. Emergency liquidation when cash falls below threshold, bypassing age-gating if needed (i.e. tax-penalized)
+7. Quarterly and Annual Balance snapshots, tax estimates and tax aggregation
+8. January year-end tax payment and penalty integration
 
 ---
 
@@ -174,6 +175,5 @@ Each month the engine sequentially applies:
 - Scenario tagging and multi-profile support
 - Interactive forecast comparison across scenarios
 - Support "smile" expenses curve
-- Category-specific inflation for expenses
 
 ---

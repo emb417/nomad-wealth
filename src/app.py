@@ -50,6 +50,7 @@ SIM_SIZE = 100
 SIM_EXAMPLE_SIZE = 1
 SHOW_HISTORICAL = True
 SHOW_MONTE_CARLO = True
+SHOW_EXAMPLES = True
 
 # Visualization settings (overrides)
 SHOW_HISTORICAL_BALANCE_CHART = False
@@ -229,17 +230,38 @@ def stage_init_components(
         social_security_brackets=social_security_brackets,
     )
 
+    inflation_defaults = inflation_rate.get("default", {"avg": 0.02, "std": 0.01})
+    inflation_profiles = inflation_rate.get("profiles", {})
+
     # apply gains
     years = sorted(future_df["Date"].dt.year.unique())
     infl_gen = InflationGenerator(
-        years, avg=inflation_rate["avg"], std=inflation_rate["std"]
+        years, avg=inflation_defaults["avg"], std=inflation_defaults["std"]
     )
-    annual_infl = infl_gen.generate()
-    market_gains = MarketGains(gain_table, inflation_thresholds, annual_infl)
+    base_inflation = infl_gen.generate()
+    market_gains = MarketGains(gain_table, inflation_thresholds, base_inflation)
 
     # transactions
     fixed_tx = FixedTransaction(dfs["fixed"])
-    recur_tx = RecurringTransaction(dfs["recurring"])
+
+    description_inflation_modifiers = {}
+
+    for desc, inflation_profile in inflation_profiles.items():
+        sensitivity = inflation_profile["avg"] / inflation_defaults["avg"]
+        adjusted = {}
+        modifier = 1.0
+        for year in years:
+            base_rate = base_inflation[year]["rate"]
+            adjusted_rate = base_rate * sensitivity
+            modifier *= 1 + adjusted_rate
+            adjusted[year] = {"rate": adjusted_rate, "modifier": modifier}
+        description_inflation_modifiers[desc] = adjusted
+
+    recur_tx = RecurringTransaction(
+        df=dfs["recurring"],
+        taxable_eligibility=eligibility,
+        description_inflation_modifiers=description_inflation_modifiers,
+    )
 
     rental_tx = RentalTransaction(
         monthly_amount=json_data["profile"]["Monthly Rent"],
@@ -275,7 +297,7 @@ def stage_init_components(
         refill_policy,
         tax_calc,
         market_gains,
-        annual_infl,
+        base_inflation,
         rule_txns,
         policy_txns,
     )
@@ -299,7 +321,7 @@ def run_one_sim(
         refill_policy,
         tax_calc,
         market_gains,
-        inflation,
+        base_inflation,
         rule_txns,
         policy_txns,
     ) = stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker)
@@ -314,7 +336,7 @@ def run_one_sim(
         policy_transactions=policy_txns,
         refill_policy=refill_policy,
         market_gains=market_gains,
-        inflation=inflation,
+        inflation=base_inflation,
         tax_calc=tax_calc,
         profile=json_data["profile"],
     )
@@ -423,7 +445,11 @@ def main():
                         flow_df=flow_df,
                         sim=sim,
                         ts=ts,
-                        show=SHOW_EXAMPLE_TRANSACTIONS_CHART,
+                        show=(
+                            SHOW_EXAMPLE_TRANSACTIONS_CHART
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
+                        ),
                         save=SAVE_EXAMPLE_TRANSACTIONS_CHART,
                     )
                     plot_example_transactions_in_context(
@@ -431,7 +457,11 @@ def main():
                         forecast_df=forecast_df.drop(columns=["Net Worth", "Year"]),
                         flow_df=flow_df,
                         ts=ts,
-                        show=SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
+                        show=(
+                            SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
+                        ),
                         save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                     )
                     plot_example_income_taxes(
@@ -439,7 +469,11 @@ def main():
                         sim=sim,
                         dob=dob,
                         ts=ts,
-                        show=SHOW_EXAMPLE_INCOME_TAXES_CHART,
+                        show=(
+                            SHOW_EXAMPLE_INCOME_TAXES_CHART
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
+                        ),
                         save=SAVE_EXAMPLE_INCOME_TAXES_CHART,
                     )
                     plot_example_forecast(
@@ -448,7 +482,11 @@ def main():
                         forecast_df=forecast_df.drop(columns=["Year"]),
                         dob=dob,
                         ts=ts,
-                        show=SHOW_EXAMPLE_FORECAST_CHART,
+                        show=(
+                            SHOW_EXAMPLE_FORECAST_CHART
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
+                        ),
                         save=SAVE_EXAMPLE_FORECAST_CHART,
                     )
 
