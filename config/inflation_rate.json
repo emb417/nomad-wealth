@@ -1,23 +1,20 @@
 {
-  "default": {
-    "avg": 0.023,
-    "std": 0.017
-  },
+  "default": { "avg": 0.023, "std": 0.02 },
   "profiles": {
-    "Mortgage": { "avg": 0.02, "std": 0.005 },
-    "Food": { "avg": 0.03, "std": 0.015 },
-    "Goods": { "avg": 0.025, "std": 0.01 },
-    "Home Maintenance": { "avg": 0.03, "std": 0.01 },
-    "Utilities": { "avg": 0.02, "std": 0.005 },
-    "Travel": { "avg": 0.03, "std": 0.02 },
-    "Auto Maintenance": { "avg": 0.025, "std": 0.01 },
-    "Health and Prescriptions": { "avg": 0.04, "std": 0.015 },
-    "Voice and Data": { "avg": 0.01, "std": 0.005 },
-    "Restaurants": { "avg": 0.03, "std": 0.015 },
-    "Auto Insurance": { "avg": 0.02, "std": 0.005 },
-    "Entertainment": { "avg": 0.03, "std": 0.02 },
+    "Mortgage": { "avg": 0.015, "std": 0.006 },
+    "Food": { "avg": 0.03, "std": 0.02 },
+    "Goods": { "avg": 0.02, "std": 0.015 },
+    "Home Maintenance": { "avg": 0.025, "std": 0.012 },
+    "Utilities": { "avg": 0.02, "std": 0.02 },
+    "Travel": { "avg": 0.035, "std": 0.03 },
+    "Auto Maintenance": { "avg": 0.025, "std": 0.015 },
+    "Health and Prescriptions": { "avg": 0.035, "std": 0.015 },
+    "Voice and Data": { "avg": 0.0075, "std": 0.01 },
+    "Restaurants": { "avg": 0.033, "std": 0.02 },
+    "Auto Insurance": { "avg": 0.025, "std": 0.02 },
+    "Entertainment": { "avg": 0.028, "std": 0.02 },
     "Subscriptions": { "avg": 0.02, "std": 0.01 },
-    "Property Taxes": { "avg": 0.025, "std": 0.01 },
-    "Home Insurance": { "avg": 0.025, "std": 0.01 }
+    "Property Taxes": { "avg": 0.03, "std": 0.015 },
+    "Home Insurance": { "avg": 0.05, "std": 0.03 }
   }
 }

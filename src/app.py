@@ -280,6 +280,7 @@ def stage_init_components(
         monthly_amount=profile["Social Security Amount"],
         pct_cash=profile["Social Security Percentage"],
         cash_bucket=policies_config["social_security"],
+        annual_infl=base_inflation,
     )
 
     roth_conv = RothConversionTransaction(

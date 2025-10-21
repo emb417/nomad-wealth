@@ -231,18 +231,42 @@ class SalaryTransaction(PolicyTransaction):
 
 class SocialSecurityTransaction(PolicyTransaction):
     def __init__(
-        self, start_date: str, monthly_amount: int, pct_cash: float, cash_bucket: str
+        self,
+        start_date: str,
+        monthly_amount: int,
+        pct_cash: float,
+        cash_bucket: str,
+        annual_infl: Dict[int, Dict[str, float]],
     ):
         self.start_month = pd.to_datetime(start_date).to_period("M")
-        self.monthly_amount = monthly_amount
+        self.nominal_monthly_amount = int(round(monthly_amount))
         self.cash_amt = int(round(monthly_amount * pct_cash))
         self.cash_bucket = cash_bucket
+        self.annual_infl = annual_infl
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
-        if tx_month >= self.start_month:
-            buckets[self.cash_bucket].deposit(
-                self.cash_amt, "Social Security", tx_month
-            )
+        amt = self.get_social_security(tx_month)
+        if amt <= 0:
+            return
+
+        # deposit scaled amount to cash bucket
+        deposit_amt = int(round(amt))
+        buckets[self.cash_bucket].deposit(deposit_amt, "Social Security", tx_month)
 
     def get_social_security(self, tx_month: pd.Period) -> int:
-        return self.monthly_amount if tx_month >= self.start_month else 0
+        if tx_month < self.start_month:
+            return 0
+
+        if not self.annual_infl:
+            return self.nominal_monthly_amount
+
+        base_year = self.start_month.start_time.year
+        current_year = tx_month.start_time.year
+
+        # choose base and current modifiers
+        base_modifier = self.annual_infl.get(base_year, {}).get("modifier", 1.0)
+        current_modifier = self.annual_infl.get(current_year, {}).get("modifier", 1.0)
+        inflation_multiplier = current_modifier / base_modifier
+
+        inflated = int(round(self.nominal_monthly_amount * inflation_multiplier))
+        return inflated
