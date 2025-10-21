@@ -21,6 +21,7 @@ from load_data import load_csv, load_json
 from policies_engine import ThresholdRefillPolicy
 from policies_transactions import (
     RentalTransaction,
+    RequiredMinimumDistributionTransaction,
     RothConversionTransaction,
     SalaryTransaction,
     SocialSecurityTransaction,
@@ -284,6 +285,8 @@ def stage_init_components(
         description_key="Rental",
     )
 
+    rmd_tx = RequiredMinimumDistributionTransaction(dob=dob)
+
     salary_tx = SalaryTransaction(
         annual_gross=profile["Annual Gross Income"],
         annual_bonus=profile["Annual Bonus Amount"],
@@ -308,7 +311,7 @@ def stage_init_components(
     )
 
     rule_txns = [fixed_tx, recur_tx]
-    policy_txns = [rental_tx, salary_tx, ss_txn, roth_conv]
+    policy_txns = [rental_tx, rmd_tx, salary_tx, ss_txn, roth_conv]
 
     return (
         buckets,

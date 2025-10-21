@@ -760,25 +760,6 @@ def plot_mc_networth(
         "age_end_pct": (mc_networth_df.loc[eol_year] > 0).mean(),
     }
 
-    # filter mc_networth_df based on final net worth for chart
-    pct_p15_final_nw = pct_df["p15"][eol_year]
-    pct_mean_final_nw = pct_df["mean"][eol_year]
-    pct_median_final_nw = pct_df["median"][eol_year]
-    pct_p85_final_nw = pct_df["p85"][eol_year]
-    mc_networth_df_filtered = mc_networth_df.loc[mc_networth_df.index == eol_year]
-    columns_to_drop = [
-        column_name
-        for column_name in mc_networth_df_filtered.columns
-        if mc_networth_df_filtered[column_name].iloc[0] > pct_p85_final_nw
-    ]
-    mc_p85 = mc_networth_df.drop(columns=columns_to_drop)
-    networth = {
-        "p15": "{:,.0f}".format(int(pct_p15_final_nw)),
-        "Median": "{:,.0f}".format(int(pct_median_final_nw)),
-        "Average": "{:,.0f}".format(int(pct_mean_final_nw)),
-        "p85": "{:,.0f}".format(int(pct_p85_final_nw)),
-    }
-
     # liquidation metrics
     min_liquidation_age = (
         summary["Minimum Property Liquidation Year"] - dob_year
@@ -817,8 +798,19 @@ def plot_mc_networth(
             hovertemplate=("Age %{customdata:.0f}<extra></extra>"),
         )
     )
-    # Monte-Carlo samples < p85, examples in purple
-    for col in mc_p85.columns:
+    # Monte-Carlo samples - top/bottom 5%, examples in purple
+
+    # Compute 5th and 95th percentiles
+    final_values = mc_networth_df.iloc[-1]
+    lower_bound = final_values.quantile(0.1)
+    upper_bound = final_values.quantile(0.9)
+    filtered_cols = [
+        col
+        for col in mc_networth_df.columns
+        if lower_bound <= final_values[col] <= upper_bound
+    ]
+
+    for col in filtered_cols:
         is_sample = col in sim_examples
         color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
         hover_kwargs = (
@@ -830,7 +822,7 @@ def plot_mc_networth(
         fig.add_trace(
             go.Scatter(
                 x=years,
-                y=mc_p85[col],
+                y=mc_networth_df[col],
                 showlegend=False,
                 line=dict(color=color, width=2),
                 opacity=opacity,
@@ -884,9 +876,6 @@ def plot_mc_networth(
 
     def getPNWColor(value):
         return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
-
-    def getEOLNWColor(value):
-        return "green" if value > 1000000 else "blue" if value > 0 else "red"
 
     def getPropertyLiquidationColor(value):
         return "green" if value < 0.2 else "blue" if value < 0.5 else "red"

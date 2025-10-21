@@ -75,6 +75,11 @@ class Bucket:
         self.allow_cash_fallback = allow_cash_fallback
         self.bucket_type = bucket_type
         self.flow_tracker = flow_tracker
+        self._end_of_month_balance = {}
+
+    def balance_at_period_end(self, year: int, month: int = 12) -> float:
+        key = (year, month)
+        return float(self._end_of_month_balance.get(key, self.balance()))
 
     def balance(self) -> int:
         return sum(h.amount for h in self.holdings)

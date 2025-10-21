@@ -138,6 +138,124 @@ class RentalTransaction(PolicyTransaction):
         src.withdraw(amt, "Rental", tx_month)
 
 
+class RequiredMinimumDistributionTransaction(PolicyTransaction):
+    DEFAULT_DIVISOR_TABLE = {
+        70: 27.4,
+        71: 26.5,
+        72: 25.6,
+        73: 24.7,
+        74: 23.8,
+        75: 22.9,
+        76: 22.0,
+        77: 21.2,
+        78: 20.3,
+        79: 19.5,
+        80: 18.7,
+        81: 17.9,
+        82: 17.1,
+        83: 16.3,
+        84: 15.5,
+        85: 14.8,
+        86: 14.1,
+        87: 13.4,
+        88: 12.7,
+        89: 12.0,
+        90: 11.4,
+        91: 10.8,
+        92: 10.2,
+        93: 9.6,
+        94: 9.1,
+        95: 8.6,
+        96: 8.1,
+        97: 7.6,
+        98: 7.1,
+        99: 6.7,
+        100: 6.3,
+    }
+
+    def __init__(
+        self,
+        dob: str,
+        start_age: int = 72,
+        rmd_month: int = 12,
+        monthly_spread: bool = False,
+        rounding: str = "monthly",
+    ):
+        super().__init__()
+        self.dob = pd.to_datetime(dob)
+        self.start_age = int(start_age)
+        self.rmd_month = int(rmd_month)
+        self.monthly_spread = monthly_spread
+        self.rounding = rounding
+        self._cached_annual_rmd: Dict[int, int] = {}
+        self._applied_amount: int = 0
+
+    def _age_at_period(self, period: pd.Period) -> int:
+        year_diff = period.start_time.year - self.dob.year
+        had_birthday = (period.start_time.month, period.start_time.day) >= (
+            self.dob.month,
+            self.dob.day,
+        )
+        return year_diff if had_birthday else year_diff - 1
+
+    def _compute_annual_rmd(self, year: int, buckets: Dict[str, Bucket]) -> int:
+        if year in self._cached_annual_rmd:
+            return self._cached_annual_rmd[year]
+
+        prior_year = year - 1
+        b = buckets.get("Tax-Deferred")
+        prior_balance = b.balance_at_period_end(prior_year) if b else 0
+        age = self._age_at_period(pd.Period(f"{year}-12", freq="M"))
+        divisor = RequiredMinimumDistributionTransaction.DEFAULT_DIVISOR_TABLE.get(
+            age, 25.6
+        )
+        rmd = int(round(prior_balance / divisor)) if divisor > 0 else 0
+        self._cached_annual_rmd[year] = rmd
+        return rmd
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        year = tx_month.start_time.year
+        month = tx_month.start_time.month
+        age = self._age_at_period(tx_month)
+        self._applied_amount = 0
+
+        if age < self.start_age:
+            return
+
+        if not self.monthly_spread and month != self.rmd_month:
+            return
+        if self.monthly_spread and month < self.rmd_month:
+            return
+
+        annual_rmd = self._compute_annual_rmd(year, buckets)
+        months_to_spread = max(1, 13 - self.rmd_month)
+        if self.monthly_spread:
+            if self.rounding == "annual":
+                base = annual_rmd // months_to_spread
+                remainder = annual_rmd - base * months_to_spread
+                month_index = month - self.rmd_month
+                amount = base + (remainder if month_index == 0 else 0)
+            else:
+                amount = int(round(annual_rmd / months_to_spread))
+        else:
+            amount = annual_rmd
+
+        src = buckets.get("Tax-Deferred")
+        tgt = buckets.get("Taxable")
+        if src and tgt and amount > 0:
+            applied = src.transfer(amount, tgt, tx_month)
+            self._applied_amount = applied
+
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        return self._applied_amount
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return 0
+
+    def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0
+
+
 class RothConversionTransaction(PolicyTransaction):
     """
     Gradually convert from Tax-Deferred → Roth bucket,
