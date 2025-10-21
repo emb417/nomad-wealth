@@ -4,7 +4,7 @@
     "Fixed-Income": 90000
   },
   "amounts": {
-    "Cash": 20000,
+    "Cash": 10000,
     "Fixed-Income": 30000
   },
   "sources": {
@@ -20,10 +20,11 @@
   },
   "social_security": "Cash",
   "roth_conversion": {
-    "Start Date": "2030-01-01",
-    "Amount": 6000,
+    "Max Tax Rate": 0.1,
+    "Start Date": "2026-01-01",
     "Source": "Tax-Deferred",
-    "Target": "Tax-Free"
+    "Target": "Tax-Free",
+    "Chunk Size": 1000
   },
   "liquidation": {
     "threshold": -20000,
@@ -33,6 +34,7 @@
       "Fixed-Income",
       "Tax-Deferred",
       "Tax-Free",
+      "Vehicles",
       "Property"
     ]
   }

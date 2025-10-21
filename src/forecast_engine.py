@@ -35,6 +35,14 @@ class ForecastEngine:
         self.annual_tax_estimate = 0
         self.monthly_tax_drip = 0
         self.dob = profile.get("Date of Birth")
+        self.prior_tax_context = {
+            "Salary": 0,
+            "Social Security": 0,
+            "Tax-Deferred Withdrawals": 0,
+            "Taxable Gains": 0,
+            "Roth Conversions": 0,
+            "Estimated Tax": 0,
+        }
 
     def run(self, ledger_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
         records = []
@@ -55,7 +63,8 @@ class ForecastEngine:
 
             # Policy-driven transactions
             for tx in self.policy_transactions:
-                tx.apply(self.buckets, tx_month)
+                if not isinstance(tx, RothConversionTransaction):
+                    tx.apply(self.buckets, tx_month)
 
             # Refill policy
             refill_txns = self.refill_policy.generate_refills(self.buckets, tx_month)
@@ -74,6 +83,21 @@ class ForecastEngine:
             liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
             for tx in liq_txns:
                 tx.apply(self.buckets, tx_month)
+
+            # Roth conversions
+            for tx in self.policy_transactions:
+                if isinstance(tx, RothConversionTransaction):
+                    tx.apply(
+                        self.buckets,
+                        tx_month,
+                        self.tax_calc,
+                        estimated_tax=self.prior_tax_context["Estimated Tax"],
+                        salary=self.prior_tax_context["Salary"],
+                        ss_benefits=self.prior_tax_context["Social Security"],
+                        withdrawals=self.prior_tax_context["Tax-Deferred Withdrawals"],
+                        gains=self.prior_tax_context["Taxable Gains"],
+                        roth=self.prior_tax_context["Roth Conversions"],
+                    )
 
             # Monthly income and tax-relevant flows
             monthly_salary = sum(
@@ -104,7 +128,6 @@ class ForecastEngine:
                 tx.get_penalty_eligible_withdrawal(tx_month)
                 for tx in self.policy_transactions + refill_txns + liq_txns
             )
-
             # Accumulate yearly totals
             if year not in yearly_tax_log:
                 yearly_tax_log[year] = {
@@ -122,6 +145,27 @@ class ForecastEngine:
             ylog["Roth Conversions"] += monthly_roth_conversions
             ylog["Social Security"] += monthly_ss
             ylog["Salary"] += monthly_salary
+
+            self.prior_tax_context = {
+                "Salary": ylog["Salary"],
+                "Social Security": ylog["Social Security"],
+                "Tax-Deferred Withdrawals": ylog["Tax-Deferred Withdrawals"],
+                "Taxable Gains": ylog["Taxable Gains"],
+                "Roth Conversions": ylog["Roth Conversions"],
+                "Estimated Tax": self.tax_calc.calculate_tax(
+                    salary=ylog["Salary"],
+                    ss_benefits=ylog["Social Security"],
+                    withdrawals=ylog["Tax-Deferred Withdrawals"],
+                    gains=ylog["Taxable Gains"],
+                    roth=ylog["Roth Conversions"],
+                    age=(
+                        (forecast_date - pd.to_datetime(self.dob)).days / 365
+                        if self.dob
+                        else None
+                    ),
+                    standard_deduction=27700,
+                )["total_tax"],
+            }
 
             # Accumulate quarterly totals
             if qkey not in quarterly_tax_log:

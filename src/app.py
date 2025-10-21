@@ -303,11 +303,14 @@ def stage_init_components(
         annual_infl=base_inflation,
     )
 
+    roth_cfg = policies_config.get("roth_conversion", {})
     roth_conv = RothConversionTransaction(
+        max_tax_rate=roth_cfg.get("Max Tax Rate"),
+        source_bucket=roth_cfg.get("Source"),
+        target_bucket=roth_cfg.get("Target"),
+        chunk_size=roth_cfg.get("Chunk Size"),
+        dob=dob,
         start_date=policies_config["roth_conversion"]["Start Date"],
-        monthly_target=policies_config["roth_conversion"]["Amount"],
-        source_bucket=policies_config["roth_conversion"]["Source"],
-        target_bucket=policies_config["roth_conversion"]["Target"],
     )
 
     rule_txns = [fixed_tx, recur_tx]
