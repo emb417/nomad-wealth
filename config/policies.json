@@ -20,11 +20,18 @@
   },
   "social_security": "Cash",
   "roth_conversion": {
-    "Max Tax Rate": 0.1,
+    "Max Tax Rate": 0.12,
     "Start Date": "2026-01-01",
     "Source": "Tax-Deferred",
     "Target": "Tax-Free",
     "Chunk Size": 1000
+  },
+  "sepp": {
+    "Enabled": false,
+    "Start Date": "2029-09-01",
+    "End Date": "2034-09-01",
+    "Source": "Tax-Deferred",
+    "Target": "Cash"
   },
   "liquidation": {
     "threshold": -20000,

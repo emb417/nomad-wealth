@@ -389,6 +389,69 @@ class SalaryTransaction(PolicyTransaction):
         return total
 
 
+class SEPPTransaction(PolicyTransaction):
+    is_tax_deferred = True
+    is_taxable = False
+
+    def __init__(
+        self,
+        dob: str,
+        buckets: Dict[str, Bucket],
+        start_date: str,
+        end_date: str,
+        source: str,
+        target: str,
+    ):
+        self.start_date = pd.to_datetime(start_date)
+        self.dob = pd.to_datetime(dob)
+        self.source_bucket = source
+        self.target_bucket = target
+
+        default_end = max(
+            self.start_date + pd.DateOffset(years=5),
+            self.dob + pd.DateOffset(days=21718),  # 59 years 6 months 1 day
+        )
+        self.end_date = pd.to_datetime(end_date) if end_date else default_end
+
+        age_at_start = (self.start_date - self.dob).days // 365
+        life_expectancy = self._get_uniform_life_expectancy(age_at_start)
+        starting_balance = buckets[self.source_bucket].balance()
+        annual_amount = starting_balance / life_expectancy
+        self.monthly_amount = int(annual_amount / 12)
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period):
+        tx_date = tx_month.start_time
+        if self.start_date <= tx_date < self.end_date:
+            source = buckets[self.source_bucket]
+            target = buckets[self.target_bucket]
+            source.transfer(
+                amount=self.monthly_amount,
+                target_bucket=target,
+                tx_month=tx_month,
+            )
+
+    def get_withdrawal(self, tx_month: pd.Period) -> int:
+        tx_date = tx_month.start_time
+        return self.monthly_amount if self.start_date <= tx_date < self.end_date else 0
+
+    def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0  # Always exempt
+
+    def _get_uniform_life_expectancy(self, age: int) -> float:
+        table = {
+            50: 33.1,
+            55: 29.6,
+            60: 25.2,
+            65: 21.0,
+            70: 17.0,
+            75: 13.4,
+            80: 10.2,
+            85: 7.6,
+            90: 5.5,
+        }
+        return next((v for a, v in sorted(table.items()) if age <= a), 33.1)
+
+
 class SocialSecurityTransaction(PolicyTransaction):
     def __init__(
         self,

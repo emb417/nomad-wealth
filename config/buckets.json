@@ -13,8 +13,8 @@
   },
   "Taxable": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.5 },
-      { "asset_class": "Stocks", "weight": 0.5 }
+      { "asset_class": "Bonds", "weight": 0.4 },
+      { "asset_class": "Stocks", "weight": 0.6 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
@@ -22,8 +22,9 @@
   },
   "Tax-Deferred": {
     "holdings": [
-      { "asset_class": "Stocks", "weight": 0.9 },
-      { "asset_class": "Bonds", "weight": 0.1 }
+      { "asset_class": "Stocks", "weight": 0.8 },
+      { "asset_class": "Bonds", "weight": 0.05 },
+      { "asset_class": "Cash", "weight": 0.05 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
@@ -31,8 +32,9 @@
   },
   "Tax-Free": {
     "holdings": [
-      { "asset_class": "Stocks", "weight": 0.6 },
-      { "asset_class": "Bonds", "weight": 0.4 }
+      { "asset_class": "Stocks", "weight": 0.45 },
+      { "asset_class": "Bonds", "weight": 0.45 },
+      { "asset_class": "Cash", "weight": 0.1 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
@@ -40,8 +42,9 @@
   },
   "Health Savings Account": {
     "holdings": [
-      { "asset_class": "Stocks", "weight": 0.5 },
-      { "asset_class": "Bonds", "weight": 0.5 }
+      { "asset_class": "Stocks", "weight": 0.1 },
+      { "asset_class": "Bonds", "weight": 0.85 },
+      { "asset_class": "Cash", "weight": 0.05 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": true,

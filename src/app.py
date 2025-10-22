@@ -24,6 +24,7 @@ from policies_transactions import (
     RequiredMinimumDistributionTransaction,
     RothConversionTransaction,
     SalaryTransaction,
+    SEPPTransaction,
     SocialSecurityTransaction,
 )
 from rules_transactions import (
@@ -313,8 +314,24 @@ def stage_init_components(
         start_date=policies_config["roth_conversion"]["Start Date"],
     )
 
+    sepp_cfg = policies_config.get("sepp")
+    sepp_txn = None
+    if sepp_cfg and sepp_cfg.get("Enabled", True):
+        sepp_txn = SEPPTransaction(
+            dob=dob,
+            buckets=buckets,
+            start_date=sepp_cfg["Start Date"],
+            end_date=sepp_cfg["End Date"],
+            source=sepp_cfg["Source"],
+            target=sepp_cfg["Target"],
+        )
+
     rule_txns = [fixed_tx, recur_tx]
-    policy_txns = [rental_tx, rmd_tx, salary_tx, ss_txn, roth_conv]
+    policy_txns = [
+        tx
+        for tx in [rental_tx, rmd_tx, salary_tx, ss_txn, roth_conv, sepp_txn]
+        if tx is not None
+    ]
 
     return (
         buckets,
