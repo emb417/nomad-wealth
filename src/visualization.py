@@ -812,7 +812,7 @@ def plot_mc_networth(
 
     for col in filtered_cols:
         is_sample = col in sim_examples
-        color, opacity = ("purple", 0.5) if is_sample else ("gray", 0.2)
+        color, opacity, width = ("purple", 0.6, 2) if is_sample else ("gray", 0.2, 1)
         hover_kwargs = (
             {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
             if is_sample
@@ -824,7 +824,7 @@ def plot_mc_networth(
                 x=years,
                 y=mc_networth_df[col],
                 showlegend=False,
-                line=dict(color=color, width=2),
+                line=dict(color=color, width=width),
                 opacity=opacity,
                 **hover_kwargs,
             )
@@ -944,13 +944,14 @@ def plot_mc_tax_bars(
     median = total_taxes.median()
     p85 = total_taxes.quantile(0.85)
 
-    # Use "Sim {n}" format for x-axis labels
+    # Exclude the top 10% of total taxes from the chart
+    threshold = total_taxes.quantile(0.90)
+    total_taxes = total_taxes[total_taxes <= threshold]
     sim_labels = [f"Sim {int(sim)+1:04d}" for sim in total_taxes.index]
-
     bar_colors = [
-        "purple" if sim in sim_examples else "gray" for sim in total_taxes.index
+        "purple" if sim in sim_examples else "lightgray" for sim in total_taxes.index
     ]
-    hover_texts = [f"Total Taxes: ${total:,.0f}" for sim, total in total_taxes.items()]
+    hover_texts = [f"Total Taxes: ${total:,.0f}" for total in total_taxes.values]
 
     fig = go.Figure(
         go.Bar(
