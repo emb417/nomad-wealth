@@ -266,9 +266,11 @@ class ForecastEngine:
                         total_tax, "Taxes", tx_month
                     )
                     remaining = total_tax - paid_from_tc
-                    paid_from_cash = self.buckets["Cash"].withdraw(
-                        remaining, "Taxes", tx_month
-                    )
+                    paid_from_cash = 0
+                    if remaining > 0:
+                        paid_from_cash = self.buckets["Cash"].withdraw(
+                            remaining, "Taxes", tx_month
+                        )
 
                     logging.debug(
                         f"[Yearly Tax:{prev_year}] paid "

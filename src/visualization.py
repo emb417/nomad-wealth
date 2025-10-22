@@ -876,16 +876,16 @@ def plot_mc_networth(
     )
 
     def getPNWColor(value):
-        return "green" if value > 0.95 else "blue" if value > 0.75 else "red"
+        return "green" if value > 0.85 else "blue" if value > 0.75 else "red"
 
     def getPropertyLiquidationColor(value):
-        return "green" if value < 0.2 else "blue" if value < 0.5 else "red"
+        return "green" if value < 0.25 else "blue" if value < 0.5 else "red"
 
     def getAgeColor(value):
         ageColor = (
             "green"
             if value is None
-            else "green" if value > 75 else "blue" if value > 60 else "red"
+            else "green" if value > 75 else "blue" if value > 65 else "red"
         )
         return ageColor
 
