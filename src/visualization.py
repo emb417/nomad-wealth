@@ -53,7 +53,7 @@ def base_label(label):
 
 
 def normalize_source(label):
-    return label.replace(" Gains", "").replace(" Losses", "")
+    return label.split(" Gains")[0].split(" Losses")[0]
 
 
 def assign_colors_by_base_label(labels, color_palette):
@@ -261,6 +261,7 @@ def plot_example_transactions(
         fig.show()
     if save:
         fig.write_html(f"{export_path}{sim+1:04d}_flow_transitions_{ts}.html")
+        flow_df.to_csv(f"{export_path}{sim+1:04d}_flow_transitions_{ts}.csv")
 
 
 def plot_example_transactions_in_context(
