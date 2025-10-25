@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
+from plotly.subplots import make_subplots
+
 
 COLOR_PALETTE = [
     "#1f77b4",
@@ -69,51 +71,132 @@ def assign_colors_by_base_label(labels, color_palette):
 def plot_example_income_taxes(
     taxes_df: pd.DataFrame,
     sim: int,
-    dob: pd.Timestamp,
     show: bool = True,
     save: bool = False,
     export_path: str = "export/",
     ts: str = "",
 ):
+    """
+    Renders and optionally saves the income and taxes chart for one simulation.
+    """
+
     title = f"Sim {sim+1:04d} | Income & Taxes"
+    years = taxes_df["Year"]
 
-    # Extract bucket labels (excluding Date)
-    bucket_labels = [col for col in taxes_df.columns if col != "Year"]
+    # Color palettes
+    income_colors = {
+        "Social Security": "#08306b",
+        "Tax-Deferred Withdrawals": "#1f77b4",
+        "Roth Conversions": "#4dabf7",
+        "Taxable Gains": "#a6cee3",
+    }
+    tax_colors = {
+        "Ordinary Tax": "#f39c12",
+        "Capital Gains Tax": "#ff7f0e",
+        "Penalty Tax": "#e74c3c",
+    }
+    marker_config = {
+        "Adjusted Gross Income (AGI)": {
+            "symbol": "arrow-up",
+            "size": 8,
+            "color": "black",
+        },
+        "Ordinary Income": {"symbol": "bowtie", "size": 10, "color": "black"},
+        "Taxable Social Security": {
+            "symbol": "arrow-down",
+            "size": 8,
+            "color": "black",
+        },
+        "Total Tax": {"symbol": "line-ew-open", "size": 10, "color": "red"},
+    }
 
-    # Age trace
-    traces = [
-        go.Scatter(
-            x=taxes_df["Year"],
-            y=[(year - pd.to_datetime(dob).year) for year in taxes_df["Year"]],
-            mode="lines",
-            name="Age",
-            line=dict(width=0, color="white"),
-            showlegend=False,
-            hovertemplate="Age %{y:.1f}<extra></extra>",
-        )
-    ]
-
-    # Bucket traces
-    traces.extend(
-        go.Scatter(
-            x=taxes_df["Year"],
-            y=taxes_df[col],
-            mode="lines",
-            name=col,
-            hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
-        )
-        for col in bucket_labels
+    # Create subplots
+    fig = make_subplots(
+        rows=1,
+        cols=2,
+        subplot_titles=("Income", "Taxes"),
     )
 
-    fig = go.Figure(data=traces)
+    # Income bars
+    for col in income_colors:
+        fig.add_trace(
+            go.Bar(
+                x=years,
+                y=taxes_df[col],
+                name=col,
+                marker_color=income_colors[col],
+                opacity=0.5,
+                hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
 
+    # Income markers
+    for col in [
+        "Adjusted Gross Income (AGI)",
+        "Ordinary Income",
+        "Taxable Social Security",
+    ]:
+        fig.add_trace(
+            go.Scatter(
+                x=years,
+                y=taxes_df[col],
+                name=col,
+                mode="markers",
+                marker=marker_config[col],
+                hovertemplate=f"{col}: %{{y:$,.0f}}<extra></extra>",
+            ),
+            row=1,
+            col=1,
+        )
+
+    # Tax bars
+    for col in tax_colors:
+        fig.add_trace(
+            go.Bar(
+                x=years,
+                y=taxes_df[col],
+                name=col,
+                marker_color=tax_colors[col],
+                opacity=0.5,
+                hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
+            ),
+            row=1,
+            col=2,
+        )
+
+    # Total tax marker
+    fig.add_trace(
+        go.Scatter(
+            x=years,
+            y=taxes_df["Total Tax"],
+            name="Total Tax",
+            mode="markers",
+            marker=marker_config["Total Tax"],
+            hovertemplate="Total Tax: %{y:$,.0f}<extra></extra>",
+        ),
+        row=1,
+        col=2,
+    )
+
+    # Layout
     fig.update_layout(
         title=title,
-        yaxis_tickformat="$,.0f",
+        barmode="stack",
         template="plotly_white",
         hovermode="x unified",
-        legend=dict(orientation="h", x=0.5, y=1.05, xanchor="center"),
+        showlegend=True,
+        yaxis_tickformat="$,.0f",
+        legend=dict(orientation="h", x=0.5, y=-0.05, xanchor="center", yanchor="top"),
     )
+
+    # Sync y-axis range
+    max_y = max(
+        taxes_df["Adjusted Gross Income (AGI)"].max(), taxes_df["Total Tax"].max()
+    )
+    fig.update_yaxes(range=[0, max_y], tickformat="$,.0f", row=1, col=1)
+    fig.update_yaxes(range=[0, max_y], tickformat="$,.0f", row=1, col=2)
 
     if show:
         fig.show()

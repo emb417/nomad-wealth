@@ -269,73 +269,34 @@ class RothConversionTransaction(PolicyTransaction):
 
     def __init__(
         self,
-        max_tax_rate: float,
         source_bucket: str,
         target_bucket: str,
-        chunk_size: int,
-        dob: str,
         start_date: Optional[str] = None,
     ):
-        self.max_tax_rate = max_tax_rate
+        super().__init__()
         self.source_bucket = source_bucket
         self.target_bucket = target_bucket
-        self.chunk_size = chunk_size
-        self.dob = pd.to_datetime(dob)
         self.start_date = pd.to_datetime(start_date) if start_date else None
-        self._applied_amount: int = 0
 
     def apply(
-        self,
-        buckets: Dict[str, Bucket],
-        tx_month: pd.Period,
-        tax_calc: "TaxCalculator",
-        estimated_tax: int = 0,
-        salary: int = 0,
-        ss_benefits: int = 0,
-        withdrawals: int = 0,
-        gains: int = 0,
-        roth: int = 0,
-    ) -> None:
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period, amount: int
+    ) -> int:
         if self.start_date and tx_month.start_time < self.start_date:
-            return
-
-        self._applied_amount = 0
-        age = (tx_month.start_time - self.dob).days / 365
+            return 0
         src = buckets.get(self.source_bucket)
         tgt = buckets.get(self.target_bucket)
         if src is None or tgt is None or src.balance() <= 0:
-            return
-
-        converted = 0
-        while True:
-            trial = converted + self.chunk_size
-            simulated_tax = tax_calc.calculate_tax(
-                salary=salary,
-                ss_benefits=ss_benefits,
-                withdrawals=withdrawals,
-                gains=gains,
-                roth=roth + trial,
-                age=age,
-            )
-            marginal_rate = (simulated_tax["total_tax"] - estimated_tax) / trial
-            if marginal_rate > self.max_tax_rate:
-                break
-            converted = trial
-
-        if converted > 0:
-            self._applied_amount = src.transfer(converted, tgt, tx_month)
+            return 0
+        return src.transfer(amount, tgt, tx_month)
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
-        return self._applied_amount
+        return 0  # Roth conversions are penalty free withdrawals
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0  # Roth conversions are not capital gains
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
         return 0  # Roth conversions are exempt from early withdrawal penalties
-
-    def get_roth_conversion(self, tx_month: pd.Period) -> int:
-        return self._applied_amount
 
 
 class SalaryTransaction(PolicyTransaction):

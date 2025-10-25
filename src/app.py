@@ -22,7 +22,6 @@ from policies_engine import ThresholdRefillPolicy
 from policies_transactions import (
     RentalTransaction,
     RequiredMinimumDistributionTransaction,
-    RothConversionTransaction,
     SalaryTransaction,
     SEPPTransaction,
     SocialSecurityTransaction,
@@ -44,7 +43,9 @@ from visualization import (
 )
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s [%(levelname)s] %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    # filename="app.log",
 )
 
 # Simulation settings
@@ -304,16 +305,6 @@ def stage_init_components(
         annual_infl=base_inflation,
     )
 
-    roth_cfg = policies_config.get("roth_conversion", {})
-    roth_conv = RothConversionTransaction(
-        max_tax_rate=roth_cfg.get("Max Tax Rate"),
-        source_bucket=roth_cfg.get("Source"),
-        target_bucket=roth_cfg.get("Target"),
-        chunk_size=roth_cfg.get("Chunk Size"),
-        dob=dob,
-        start_date=policies_config["roth_conversion"]["Start Date"],
-    )
-
     sepp_cfg = policies_config.get("sepp")
     sepp_txn = None
     if sepp_cfg and sepp_cfg.get("Enabled", True):
@@ -328,9 +319,7 @@ def stage_init_components(
 
     rule_txns = [fixed_tx, recur_tx]
     policy_txns = [
-        tx
-        for tx in [rental_tx, rmd_tx, salary_tx, ss_txn, roth_conv, sepp_txn]
-        if tx is not None
+        tx for tx in [rental_tx, rmd_tx, salary_tx, ss_txn, sepp_txn] if tx is not None
     ]
 
     return (
@@ -379,7 +368,8 @@ def run_one_sim(
         market_gains=market_gains,
         inflation=base_inflation,
         tax_calc=tax_calc,
-        profile=json_data["profile"],
+        dob=(json_data["profile"]["Date of Birth"]),
+        policies=json_data["policies"],
     )
     forecast_df, taxes_df = engine.run(future_df)
 
@@ -508,7 +498,6 @@ def main():
                     plot_example_income_taxes(
                         taxes_df=taxes_df,
                         sim=sim,
-                        dob=dob,
                         ts=ts,
                         show=(
                             SHOW_EXAMPLE_INCOME_TAXES_CHART
