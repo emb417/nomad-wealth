@@ -11,7 +11,7 @@ from policies_transactions import RefillTransaction
 class ThresholdRefillPolicy:
     """
     Refill policy using buckets.json metadata attached to Bucket instances.
-    Inline eligibility gating is performed using taxable_eligibility (a pd.Period).
+    Inline eligibility gating is performed using taxable_eligibility (a pd.Period or Timestamp).
     """
 
     def __init__(
@@ -23,7 +23,6 @@ class ThresholdRefillPolicy:
         liquidation_threshold: int = 0,
         liquidation_buckets: Optional[List[str]] = None,
     ):
-        # Minimal validation
         self.thresholds = thresholds or {}
         self.sources = source_by_target or {}
         self.amounts = amounts or {}
@@ -41,25 +40,11 @@ class ThresholdRefillPolicy:
     ) -> List[RefillTransaction]:
         txns: List[RefillTransaction] = []
 
-        # normalize eligibility once per call (ensure Period with monthly freq)
-        elig: Optional[pd.Period] = None
-        if self.taxable_eligibility is not None:
-            elig = (
-                self.taxable_eligibility
-                if isinstance(self.taxable_eligibility, pd.Period)
-                else pd.to_datetime(self.taxable_eligibility).to_period("M")
-            )
-
-        # defensive: ensure tx_month is compared as a Period
-        tx_month_period = (
-            tx_month.to_period("M") if not isinstance(tx_month, pd.Period) else tx_month
-        )
-
         for target, threshold in self.thresholds.items():
             tgt_bucket = buckets.get(target)
             if tgt_bucket is None:
                 logging.warning(
-                    f"[RefillPolicy] {tx_month_period} — target '{target}' missing, skipping"
+                    f"[RefillPolicy] {tx_month} — target '{target}' missing, skipping"
                 )
                 continue
 
@@ -69,7 +54,7 @@ class ThresholdRefillPolicy:
             per_pass = int(self.amounts.get(target, 0))
             if per_pass <= 0:
                 logging.warning(
-                    f"[RefillPolicy] {tx_month_period} — no refill amount for '{target}'"
+                    f"[RefillPolicy] {tx_month} — no refill amount for '{target}'"
                 )
                 continue
 
@@ -79,30 +64,27 @@ class ThresholdRefillPolicy:
                 if src_bucket is None:
                     continue
 
-                # Age-gate tax-advantaged bucket types using canonical bucket_type
-                if elig is not None and getattr(src_bucket, "bucket_type", None) in {
-                    "tax_free",
-                    "tax_deferred",
-                }:
-                    if tx_month_period < elig:
+                # Age-gate tax-advantaged bucket types
+                if self.taxable_eligibility is not None and getattr(
+                    src_bucket, "bucket_type", None
+                ) in {"tax_free", "tax_deferred"}:
+                    if tx_month < self.taxable_eligibility:
                         logging.debug(
-                            f"[RefillPolicy] {tx_month_period} — source '{source}' age-gated (bucket_type={src_bucket.bucket_type})"
+                            f"[RefillPolicy] {tx_month} — source '{source}' age-gated (bucket_type={src_bucket.bucket_type})"
                         )
                         continue
 
                 available = max(0, src_bucket.balance())
                 allow_fallback = getattr(src_bucket, "allow_cash_fallback", False)
 
-                # If fallback allowed, plan the full chunk; apply() will pull remainder from Cash
-                if allow_fallback:
-                    transfer = min(remaining, per_pass)
-                else:
-                    transfer = min(available, remaining)
-
+                transfer = (
+                    min(remaining, per_pass)
+                    if allow_fallback
+                    else min(available, remaining)
+                )
                 if transfer <= 0:
                     continue
 
-                # Use bucket_type as canonical source for tax semantics
                 bt = getattr(src_bucket, "bucket_type", None)
                 is_def = bt == "tax_deferred"
                 is_tax = bt == "taxable"
@@ -175,7 +157,7 @@ class ThresholdRefillPolicy:
             is_tax = bt == "taxable"
             is_penalty_applicable = (
                 is_def
-                and self.taxable_eligibility
+                and self.taxable_eligibility is not None
                 and tx_month < self.taxable_eligibility
             )
             txns.append(
@@ -185,10 +167,12 @@ class ThresholdRefillPolicy:
                     amount=take,
                     is_tax_deferred=is_def,
                     is_taxable=is_tax,
-                    is_penalty_applicable=bool(is_penalty_applicable),
+                    is_penalty_applicable=is_penalty_applicable,
                 )
             )
+
             shortfall -= take
             if shortfall <= 0:
                 break
+
         return txns

@@ -1,6 +1,10 @@
 # Ignore Export files: html and csv files
 export/*.html
 export/*.csv
+utils/
+
+# Ignore log file
+app.log
 
 # Ignore IDE and OS files
 .vscode

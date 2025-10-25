@@ -312,6 +312,7 @@ class ForecastEngine:
                     ylog["Roth Conversions"] += converted
 
             # Final tax calculation
+            penalty_basis = ylog.get("Penalty Tax", 0)
             final_tax = self.tax_calc.calculate_tax(
                 salary=ylog["Salary"],
                 ss_benefits=ylog["Social Security"],
@@ -319,6 +320,7 @@ class ForecastEngine:
                 gains=ylog["Taxable Gains"],
                 roth=ylog["Roth Conversions"],
                 age=age,
+                penalty_basis=penalty_basis,
                 standard_deduction=27700,
             )
 

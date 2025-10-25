@@ -61,6 +61,7 @@ class TaxCalculator:
         gains: int = 0,
         roth: int = 0,
         age: Optional[float] = None,
+        penalty_basis: int = 0,
         standard_deduction: int = 27700,
     ) -> Dict[str, int]:
         # Compute taxable Social Security
@@ -88,8 +89,7 @@ class TaxCalculator:
 
         # Early withdrawal penalty (only on penalty-eligible withdrawals)
         penalty_tax = 0
-        if age is not None and age < 59.5 and withdrawals > 0:
-            penalty_tax = int(0.10 * withdrawals)
+        penalty_tax = int(0.10 * penalty_basis)
 
         total_tax = int(ordinary_tax + gains_tax + penalty_tax)
 
