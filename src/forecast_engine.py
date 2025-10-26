@@ -136,8 +136,8 @@ class ForecastEngine:
         quarter = (forecast_date.month - 1) // 3 + 1
         qkey = (year, quarter)
 
-        salary, ss, deferred, taxable, penalty = self._accumulate_monthly_tax_inputs(
-            tx_month, all_policy_txns
+        salary, ss, deferred, realized, taxable, penalty = (
+            self._accumulate_monthly_tax_inputs(tx_month, all_policy_txns)
         )
         self._update_tax_logs(
             year,
@@ -147,6 +147,7 @@ class ForecastEngine:
             salary,
             ss,
             deferred,
+            realized,
             taxable,
             penalty,
         )
@@ -162,9 +163,10 @@ class ForecastEngine:
         salary = sum(tx.get_salary(tx_month) for tx in txs)
         ss = sum(tx.get_social_security(tx_month) for tx in txs)
         deferred = sum(tx.get_withdrawal(tx_month) for tx in txs)
+        realized = sum(tx.get_realized_gain(tx_month) for tx in txs)
         taxable = sum(tx.get_taxable_gain(tx_month) for tx in txs)
         penalty = sum(tx.get_penalty_eligible_withdrawal(tx_month) for tx in txs)
-        return salary, ss, deferred, taxable, penalty
+        return salary, ss, deferred, realized, taxable, penalty
 
     def _update_tax_logs(
         self,
@@ -175,6 +177,7 @@ class ForecastEngine:
         salary,
         ss,
         deferred,
+        realized,
         taxable,
         penalty,
     ):
@@ -182,6 +185,7 @@ class ForecastEngine:
             year,
             {
                 "Tax-Deferred Withdrawals": 0,
+                "Realized Gains": 0,
                 "Taxable Gains": 0,
                 "Penalty Tax": 0,
                 "Roth Conversions": 0,
@@ -192,6 +196,7 @@ class ForecastEngine:
         ylog["Salary"] += salary
         ylog["Social Security"] += ss
         ylog["Tax-Deferred Withdrawals"] += deferred
+        ylog["Realized Gains"] += realized
         ylog["Taxable Gains"] += taxable
         ylog["Penalty Tax"] += penalty
 
@@ -370,6 +375,7 @@ class ForecastEngine:
                 "Total Tax": final_tax["total_tax"],
                 "Tax-Deferred Withdrawals": ylog["Tax-Deferred Withdrawals"],
                 "Penalty Tax": final_tax["penalty_tax"],
+                "Realized Gains": ylog["Realized Gains"],
                 "Taxable Gains": ylog["Taxable Gains"],
                 "Capital Gains Tax": final_tax["capital_gains_tax"],
                 "Roth Conversions": ylog["Roth Conversions"],

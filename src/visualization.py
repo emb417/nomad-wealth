@@ -88,7 +88,7 @@ def plot_example_income_taxes(
         "Social Security": "#08306b",
         "Tax-Deferred Withdrawals": "#1f77b4",
         "Roth Conversions": "#4dabf7",
-        "Taxable Gains": "#a6cee3",
+        "Realized Gains": "#a6cee3",
     }
     tax_colors = {
         "Ordinary Tax": "#f39c12",
@@ -97,13 +97,14 @@ def plot_example_income_taxes(
     }
     marker_config = {
         "Adjusted Gross Income (AGI)": {
-            "symbol": "arrow-up",
+            "symbol": "triangle-up",
             "size": 8,
             "color": "black",
         },
         "Ordinary Income": {"symbol": "bowtie", "size": 10, "color": "black"},
+        "Taxable Gains": {"symbol": "cross", "size": 8, "color": "black"},
         "Taxable Social Security": {
-            "symbol": "arrow-down",
+            "symbol": "triangle-down",
             "size": 8,
             "color": "black",
         },
@@ -136,6 +137,7 @@ def plot_example_income_taxes(
     for col in [
         "Adjusted Gross Income (AGI)",
         "Ordinary Income",
+        "Taxable Gains",
         "Taxable Social Security",
     ]:
         fig.add_trace(

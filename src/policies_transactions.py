@@ -27,6 +27,9 @@ class PolicyTransaction(ABC):
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
         return 0
 
+    def get_realized_gain(self, tx_month: pd.Period) -> int:
+        return 0
+
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0
 
@@ -58,12 +61,14 @@ class RefillTransaction(PolicyTransaction):
         # runtime-applied amounts and estimated gains (set by apply)
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
+        self._realized_gain: int = 0
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         src = buckets.get(self.source)
         tgt = buckets.get(self.target)
         self._applied_amount = 0
         self._taxable_gain = 0
+        self._realized_gain = 0
 
         if src is None or tgt is None or self.amount <= 0:
             return
@@ -79,9 +84,13 @@ class RefillTransaction(PolicyTransaction):
             and applied > 0
         ):
             self._taxable_gain = int(round(applied * 0.5))
+            self._realized_gain = int(round(applied))
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self._applied_amount if self.is_tax_deferred else 0
+
+    def get_realized_gain(self, tx_month: pd.Period) -> int:
+        return self._realized_gain
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return self._taxable_gain
