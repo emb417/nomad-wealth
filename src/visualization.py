@@ -90,6 +90,7 @@ def plot_example_income_taxes(
         "Tax-Deferred Withdrawals": "#1f77b4",
         "Roth Conversions": "#4dabf7",
         "Realized Gains": "#a6cee3",
+        "Tax-Free Withdrawals": "#1b9e77",
     }
     tax_colors = {
         "Ordinary Tax": "#f39c12",

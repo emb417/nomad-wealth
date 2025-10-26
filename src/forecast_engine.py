@@ -41,14 +41,6 @@ class ForecastEngine:
         # Tax tracking
         self.annual_tax_estimate = 0
         self.monthly_tax_drip = 0
-        self.prior_tax_context = {
-            "Salary": 0,
-            "Social Security": 0,
-            "Tax-Deferred Withdrawals": 0,
-            "Taxable Gains": 0,
-            "Roth Conversions": 0,
-            "Estimated Tax": 0,
-        }
 
         # Logs for tracking tax inputs and outputs
         self.yearly_tax_log: Dict[int, Dict[str, int]] = {}
@@ -136,7 +128,7 @@ class ForecastEngine:
         quarter = (forecast_date.month - 1) // 3 + 1
         qkey = (year, quarter)
 
-        salary, ss, deferred, realized, taxable, penalty = (
+        salary, ss, deferred, realized, taxable, penalty, taxfree = (
             self._accumulate_monthly_tax_inputs(tx_month, all_policy_txns)
         )
         self._update_tax_logs(
@@ -150,6 +142,7 @@ class ForecastEngine:
             realized,
             taxable,
             penalty,
+            taxfree,
         )
         self._update_tax_estimate_if_needed(forecast_date, buckets)
         self._apply_yearly_tax_payment_if_needed(
@@ -166,7 +159,8 @@ class ForecastEngine:
         realized = sum(tx.get_realized_gain(tx_month) for tx in txs)
         taxable = sum(tx.get_taxable_gain(tx_month) for tx in txs)
         penalty = sum(tx.get_penalty_eligible_withdrawal(tx_month) for tx in txs)
-        return salary, ss, deferred, realized, taxable, penalty
+        taxfree = sum(tx.get_taxfree_withdrawal(tx_month) for tx in txs)
+        return salary, ss, deferred, realized, taxable, penalty, taxfree
 
     def _update_tax_logs(
         self,
@@ -180,6 +174,7 @@ class ForecastEngine:
         realized,
         taxable,
         penalty,
+        taxfree,
     ):
         ylog = yearly_log.setdefault(
             year,
@@ -191,6 +186,7 @@ class ForecastEngine:
                 "Roth Conversions": 0,
                 "Social Security": 0,
                 "Salary": 0,
+                "Tax-Free Withdrawals": 0,
             },
         )
         ylog["Salary"] += salary
@@ -199,6 +195,7 @@ class ForecastEngine:
         ylog["Realized Gains"] += realized
         ylog["Taxable Gains"] += taxable
         ylog["Penalty Tax"] += penalty
+        ylog["Tax-Free Withdrawals"] += taxfree
 
         qlog = quarterly_log.setdefault(
             qkey,
@@ -373,6 +370,7 @@ class ForecastEngine:
                 "Adjusted Gross Income (AGI)": final_tax.get("agi"),
                 "Ordinary Income": final_tax.get("ordinary_income"),
                 "Total Tax": final_tax["total_tax"],
+                "Tax-Free Withdrawals": ylog["Tax-Free Withdrawals"],
                 "Tax-Deferred Withdrawals": ylog["Tax-Deferred Withdrawals"],
                 "Penalty Tax": final_tax["penalty_tax"],
                 "Realized Gains": ylog["Realized Gains"],

@@ -33,6 +33,9 @@ class PolicyTransaction(ABC):
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0
 
+    def get_taxfree_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0
+
 
 class RefillTransaction(PolicyTransaction):
     """
@@ -62,6 +65,7 @@ class RefillTransaction(PolicyTransaction):
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
         self._realized_gain: int = 0
+        self._taxfree_amount: int = 0
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         src = buckets.get(self.source)
@@ -69,6 +73,7 @@ class RefillTransaction(PolicyTransaction):
         self._applied_amount = 0
         self._taxable_gain = 0
         self._realized_gain = 0
+        self._taxfree_amount = 0
 
         if src is None or tgt is None or self.amount <= 0:
             return
@@ -86,6 +91,9 @@ class RefillTransaction(PolicyTransaction):
             self._taxable_gain = int(round(applied * 0.5))
             self._realized_gain = int(round(applied))
 
+        if getattr(src, "bucket_type", None) == "tax_free" and applied > 0:
+            self._taxfree_amount = int(round(applied))
+
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self._applied_amount if self.is_tax_deferred else 0
 
@@ -101,6 +109,9 @@ class RefillTransaction(PolicyTransaction):
             if self.is_tax_deferred and self.is_penalty_applicable
             else 0
         )
+
+    def get_taxfree_withdrawal(self, tx_month: pd.Period) -> int:
+        return self._taxfree_amount
 
 
 class RentalTransaction(PolicyTransaction):
