@@ -282,7 +282,7 @@ def stage_init_components(
 
     rental_profile = description_inflation_modifiers.get("Rental", {})
     rental_tx = RentalTransaction(
-        monthly_amount=json_data["profile"]["Monthly Rent"],
+        monthly_amount=policies_config["liquidation"]["Monthly Rent"],
         annual_infl=rental_profile,
         description_key="Rental",
     )
@@ -290,18 +290,18 @@ def stage_init_components(
     rmd_tx = RequiredMinimumDistributionTransaction(dob=dob)
 
     salary_tx = SalaryTransaction(
-        annual_gross=profile["Annual Gross Income"],
-        annual_bonus=profile["Annual Bonus Amount"],
-        bonus_date=profile["Annual Bonus Date"],
-        salary_buckets=policies_config["salary"],
-        retirement_date=profile["Retirement Date"],
+        annual_gross=policies_config["salary"]["Annual Gross Income"],
+        annual_bonus=policies_config["salary"]["Annual Bonus Amount"],
+        bonus_date=policies_config["salary"]["Annual Bonus Date"],
+        salary_buckets=policies_config["salary"]["Targets"],
+        retirement_date=policies_config["salary"]["Retirement Date"],
     )
 
     ss_txn = SocialSecurityTransaction(
-        start_date=profile["Social Security Date"],
-        monthly_amount=profile["Social Security Amount"],
-        pct_cash=profile["Social Security Percentage"],
-        cash_bucket=policies_config["social_security"],
+        start_date=policies_config["social_security"]["Start Date"],
+        monthly_amount=policies_config["social_security"]["Amount"],
+        pct_cash=policies_config["social_security"]["Percentage"],
+        cash_bucket=policies_config["social_security"]["Target"],
         annual_infl=base_inflation,
     )
 

@@ -1,34 +1,39 @@
 {
   "thresholds": {
-    "Cash": 30000,
-    "Fixed-Income": 90000
+    "Cash": 30000
   },
   "amounts": {
-    "Cash": 10000,
-    "Fixed-Income": 30000
+    "Cash": 30000
   },
   "sources": {
-    "Cash": ["Fixed-Income", "Tax-Deferred", "Taxable"],
-    "Fixed-Income": ["Tax-Deferred", "Taxable", "Tax-Free"]
+    "Cash": ["Fixed-Income", "Taxable", "Tax-Deferred", "Tax-Free"]
   },
   "salary": {
-    "Cash": 0.9,
-    "Fixed-Income": 0.0,
-    "Taxable": 0.0,
-    "Tax-Deferred": 0.1,
-    "Tax-Free": 0.0
+    "Targets": {
+      "Cash": 0.9,
+      "Fixed-Income": 0.0,
+      "Taxable": 0.0,
+      "Tax-Deferred": 0.1,
+      "Tax-Free": 0.0
+    },
+    "Annual Gross Income": 200000,
+    "Annual Bonus Date": "2027-04-01",
+    "Annual Bonus Amount": 40000,
+    "Retirement Date": "2030-04-01"
   },
-  "social_security": "Cash",
+  "social_security": {
+    "Target": "Cash",
+    "Start Date": "2042-04-01",
+    "Amount": 5000,
+    "Percentage": 0.5
+  },
   "roth_conversion": {
-    "Max Tax Rate": 0.12,
-    "Start Date": "2026-01-01",
-    "Source": "Tax-Deferred",
-    "Target": "Tax-Free",
-    "Chunk Size": 1000
+    "Max Tax Rate": 0.22,
+    "Start Date": "2035-01-01"
   },
   "sepp": {
-    "Enabled": false,
-    "Start Date": "2029-09-01",
+    "Enabled": true,
+    "Start Date": "2027-01-01",
     "End Date": "2034-09-01",
     "Source": "Tax-Deferred",
     "Target": "Cash"
@@ -43,6 +48,7 @@
       "Tax-Free",
       "Vehicles",
       "Property"
-    ]
+    ],
+    "Monthly Rent": 3000
   }
 }
