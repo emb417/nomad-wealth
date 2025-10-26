@@ -5,7 +5,6 @@ from typing import Dict, Optional
 
 # Internal Imports
 from buckets import Bucket
-from taxes import TaxCalculator
 
 
 class PolicyTransaction(ABC):
@@ -271,18 +270,14 @@ class RothConversionTransaction(PolicyTransaction):
         self,
         source_bucket: str,
         target_bucket: str,
-        start_date: Optional[str] = None,
     ):
         super().__init__()
         self.source_bucket = source_bucket
         self.target_bucket = target_bucket
-        self.start_date = pd.to_datetime(start_date) if start_date else None
 
     def apply(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period, amount: int
     ) -> int:
-        if self.start_date and tx_month.start_time < self.start_date:
-            return 0
         src = buckets.get(self.source_bucket)
         tgt = buckets.get(self.target_bucket)
         if src is None or tgt is None or src.balance() <= 0:
@@ -368,11 +363,18 @@ class SEPPTransaction(PolicyTransaction):
         self.source_bucket = source
         self.target_bucket = target
 
-        default_end = max(
-            self.start_date + pd.DateOffset(years=5),
-            self.dob + pd.DateOffset(days=21718),  # 59 years 6 months 1 day
+        # IRS requires SEPP to continue for the longer of:
+        # - 5 years from start
+        # - until age 59½ (21718 days)
+        five_years = self.start_date + pd.DateOffset(years=5)
+        age_59_5 = self.dob + pd.DateOffset(days=21718)
+        default_end = max(five_years, age_59_5)
+
+        self.end_date = (
+            pd.to_datetime(end_date)
+            if end_date
+            else default_end + pd.offsets.MonthEnd(1)
         )
-        self.end_date = pd.to_datetime(end_date) if end_date else default_end
 
         age_at_start = (self.start_date - self.dob).days // 365
         life_expectancy = self._get_uniform_life_expectancy(age_at_start)
@@ -396,7 +398,7 @@ class SEPPTransaction(PolicyTransaction):
         return self.monthly_amount if self.start_date <= tx_date < self.end_date else 0
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
-        return 0  # Always exempt
+        return 0  # SEPP withdrawals are always penalty-exempt
 
     def _get_uniform_life_expectancy(self, age: int) -> float:
         table = {

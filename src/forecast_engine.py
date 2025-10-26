@@ -36,6 +36,7 @@ class ForecastEngine:
         self.dob = dob
         self.roth_conversion = policies["roth_conversion"]
         self.roth_start_date = pd.to_datetime(self.roth_conversion["Start Date"])
+        self.roth_max_rate = self.roth_conversion["Max Tax Rate"]
 
         # Tax tracking
         self.annual_tax_estimate = 0
@@ -275,87 +276,109 @@ class ForecastEngine:
 
         return int(headroom)
 
+    def _apply_roth_conversion_if_eligible(
+        self,
+        forecast_date: pd.Timestamp,
+        ylog: dict,
+    ) -> int:
+        conversion_month = pd.Period(forecast_date - pd.DateOffset(months=1), freq="M")
+        conversion_date = conversion_month.to_timestamp()
+
+        if conversion_date < self.roth_start_date:
+            logging.debug(
+                f"[Roth] Skipping conversion in {conversion_month} — before start date {self.roth_start_date}"
+            )
+            return 0
+
+        headroom = max(
+            0,
+            self._estimate_roth_headroom(
+                salary=ylog["Salary"],
+                ss_benefits=ylog["Social Security"],
+                withdrawals=ylog["Tax-Deferred Withdrawals"],
+                gains=ylog["Taxable Gains"],
+                max_rate=self.roth_max_rate,
+            ),
+        )
+
+        if headroom <= 0:
+            return 0
+
+        roth_tx = RothConversionTransaction(
+            source_bucket="Tax-Deferred",
+            target_bucket="Tax-Free",
+        )
+        converted = roth_tx.apply(self.buckets, conversion_month, headroom)
+        logging.debug(
+            f"[Roth] Applied conversion of ${converted:,} in {conversion_month} with headroom ${headroom:,}"
+        )
+        return converted
+
     def _apply_yearly_tax_payment_if_needed(
         self, forecast_date, tx_month, yearly_tax_log, buckets, tax_records
     ):
-        if forecast_date.month == 1:
-            age = forecast_date.year - pd.to_datetime(self.dob).year
-            prev_year = forecast_date.year - 1
-            ylog = yearly_tax_log.get(prev_year)
-            if not ylog:
-                return
+        if forecast_date.month != 1:
+            return
 
-            # Determine headroom
-            headroom = self._estimate_roth_headroom(
-                salary=ylog["Salary"],
-                ss_benefits=ylog["Social Security"],
-                withdrawals=ylog["Tax-Deferred Withdrawals"],
-                gains=ylog["Taxable Gains"],
-                max_rate=0.12,
+        prev_year = forecast_date.year - 1
+        ylog = yearly_tax_log.get(prev_year)
+        if not ylog:
+            return
+
+        age = forecast_date.year - pd.to_datetime(self.dob).year
+
+        # Apply Roth conversion if eligible
+        converted = self._apply_roth_conversion_if_eligible(
+            forecast_date=forecast_date,
+            ylog=ylog,
+        )
+        ylog["Roth Conversions"] += converted
+
+        # Final tax calculation
+        penalty_basis = ylog.get("Penalty Tax", 0)
+        final_tax = self.tax_calc.calculate_tax(
+            salary=ylog["Salary"],
+            ss_benefits=ylog["Social Security"],
+            withdrawals=ylog["Tax-Deferred Withdrawals"],
+            gains=ylog["Taxable Gains"],
+            roth=ylog["Roth Conversions"],
+            age=age,
+            penalty_basis=penalty_basis,
+            standard_deduction=27700,
+        )
+
+        if final_tax["total_tax"] > 0:
+            paid_from_tc = buckets["Tax Collection"].withdraw(
+                final_tax["total_tax"], "Taxes", tx_month
             )
-            if forecast_date < self.roth_start_date:
-                logging.debug(
-                    f"[Roth] Skipping conversion in {forecast_date} — before start date {self.roth_start_date}"
+            if final_tax["total_tax"] > paid_from_tc:
+                buckets["Cash"].withdraw(
+                    final_tax["total_tax"] - paid_from_tc, "Taxes", tx_month
                 )
-            else:
-                # Apply Roth conversion
-                if headroom > 0:
-                    roth_tx = RothConversionTransaction(
-                        source_bucket="Tax-Deferred",
-                        target_bucket="Tax-Free",
-                        start_date=tx_month.start_time,
-                    )
-                    conversion_month = pd.Period(
-                        forecast_date - pd.DateOffset(months=1), freq="M"
-                    )
-                    converted = roth_tx.apply(self.buckets, conversion_month, headroom)
-                    ylog["Roth Conversions"] += converted
 
-            # Final tax calculation
-            penalty_basis = ylog.get("Penalty Tax", 0)
-            final_tax = self.tax_calc.calculate_tax(
-                salary=ylog["Salary"],
-                ss_benefits=ylog["Social Security"],
-                withdrawals=ylog["Tax-Deferred Withdrawals"],
-                gains=ylog["Taxable Gains"],
-                roth=ylog["Roth Conversions"],
-                age=age,
-                penalty_basis=penalty_basis,
-                standard_deduction=27700,
-            )
+        leftover = buckets["Tax Collection"].balance()
+        self.annual_tax_estimate = max(final_tax["total_tax"] - leftover, 0)
+        self.monthly_tax_drip = int(self.annual_tax_estimate / 12)
+        if self.annual_tax_estimate == 0 and leftover > 0:
+            buckets["Tax Collection"].transfer(leftover, buckets["Cash"], tx_month)
 
-            if final_tax["total_tax"] > 0:
-                paid_from_tc = buckets["Tax Collection"].withdraw(
-                    final_tax["total_tax"], "Taxes", tx_month
-                )
-                if final_tax["total_tax"] > paid_from_tc:
-                    buckets["Cash"].withdraw(
-                        final_tax["total_tax"] - paid_from_tc, "Taxes", tx_month
-                    )
-
-            leftover = buckets["Tax Collection"].balance()
-            self.annual_tax_estimate = max(final_tax["total_tax"] - leftover, 0)
-            self.monthly_tax_drip = int(self.annual_tax_estimate / 12)
-            if self.annual_tax_estimate == 0 and leftover > 0:
-                buckets["Tax Collection"].transfer(leftover, buckets["Cash"], tx_month)
-
-            tax_records.append(
-                {
-                    "Year": prev_year,
-                    "Adjusted Gross Income (AGI)": final_tax.get("agi"),
-                    "Ordinary Income": final_tax.get("ordinary_income"),
-                    "Total Tax": final_tax["total_tax"],
-                    "Tax-Deferred Withdrawals": ylog["Tax-Deferred Withdrawals"],
-                    "Penalty Tax": final_tax["penalty_tax"],
-                    "Taxable Gains": ylog["Taxable Gains"],
-                    "Capital Gains Tax": final_tax["capital_gains_tax"],
-                    "Roth Conversions": ylog["Roth Conversions"],
-                    "Salary": ylog["Salary"],
-                    "Social Security": ylog["Social Security"],
-                    "Taxable Social Security": final_tax.get("taxable_ss"),
-                    "Ordinary Tax": final_tax["ordinary_tax"],
-                }
-            )
+        tax_records.append(
+            {
+                "Year": prev_year,
+                "Adjusted Gross Income (AGI)": final_tax.get("agi"),
+                "Ordinary Income": final_tax.get("ordinary_income"),
+                "Total Tax": final_tax["total_tax"],
+                "Tax-Deferred Withdrawals": ylog["Tax-Deferred Withdrawals"],
+                "Penalty Tax": final_tax["penalty_tax"],
+                "Taxable Gains": ylog["Taxable Gains"],
+                "Capital Gains Tax": final_tax["capital_gains_tax"],
+                "Roth Conversions": ylog["Roth Conversions"],
+                "Salary": ylog["Salary"],
+                "Social Security": ylog["Social Security"],
+                "Taxable Social Security": final_tax.get("taxable_ss"),
+                "Ordinary Tax": final_tax["ordinary_tax"],
+            }
+        )
 
     def _record_snapshot(self, records, forecast_date, buckets):
         snapshot = {"Date": forecast_date}
