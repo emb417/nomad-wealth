@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 
 from pandas.tseries.offsets import MonthBegin
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Optional
 
 # Internal Imports
 from buckets import Bucket
@@ -26,6 +26,7 @@ class ForecastEngine:
         dob: str,
         policies: Dict[str, Dict[str, int]],
         irmaa_brackets: List[Dict[str, float]],
+        marketplace_premiums: Dict[str, Dict[str, float]],
     ):
         self.buckets = buckets
         self.rule_transactions = rule_transactions
@@ -39,12 +40,10 @@ class ForecastEngine:
         self.roth_start_date = pd.to_datetime(self.roth_conversion["Start Date"])
         self.roth_max_rate = self.roth_conversion["Max Tax Rate"]
         self.irmaa_brackets = irmaa_brackets
+        self.marketplace_premiums = marketplace_premiums
 
-        # Tax tracking
         self.annual_tax_estimate = 0
         self.monthly_tax_drip = 0
-
-        # Logs for tracking tax inputs and outputs
         self.yearly_tax_log: Dict[int, Dict[str, int]] = {}
         self.quarterly_tax_log: Dict[Tuple[int, int], Dict[str, int]] = {}
 
@@ -65,7 +64,6 @@ class ForecastEngine:
 
             self.market_gains.apply(self.buckets, forecast_date)
             self._withhold_monthly_taxes(self.buckets, tx_month)
-            self._apply_irmaa_monthly(tx_month)
 
             liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
             self._apply_liquidation_transactions(liq_txns, self.buckets, tx_month)
@@ -84,40 +82,13 @@ class ForecastEngine:
                     all_policy_txns,
                 )
             )
+            self._apply_marketplace_premiums(tx_month, tax_records)
+            self._apply_irmaa_premiums(tx_month, tax_records)
 
         return pd.DataFrame(records), pd.DataFrame(tax_records)
 
     def _initialize_results(self):
-        records = []
-        tax_records = []
-        yearly_tax_log = {}
-        quarterly_tax_log = {}
-        return records, tax_records, yearly_tax_log, quarterly_tax_log
-
-    def _apply_irmaa_monthly(self, tx_month: pd.Period) -> None:
-        # Skip if not yet Medicare eligible
-        age = (tx_month.start_time - pd.to_datetime(self.dob)).days // 365
-        if age < 65:
-            return
-
-        prior_year = tx_month.year - 2  # SSA uses 2-year lookback
-        prior_log = self.yearly_tax_log.get(prior_year, {})
-        prior_magi = prior_log.get("Adjusted Gross Income (AGI)", 0) + prior_log.get(
-            "Tax-Exempt Interest", 0
-        )
-
-        monthly_cost = 0
-        for bracket in self.irmaa_brackets:
-            if prior_magi <= float(bracket["max_magi"]):
-                monthly_cost = int(bracket["part_b"] + bracket["part_d"])
-                break
-
-        if monthly_cost > 0:
-            self.buckets["Cash"].withdraw(monthly_cost, "IRMAA", tx_month)
-            logging.debug(
-                f"[IRMAA] Deducted ${monthly_cost:.0f} in {tx_month} "
-                f"based on prior-year MAGI ${prior_magi:.0f}, bracket ≤ ${bracket['max_magi']}"
-            )
+        return [], [], {}, {}
 
     def _apply_rule_transactions(self, buckets, tx_month):
         for tx in self.rule_transactions:
@@ -406,6 +377,82 @@ class ForecastEngine:
                 "Taxable Social Security": final_tax.get("taxable_ss"),
                 "Ordinary Tax": final_tax["ordinary_tax"],
             }
+        )
+
+    def _get_prior_magi(
+        self, tx_month: pd.Period, tax_records: List[Dict[str, int]]
+    ) -> Optional[int]:
+        prior_year = tx_month.year - 2
+        if not tax_records or prior_year == min(r["Year"] for r in tax_records):
+            return None
+
+        prior_entry = next((r for r in tax_records if r["Year"] == prior_year), None)
+        if not prior_entry:
+            return None
+
+        return prior_entry.get("Adjusted Gross Income (AGI)", 0) + prior_entry.get(
+            "Tax-Free Withdrawals", 0
+        )
+
+    def _apply_marketplace_premiums(
+        self, tx_month: pd.Period, tax_records: List[Dict[str, int]]
+    ) -> None:
+        age = (tx_month.start_time - pd.to_datetime(self.dob)).days // 365
+        if age >= 65:
+            return
+
+        household_type = (
+            "silver_family"
+            if tx_month < pd.Period("2032-12", freq="M")
+            else "silver_couple"
+        )
+        benchmark_premium = self.marketplace_premiums[household_type]["monthly_premium"]
+        prior_magi = self._get_prior_magi(tx_month, tax_records)
+
+        if prior_magi is not None:
+            capped_monthly = (prior_magi * 0.085) / 12
+            monthly_premium = int(min(benchmark_premium, capped_monthly))
+            source = "MAGI-based"
+        else:
+            monthly_premium = int(benchmark_premium)
+            capped_monthly = 0
+            source = "fallback (full benchmark)"
+
+        self.buckets["Cash"].withdraw(monthly_premium, "Marketplace Premium", tx_month)
+        logging.debug(
+            f"[Marketplace] Deducted ${monthly_premium:.0f} in {tx_month} "
+            f"for {household_type} (age {age}, MAGI ${prior_magi or 0:.0f}, cap ${capped_monthly:.0f}, source: {source})"
+        )
+
+    def _apply_irmaa_premiums(
+        self, tx_month: pd.Period, tax_records: List[Dict[str, int]]
+    ) -> None:
+        age = (tx_month.start_time - pd.to_datetime(self.dob)).days // 365
+        if age < 65:
+            return
+
+        prior_magi = self._get_prior_magi(tx_month, tax_records)
+
+        if prior_magi is None:
+            monthly_cost = int(
+                self.irmaa_brackets[0]["part_b"] + self.irmaa_brackets[0]["part_d"]
+            )
+            bracket_info = "MAGI unavailable (base premium only)"
+        else:
+            monthly_cost = int(
+                self.irmaa_brackets[-1]["part_b"] + self.irmaa_brackets[-1]["part_d"]
+            )
+            for bracket in self.irmaa_brackets:
+                if prior_magi <= float(bracket["max_magi"]):
+                    monthly_cost = int(bracket["part_b"] + bracket["part_d"])
+                    bracket_info = (
+                        f"MAGI ${prior_magi:.0f}, bracket ≤ ${bracket['max_magi']}"
+                    )
+                    break
+
+        self.buckets["Cash"].withdraw(monthly_cost, "IRMAA", tx_month)
+        logging.debug(
+            f"[IRMAA] Deducted ${monthly_cost:.0f} in {tx_month} ({bracket_info})"
         )
 
     def _record_snapshot(self, records, forecast_date, buckets):

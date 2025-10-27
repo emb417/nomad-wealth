@@ -45,7 +45,7 @@ from visualization import (
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
-    # filename="app.log",
+    filename="app.log",
 )
 
 # Simulation settings
@@ -81,7 +81,9 @@ sim_examples = np.sort(rng.choice(SIM_SIZE, size=SIM_EXAMPLE_SIZE, replace=False
 def timed(label):
     start = time.time()
     yield
-    logging.info(f"{label} completed in {(time.time() - start):.1f} seconds.")
+    logging.info(
+        f"{label} with {SIM_SIZE} trials completed in {(time.time() - start):.1f} seconds."
+    )
 
 
 def build_description_inflation_modifiers(
@@ -372,6 +374,7 @@ def run_one_sim(
         dob=(json_data["profile"]["Date of Birth"]),
         policies=json_data["policies"],
         irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
+        marketplace_premiums=json_data["marketplace_premiums"],
     )
     forecast_df, taxes_df = engine.run(future_df)
 
