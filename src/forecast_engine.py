@@ -263,19 +263,15 @@ class ForecastEngine:
         ordinary_income = max(0, salary + withdrawals + taxable_ss - standard_deduction)
 
         federal_brackets = self.tax_calc.ordinary_tax_brackets[BRACKET_YEAR]
-        headroom = 0
-        for i, bracket in enumerate(federal_brackets):
-            rate = bracket["tax_rate"]
-            if rate > max_rate:
-                break
-            upper = (
-                federal_brackets[i + 1]["min_salary"]
-                if i + 1 < len(federal_brackets)
-                else float("inf")
-            )
-            if ordinary_income < upper:
-                headroom = upper - ordinary_income
 
+        for bracket in federal_brackets:
+            if bracket["tax_rate"] > max_rate:
+                next_threshold = bracket["min_salary"]
+                break
+        else:
+            next_threshold = float("inf")
+
+        headroom = max(0, next_threshold - ordinary_income)
         return int(headroom)
 
     def _apply_roth_conversion_if_eligible(
