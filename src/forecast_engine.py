@@ -391,7 +391,7 @@ class ForecastEngine:
             return None
 
         return prior_entry.get("Adjusted Gross Income (AGI)", 0) + prior_entry.get(
-            "Tax-Free Withdrawals", 0
+            "Tax-Exempt Interest", 0
         )
 
     def _apply_marketplace_premiums(
