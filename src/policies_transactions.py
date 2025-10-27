@@ -377,11 +377,13 @@ class SEPPTransaction(PolicyTransaction):
         end_date: str,
         source: str,
         target: str,
+        source_percentage: Optional[float] = 1.0,
     ):
         self.start_date = pd.to_datetime(start_date)
         self.dob = pd.to_datetime(dob)
         self.source_bucket = source
         self.target_bucket = target
+        self.source_percentage = source_percentage
 
         # IRS requires SEPP to continue for the longer of:
         # - 5 years from start
@@ -399,7 +401,10 @@ class SEPPTransaction(PolicyTransaction):
         age_at_start = (self.start_date - self.dob).days // 365
         life_expectancy = self._get_uniform_life_expectancy(age_at_start)
         starting_balance = buckets[self.source_bucket].balance()
-        annual_amount = starting_balance / life_expectancy
+        adjusted_balance = starting_balance * (
+            self.source_percentage if self.source_percentage is not None else 1.0
+        )
+        annual_amount = adjusted_balance / life_expectancy
         self.monthly_amount = int(annual_amount / 12)
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period):
