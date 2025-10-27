@@ -315,6 +315,7 @@ def stage_init_components(
             end_date=sepp_cfg["End Date"],
             source=sepp_cfg["Source"],
             target=sepp_cfg["Target"],
+            source_percentage=sepp_cfg["Source Percentage"],
         )
 
     rule_txns = [fixed_tx, recur_tx]
@@ -370,6 +371,7 @@ def run_one_sim(
         tax_calc=tax_calc,
         dob=(json_data["profile"]["Date of Birth"]),
         policies=json_data["policies"],
+        irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
     )
     forecast_df, taxes_df = engine.run(future_df)
 

@@ -25,6 +25,7 @@ class ForecastEngine:
         tax_calc: TaxCalculator,
         dob: str,
         policies: Dict[str, Dict[str, int]],
+        irmaa_brackets: List[Dict[str, float]],
     ):
         self.buckets = buckets
         self.rule_transactions = rule_transactions
@@ -37,6 +38,7 @@ class ForecastEngine:
         self.roth_conversion = policies["roth_conversion"]
         self.roth_start_date = pd.to_datetime(self.roth_conversion["Start Date"])
         self.roth_max_rate = self.roth_conversion["Max Tax Rate"]
+        self.irmaa_brackets = irmaa_brackets
 
         # Tax tracking
         self.annual_tax_estimate = 0
@@ -63,6 +65,7 @@ class ForecastEngine:
 
             self.market_gains.apply(self.buckets, forecast_date)
             self._withhold_monthly_taxes(self.buckets, tx_month)
+            self._apply_irmaa_monthly(tx_month)
 
             liq_txns = self.refill_policy.generate_liquidation(self.buckets, tx_month)
             self._apply_liquidation_transactions(liq_txns, self.buckets, tx_month)
@@ -90,6 +93,31 @@ class ForecastEngine:
         yearly_tax_log = {}
         quarterly_tax_log = {}
         return records, tax_records, yearly_tax_log, quarterly_tax_log
+
+    def _apply_irmaa_monthly(self, tx_month: pd.Period) -> None:
+        # Skip if not yet Medicare eligible
+        age = (tx_month.start_time - pd.to_datetime(self.dob)).days // 365
+        if age < 65:
+            return
+
+        prior_year = tx_month.year - 2  # SSA uses 2-year lookback
+        prior_log = self.yearly_tax_log.get(prior_year, {})
+        prior_magi = prior_log.get("Adjusted Gross Income (AGI)", 0) + prior_log.get(
+            "Tax-Exempt Interest", 0
+        )
+
+        monthly_cost = 0
+        for bracket in self.irmaa_brackets:
+            if prior_magi <= float(bracket["max_magi"]):
+                monthly_cost = int(bracket["part_b"] + bracket["part_d"])
+                break
+
+        if monthly_cost > 0:
+            self.buckets["Cash"].withdraw(monthly_cost, "IRMAA", tx_month)
+            logging.debug(
+                f"[IRMAA] Deducted ${monthly_cost:.0f} in {tx_month} "
+                f"based on prior-year MAGI ${prior_magi:.0f}, bracket ≤ ${bracket['max_magi']}"
+            )
 
     def _apply_rule_transactions(self, buckets, tx_month):
         for tx in self.rule_transactions:

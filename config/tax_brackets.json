@@ -36,5 +36,13 @@
     { "min_provisional": 0, "rate": 0.0 },
     { "min_provisional": 32000, "rate": 0.5 },
     { "min_provisional": 44000, "rate": 0.85 }
+  ],
+  "IRMAA 2025 MFJ": [
+    { "max_magi": 206000, "part_b": 185.0, "part_d": 0.0 },
+    { "max_magi": 258000, "part_b": 259.2, "part_d": 12.9 },
+    { "max_magi": 322000, "part_b": 331.7, "part_d": 33.3 },
+    { "max_magi": 386000, "part_b": 404.2, "part_d": 53.8 },
+    { "max_magi": 750000, "part_b": 476.7, "part_d": 74.2 },
+    { "max_magi": 999999999, "part_b": 549.3, "part_d": 81.0 }
   ]
 }
