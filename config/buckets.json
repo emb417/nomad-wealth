@@ -9,7 +9,7 @@
     "holdings": [{ "asset_class": "Bonds", "weight": 1.0 }],
     "can_go_negative": false,
     "allow_cash_fallback": false,
-    "bucket_type": "taxable"
+    "bucket_type": "other"
   },
   "Taxable": {
     "holdings": [
