@@ -2,7 +2,7 @@ import logging
 import pandas as pd
 
 from pandas.tseries.offsets import MonthBegin
-from typing import Dict, List, Tuple, Optional
+from typing import Dict, List, Tuple, Optional, Union
 
 # Internal Imports
 from buckets import Bucket
@@ -24,7 +24,7 @@ class ForecastEngine:
         inflation: Dict[int, Dict[str, float]],
         tax_calc: TaxCalculator,
         dob: str,
-        policies: Dict[str, Dict[str, int]],
+        roth_policies: Dict[str, Dict[str, Union[int, float, bool]]],
         irmaa_brackets: List[Dict[str, float]],
         marketplace_premiums: Dict[str, Dict[str, float]],
     ):
@@ -36,9 +36,7 @@ class ForecastEngine:
         self.inflation = inflation
         self.tax_calc = tax_calc
         self.dob = dob
-        self.roth_conversion = policies["roth_conversion"]
-        self.roth_start_date = pd.to_datetime(self.roth_conversion["Start Date"])
-        self.roth_max_rate = self.roth_conversion["Max Tax Rate"]
+        self.roth_policies = roth_policies
         self.irmaa_brackets = irmaa_brackets
         self.marketplace_premiums = marketplace_premiums
 
@@ -255,13 +253,12 @@ class ForecastEngine:
         max_rate: float,
         standard_deduction: int = 27700,
     ) -> int:
-        BRACKET_YEAR = "Federal 2025"
         taxable_ss = self.tax_calc._taxable_social_security(
             ss_benefits, salary + withdrawals + gains
         )
         ordinary_income = max(0, salary + withdrawals + taxable_ss - standard_deduction)
 
-        federal_brackets = self.tax_calc.ordinary_tax_brackets[BRACKET_YEAR]
+        federal_brackets = self.tax_calc.ordinary_tax_brackets["Federal 2025"]
 
         for bracket in federal_brackets:
             if bracket["tax_rate"] > max_rate:
@@ -279,24 +276,42 @@ class ForecastEngine:
         ylog: dict,
     ) -> int:
         conversion_month = pd.Period(forecast_date - pd.DateOffset(months=1), freq="M")
-        conversion_date = conversion_month.to_timestamp()
-
-        if conversion_date < self.roth_start_date:
+        if conversion_month.year == pd.Timestamp.now().year:
             logging.debug(
-                f"[Roth] Skipping conversion in {conversion_month} — before start date {self.roth_start_date}"
+                f"[Roth] Skipping conversion in {conversion_month} — same year as current year"
             )
             return 0
 
-        headroom = max(
-            0,
-            self._estimate_roth_headroom(
-                salary=ylog["Salary"],
-                ss_benefits=ylog["Social Security"],
-                withdrawals=ylog["Tax-Deferred Withdrawals"],
-                gains=ylog["Taxable Gains"],
-                max_rate=self.roth_max_rate,
-            ),
+        age_days = (conversion_month.to_timestamp() - pd.to_datetime(self.dob)).days
+        age = age_days / 365.25
+
+        # Determine phase based on age and cutoff
+        for phase, policy in self.roth_policies.items():
+            if age < policy.get("Cutoff Age", float("inf")):
+                phase_config = policy
+                break
+        else:
+            phase_config = {}
+
+        if not phase_config.get("Allow Conversion", True):
+            logging.debug(
+                f"[Roth] Skipping conversion in {conversion_month} — phase disallows conversion"
+            )
+            return 0
+
+        max_rate = phase_config.get("Max Tax Rate", 0.0)
+
+        headroom = self._estimate_roth_headroom(
+            salary=ylog["Salary"],
+            ss_benefits=ylog["Social Security"],
+            withdrawals=ylog["Tax-Deferred Withdrawals"],
+            gains=ylog["Taxable Gains"],
+            max_rate=max_rate,
         )
+
+        max_amt = phase_config.get("Max Conversion Amount")
+        if max_amt is not None:
+            headroom = int(min(headroom, max_amt))
 
         if headroom <= 0:
             return 0

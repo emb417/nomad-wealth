@@ -300,10 +300,10 @@ def stage_init_components(
     )
 
     ss_txn = SocialSecurityTransaction(
-        start_date=policies_config["social_security"]["Start Date"],
-        monthly_amount=policies_config["social_security"]["Amount"],
-        pct_cash=policies_config["social_security"]["Percentage"],
-        cash_bucket=policies_config["social_security"]["Target"],
+        start_date=policies_config["Social Security"]["Start Date"],
+        monthly_amount=policies_config["Social Security"]["Amount"],
+        pct_cash=policies_config["Social Security"]["Percentage"],
+        cash_bucket=policies_config["Social Security"]["Target"],
         annual_infl=base_inflation,
     )
 
@@ -372,7 +372,7 @@ def run_one_sim(
         inflation=base_inflation,
         tax_calc=tax_calc,
         dob=(json_data["profile"]["Date of Birth"]),
-        policies=json_data["policies"],
+        roth_policies=json_data["policies"]["Roth Conversions"],
         irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
         marketplace_premiums=json_data["marketplace_premiums"],
     )
