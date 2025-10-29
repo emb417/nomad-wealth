@@ -302,8 +302,8 @@ def stage_init_components(
     ss_txn = SocialSecurityTransaction(
         start_date=policies_config["Social Security"]["Start Date"],
         monthly_amount=policies_config["Social Security"]["Amount"],
-        pct_cash=policies_config["Social Security"]["Percentage"],
-        cash_bucket=policies_config["Social Security"]["Target"],
+        pct_payout=policies_config["Social Security"]["Percentage"],
+        target_bucket=policies_config["Social Security"]["Target"],
         annual_infl=base_inflation,
     )
 

@@ -445,14 +445,14 @@ class SocialSecurityTransaction(PolicyTransaction):
         self,
         start_date: str,
         monthly_amount: int,
-        pct_cash: float,
-        cash_bucket: str,
+        pct_payout: float,
+        target_bucket: str,
         annual_infl: Dict[int, Dict[str, float]],
     ):
         self.start_month = pd.to_datetime(start_date).to_period("M")
         self.nominal_monthly_amount = int(round(monthly_amount))
-        self.cash_amt = int(round(monthly_amount * pct_cash))
-        self.cash_bucket = cash_bucket
+        self.pct_payout = pct_payout  # store for later use
+        self.target_bucket = target_bucket
         self.annual_infl = annual_infl
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
@@ -462,22 +462,22 @@ class SocialSecurityTransaction(PolicyTransaction):
 
         # deposit scaled amount to cash bucket
         deposit_amt = int(round(amt))
-        buckets[self.cash_bucket].deposit(deposit_amt, "Social Security", tx_month)
+        buckets[self.target_bucket].deposit(deposit_amt, "Social Security", tx_month)
 
     def get_social_security(self, tx_month: pd.Period) -> int:
         if tx_month < self.start_month:
             return 0
 
         if not self.annual_infl:
-            return self.nominal_monthly_amount
+            return int(round(self.nominal_monthly_amount * self.pct_payout))
 
         base_year = self.start_month.start_time.year
         current_year = tx_month.start_time.year
 
-        # choose base and current modifiers
         base_modifier = self.annual_infl.get(base_year, {}).get("modifier", 1.0)
         current_modifier = self.annual_infl.get(current_year, {}).get("modifier", 1.0)
         inflation_multiplier = current_modifier / base_modifier
 
-        inflated = int(round(self.nominal_monthly_amount * inflation_multiplier))
-        return inflated
+        inflated = self.nominal_monthly_amount * inflation_multiplier
+        scaled = inflated * self.pct_payout
+        return int(round(scaled))
