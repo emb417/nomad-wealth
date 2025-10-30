@@ -7,7 +7,6 @@ from concurrent.futures import ProcessPoolExecutor, as_completed
 from contextlib import contextmanager
 from datetime import datetime
 from dateutil.relativedelta import relativedelta
-from pandas.tseries.offsets import MonthBegin
 from tqdm import tqdm
 from typing import Dict, List
 
@@ -23,7 +22,6 @@ from policies_transactions import (
     RentalTransaction,
     RequiredMinimumDistributionTransaction,
     SalaryTransaction,
-    SEPPTransaction,
     SocialSecurityTransaction,
 )
 from rules_transactions import (
@@ -156,7 +154,7 @@ def seed_buckets_from_config(
     buckets: Dict[str, Bucket] = {}
 
     for col in hist_df.columns:
-        if col != "Date":
+        if col != "Month":
             if col not in buckets_cfg:
                 raise ValueError(
                     f"hist_df column '{col}' does not exist in buckets_cfg"
@@ -189,9 +187,9 @@ def retirement_period_from_dob(dob_str: str) -> pd.Period:
     Compute the first month withdrawals are allowed: DOB + 59 years 6 months.
     Returns a pandas Period with monthly frequency.
     """
-    dob = pd.to_datetime(dob_str).to_pydatetime()
+    dob = pd.to_datetime(dob_str)
     cutoff = dob + relativedelta(years=59, months=6)
-    return pd.Period(cutoff, freq="M")
+    return cutoff.to_period("M")
 
 
 def stage_load():
@@ -206,13 +204,15 @@ def stage_load():
 
 def stage_prepare_timeframes(balance_df: pd.DataFrame, end_date: str):
     hist_df = balance_df.copy()
-    hist_df["Date"] = pd.to_datetime(hist_df["Date"])
+    hist_df["Month"] = pd.to_datetime(hist_df["Month"]).dt.to_period("M")
     hist_df["Tax Collection"] = 0
-    last_date = hist_df["Date"].max()
-    future_idx = pd.date_range(
-        start=last_date + MonthBegin(1), end=pd.to_datetime(end_date), freq="MS"
-    )
-    future_df = pd.DataFrame({"Date": future_idx})
+
+    last_period = hist_df["Month"].max()
+    end_period = pd.Period(end_date, freq="M")
+
+    future_periods = pd.period_range(start=last_period + 1, end=end_period, freq="M")
+    future_df = pd.DataFrame({"Month": future_periods})
+
     return hist_df, future_df
 
 
@@ -235,7 +235,7 @@ def stage_init_components(
     buckets = seed_buckets_from_config(hist_df, buckets_config, flow_tracker)
 
     # Penalty tax eligibility period
-    dob = profile.get("Date of Birth")
+    dob = profile.get("Birth Month")
     eligibility = retirement_period_from_dob(dob) if dob else None
 
     # Refill policy
@@ -261,7 +261,7 @@ def stage_init_components(
     # base inflation and modifiers
     inflation_defaults = inflation_rate.get("default", {"avg": 0.02, "std": 0.01})
     inflation_profiles = inflation_rate.get("profiles", {})
-    years = sorted(future_df["Date"].dt.year.unique())
+    years = sorted(future_df["Month"].dt.year.unique())
     infl_gen = InflationGenerator(
         years, avg=inflation_defaults["avg"], std=inflation_defaults["std"]
     )
@@ -292,37 +292,24 @@ def stage_init_components(
     rmd_tx = RequiredMinimumDistributionTransaction(dob=dob)
 
     salary_tx = SalaryTransaction(
-        annual_gross=policies_config["salary"]["Annual Gross Income"],
-        annual_bonus=policies_config["salary"]["Annual Bonus Amount"],
-        bonus_date=policies_config["salary"]["Annual Bonus Date"],
-        salary_buckets=policies_config["salary"]["Targets"],
-        retirement_date=policies_config["salary"]["Retirement Date"],
+        annual_gross=policies_config["Salary"]["Annual Gross Income"],
+        annual_bonus=policies_config["Salary"]["Annual Bonus Amount"],
+        bonus_date=policies_config["Salary"]["Annual Bonus Month"],
+        salary_buckets=policies_config["Salary"]["Targets"],
+        retirement_date=policies_config["Salary"]["Retirement Month"],
     )
 
     ss_txn = SocialSecurityTransaction(
-        start_date=policies_config["Social Security"]["Start Date"],
+        start_date=policies_config["Social Security"]["Start Month"],
         monthly_amount=policies_config["Social Security"]["Amount"],
         pct_payout=policies_config["Social Security"]["Percentage"],
         target_bucket=policies_config["Social Security"]["Target"],
         annual_infl=base_inflation,
     )
 
-    sepp_cfg = policies_config.get("sepp")
-    sepp_txn = None
-    if sepp_cfg and sepp_cfg.get("Enabled", True):
-        sepp_txn = SEPPTransaction(
-            dob=dob,
-            buckets=buckets,
-            start_date=sepp_cfg["Start Date"],
-            end_date=sepp_cfg["End Date"],
-            source=sepp_cfg["Source"],
-            target=sepp_cfg["Target"],
-            source_percentage=sepp_cfg["Source Percentage"],
-        )
-
     rule_txns = [fixed_tx, recur_tx]
     policy_txns = [
-        tx for tx in [rental_tx, rmd_tx, salary_tx, ss_txn, sepp_txn] if tx is not None
+        tx for tx in [rental_tx, rmd_tx, salary_tx, ss_txn] if tx is not None
     ]
 
     return (
@@ -336,17 +323,17 @@ def stage_init_components(
     )
 
 
-def run_one_sim(
-    sim: int,
+def run_one_trial(
+    trial: int,
     future_df: pd.DataFrame,
     json_data: dict,
     dfs: dict,
     hist_df: pd.DataFrame,
 ) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Runs Monte Carlo sim# sim, returns (forecast_df, flow_df).
+    Runs Monte Carlo trial, returns (forecast_df, flow_df).
     """
-    np.random.seed(sim)
+    np.random.seed(trial)
     flow_tracker = FlowTracker()
 
     (
@@ -371,7 +358,10 @@ def run_one_sim(
         market_gains=market_gains,
         inflation=base_inflation,
         tax_calc=tax_calc,
-        dob=(json_data["profile"]["Date of Birth"]),
+        dob=(json_data["profile"]["Birth Month"]),
+        magi=json_data["profile"]["MAGI"],
+        retirement_period=json_data["policies"]["Salary"]["Retirement Month"],
+        sepp_policies=json_data["policies"]["SEPP"],
         roth_policies=json_data["policies"]["Roth Conversions"],
         irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
         marketplace_premiums=json_data["marketplace_premiums"],
@@ -379,29 +369,29 @@ def run_one_sim(
     forecast_df, taxes_df = engine.run(future_df)
 
     flow_df = flow_tracker.to_dataframe()
-    flow_df["sim"] = sim
+    flow_df["trial"] = trial
 
     return forecast_df, taxes_df, flow_df
 
 
-def run_simulation(sim, future_df, json_data, dfs, hist_df):
+def run_simulation(trial, future_df, json_data, dfs, hist_df):
     """
-    Wrapper for run_one_sim to inject simulation index into the result.
+    Wrapper for run_one_trial to inject trial index into the result.
     """
-    forecast_df, taxes_df, flow_df = run_one_sim(
-        sim, future_df, json_data, dfs, hist_df
+    forecast_df, taxes_df, flow_df = run_one_trial(
+        trial, future_df, json_data, dfs, hist_df
     )
-    return sim, forecast_df, taxes_df, flow_df
+    return trial, forecast_df, taxes_df, flow_df
 
 
 def update_property_liquidation_summary(summary, forecast_df):
     row = forecast_df.loc[forecast_df["Property"] == 0]
     if row.empty:
         return
-    date = row["Date"].iloc[0]
+    date = row["Month"].iloc[0]
     year = date.year
     summary["Property Liquidations"] += 1
-    summary["Property Liquidation Dates"].append(date)
+    summary["Property Liquidation Months"].append(date)
     summary["Minimum Property Liquidation Year"] = (
         year
         if summary["Minimum Property Liquidation Year"] is None
@@ -420,8 +410,8 @@ def main():
     with timed("Simulation"):
         # load & prep
         json_data, dfs = stage_load()
-        dob = pd.to_datetime(json_data["profile"]["Date of Birth"])
-        eol = pd.to_datetime(json_data["profile"]["End Date"])
+        dob = pd.to_datetime(json_data["profile"]["Birth Month"]).to_period("M")
+        eol = pd.to_datetime(json_data["profile"]["End Month"]).to_period("M")
 
         plot_historical_bucket_gains(
             dfs["balance"],
@@ -444,18 +434,20 @@ def main():
 
         summary = {
             "Property Liquidations": 0,
-            "Property Liquidation Dates": [],
+            "Property Liquidation Months": [],
             "Minimum Property Liquidation Year": None,
             "Maximum Property Liquidation Year": None,
         }
 
-        mc_networth_by_sim = {}
-        mc_tax_by_sim = {}
+        mc_networth_by_trial = {}
+        mc_tax_by_trial = {}
 
         with ProcessPoolExecutor() as executor:
             futures = [
-                executor.submit(run_simulation, sim, future_df, json_data, dfs, hist_df)
-                for sim in range(SIM_SIZE)
+                executor.submit(
+                    run_simulation, trial, future_df, json_data, dfs, hist_df
+                )
+                for trial in range(SIM_SIZE)
             ]
 
             for future in tqdm(
@@ -463,23 +455,23 @@ def main():
                 total=SIM_SIZE,
                 desc="Running Monte Carlo Simulation",
             ):
-                sim, forecast_df, taxes_df, flow_df = future.result()
+                trial, forecast_df, taxes_df, flow_df = future.result()
 
                 update_property_liquidation_summary(summary, forecast_df)
 
                 forecast_df["Net Worth"] = forecast_df.iloc[:, 1:].sum(axis=1)
-                forecast_df["Year"] = forecast_df["Date"].dt.year
+                forecast_df["Year"] = forecast_df["Month"].dt.year
 
-                # Store year-end net worth per simulation
-                ye_nw_series = forecast_df.groupby("Year")["Net Worth"].last()
-                mc_networth_by_sim[sim] = ye_nw_series
+                # Store year-end net worth per trial
+                monthly_nw_series = forecast_df.set_index("Month")["Net Worth"]
+                mc_networth_by_trial[trial] = monthly_nw_series
                 tax_series = taxes_df.set_index("Year")["Total Tax"]
-                mc_tax_by_sim[sim] = tax_series
+                mc_tax_by_trial[trial] = tax_series
 
-                if sim in sim_examples:
+                if trial in sim_examples:
                     plot_example_transactions(
                         flow_df=flow_df,
-                        sim=sim,
+                        trial=trial,
                         ts=ts,
                         show=(
                             SHOW_EXAMPLE_TRANSACTIONS_CHART
@@ -489,7 +481,7 @@ def main():
                         save=SAVE_EXAMPLE_TRANSACTIONS_CHART,
                     )
                     plot_example_transactions_in_context(
-                        sim=sim,
+                        trial=trial,
                         forecast_df=forecast_df.drop(columns=["Net Worth", "Year"]),
                         flow_df=flow_df,
                         ts=ts,
@@ -502,7 +494,7 @@ def main():
                     )
                     plot_example_income_taxes(
                         taxes_df=taxes_df,
-                        sim=sim,
+                        trial=trial,
                         ts=ts,
                         show=(
                             SHOW_EXAMPLE_INCOME_TAXES_CHART
@@ -512,7 +504,7 @@ def main():
                         save=SAVE_EXAMPLE_INCOME_TAXES_CHART,
                     )
                     plot_example_forecast(
-                        sim=sim,
+                        trial=trial,
                         hist_df=hist_df,
                         forecast_df=forecast_df.drop(columns=["Year"]),
                         dob=dob,
@@ -527,9 +519,11 @@ def main():
 
         # Build DataFrame: rows = simulations, columns = years
         mc_networth_df = (
-            pd.DataFrame.from_dict(mc_networth_by_sim, orient="index").sort_index().T
+            pd.DataFrame.from_dict(mc_networth_by_trial, orient="index").sort_index().T
         )
-        mc_tax_df = pd.DataFrame.from_dict(mc_tax_by_sim, orient="index").sort_index().T
+        mc_tax_df = (
+            pd.DataFrame.from_dict(mc_tax_by_trial, orient="index").sort_index().T
+        )
 
         plot_mc_tax_bars(
             mc_tax_df=mc_tax_df,

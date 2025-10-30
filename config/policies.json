@@ -11,7 +11,7 @@
     "Cash": ["Fixed-Income", "Taxable", "Tax-Deferred", "Tax-Free"],
     "Fixed-Income": ["Taxable", "Tax-Deferred", "Tax-Free"]
   },
-  "salary": {
+  "Salary": {
     "Targets": {
       "Cash": 0.9,
       "Fixed-Income": 0.0,
@@ -20,28 +20,28 @@
       "Tax-Free": 0.0
     },
     "Annual Gross Income": 200000,
-    "Annual Bonus Date": "2027-04-01",
+    "Annual Bonus Month": "2027-04",
     "Annual Bonus Amount": 40000,
-    "Retirement Date": "2030-04-01"
+    "Retirement Month": "2030-09"
   },
   "Social Security": {
     "Target": "Cash",
-    "Start Date": "2042-04-01",
-    "Amount": 5000,
-    "Percentage": 0.5
+    "Start Month": "2037-04",
+    "Amount": 3800,
+    "Percentage": 0.8
   },
   "Roth Conversions": {
     "early": {
       "Max Tax Rate": 0.1,
-      "Max Conversion Amount": 50000,
+      "Max Conversion Amount": 10000,
       "Allow Conversion": true,
       "Cutoff Age": 59.5
     },
     "prime": {
       "Max Tax Rate": 0.22,
-      "Max Conversion Amount": 150000,
+      "Max Conversion Amount": 100000,
       "Allow Conversion": true,
-      "Cutoff Age": 65
+      "Cutoff Age": 61
     },
     "late": {
       "Max Tax Rate": 0.24,
@@ -50,12 +50,12 @@
       "Cutoff Age": 75
     }
   },
-  "sepp": {
+  "SEPP": {
     "Enabled": true,
-    "Start Date": "2027-01-01",
-    "End Date": "2034-09-01",
+    "Start Month": "2030-10",
+    "End Month": "2034-09",
     "Source": "Tax-Deferred",
-    "Source Percentage": 1.0,
+    "Source Percentage": 0.75,
     "Target": "Cash"
   },
   "liquidation": {

@@ -15,10 +15,10 @@ def load_csv() -> dict[str, pd.DataFrame]:
         and (DATA / "recurring.csv").exists()
     ):
         return {
-            "balance": pd.read_csv(DATA / "balance.csv", parse_dates=["Date"]),
-            "fixed": pd.read_csv(DATA / "fixed.csv", parse_dates=["Date"]),
+            "balance": pd.read_csv(DATA / "balance.csv", parse_dates=["Month"]),
+            "fixed": pd.read_csv(DATA / "fixed.csv", parse_dates=["Month"]),
             "recurring": pd.read_csv(
-                DATA / "recurring.csv", parse_dates=["Start Date", "End Date"]
+                DATA / "recurring.csv", parse_dates=["Start Month", "End Month"]
             ),
         }
     else:

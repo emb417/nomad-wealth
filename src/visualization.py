@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from plotly.subplots import make_subplots
+from datetime import datetime
 
 
 COLOR_PALETTE = [
@@ -68,19 +69,36 @@ def assign_colors_by_base_label(labels, color_palette):
     return [label_color_map[base_label(lbl)] for lbl in labels]
 
 
+def coerce_month_column(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Ensures the 'Month' column is datetime64[ns] at month-end.
+    Avoids using pd.api.types.
+    """
+    month_col = df["Month"]
+
+    if isinstance(month_col.iloc[0], pd.Period):
+        df["Month"] = month_col.dt.to_timestamp("M")
+    elif isinstance(month_col.iloc[0], (pd.Timestamp, datetime)):
+        df["Month"] = month_col.dt.to_period("M").dt.to_timestamp("M")
+    else:
+        df["Month"] = pd.to_datetime(month_col).dt.to_period("M").dt.to_timestamp("M")
+
+    return df
+
+
 def plot_example_income_taxes(
     taxes_df: pd.DataFrame,
-    sim: int,
+    trial: int,
     show: bool = True,
     save: bool = False,
     export_path: str = "export/",
     ts: str = "",
 ):
     """
-    Renders and optionally saves the income and taxes chart for one simulation.
+    Renders and optionally saves the income and taxes chart for one trial.
     """
 
-    title = f"Sim {sim+1:04d} | Income & Taxes"
+    title = f"Trial {trial+1:04d} | Income & Taxes"
     years = taxes_df["Year"]
 
     # Color palettes
@@ -205,18 +223,18 @@ def plot_example_income_taxes(
     if show:
         fig.show()
     if save:
-        prefix = f"{export_path}{sim+1:04d}_"
+        prefix = f"{export_path}{trial+1:04d}_"
         taxes_csv = f"{prefix}income_taxes_{ts}.csv"
         html = f"{prefix}income_taxes_{ts}.html"
 
         taxes_df.to_csv(taxes_csv, index=False)
         fig.write_html(html)
-        logging.debug(f"Sim {sim+1:04d} | Saved sample forecast to {html}")
+        logging.debug(f"Trial {trial+1:04d} | Saved sample forecast to {html}")
 
 
 def plot_example_transactions(
     flow_df: pd.DataFrame,
-    sim: int,
+    trial: int,
     show: bool = True,
     save: bool = False,
     export_path: str = "export/",
@@ -225,7 +243,7 @@ def plot_example_transactions(
     df = flow_df.copy()
     df["date"] = df["date"].dt.to_timestamp()
     df["year"] = df["date"].dt.year
-    df = df[df["sim"] == sim]
+    df = df[df["trial"] == trial]
 
     years = sorted(df["year"].unique())
 
@@ -325,14 +343,14 @@ def plot_example_transactions(
                 method="update",
                 args=[
                     {"visible": visibility},
-                    {"title": {"text": f"Sim {sim+1:04d} | {year} Transactions"}},
+                    {"title": {"text": f"Trial {trial+1:04d} | {year} Transactions"}},
                 ],
                 label=str(year),
             )
         )
 
     fig.update_layout(
-        title={"text": f"Sim {sim+1:04d} | {years[0]} Transactions"},
+        title={"text": f"Trial {trial+1:04d} | {years[0]} Transactions"},
         sliders=[
             {
                 "active": 0,
@@ -347,12 +365,12 @@ def plot_example_transactions(
     if show:
         fig.show()
     if save:
-        fig.write_html(f"{export_path}{sim+1:04d}_flow_transitions_{ts}.html")
-        flow_df.to_csv(f"{export_path}{sim+1:04d}_flow_transitions_{ts}.csv")
+        fig.write_html(f"{export_path}{trial+1:04d}_flow_transitions_{ts}.html")
+        flow_df.to_csv(f"{export_path}{trial+1:04d}_flow_transitions_{ts}.csv")
 
 
 def plot_example_transactions_in_context(
-    sim: int,
+    trial: int,
     forecast_df: pd.DataFrame,
     flow_df: pd.DataFrame,
     ts: str,
@@ -360,24 +378,22 @@ def plot_example_transactions_in_context(
     save: bool,
     export_path: str = "export/",
 ):
+    forecast_df = coerce_month_column(forecast_df.copy())
+    forecast_df = forecast_df[forecast_df["Month"].dt.month == 1].sort_values("Month")
 
-    forecast_df = forecast_df.copy()
-    forecast_df["Date"] = pd.to_datetime(forecast_df["Date"])
-    forecast_df = forecast_df[forecast_df["Date"].dt.month == 1].sort_values("Date")
-    bucket_names = [col for col in forecast_df.columns if col != "Date"]
-    years = forecast_df["Date"].dt.year.tolist()
+    bucket_names = [col for col in forecast_df.columns if col != "Month"]
+    years = forecast_df["Month"].dt.year.tolist()
     transitions = [(years[i], years[i + 1]) for i in range(len(years) - 1)]
 
     flow_df = flow_df.copy()
     flow_df["date"] = flow_df["date"].dt.to_timestamp()
-    flow_df = flow_df[flow_df["sim"] == sim]
+    flow_df = flow_df[flow_df["trial"] == trial]
     flow_df["year"] = flow_df["date"].dt.year
 
     sankey_traces = []
     for y0, y1 in transitions:
-        bal_end = forecast_df[forecast_df["Date"] == pd.Timestamp(f"{y1}-01-01")].iloc[
-            0
-        ]
+        target_month = pd.Period(f"{y1}-01", freq="M").to_timestamp("M")
+        bal_end = forecast_df.loc[forecast_df["Month"] == target_month].iloc[0]
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
         agg = (
             flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
@@ -501,7 +517,7 @@ def plot_example_transactions_in_context(
                     {"visible": vis},
                     {
                         "title": {
-                            "text": f"Sim {sim+1:04d} | Jan {y0} → Jan {y1} Transactions In-Context"
+                            "text": f"Trial {trial+1:04d} | Jan {y0} → Jan {y1} Transactions In-Context"
                         }
                     },
                 ],
@@ -513,7 +529,7 @@ def plot_example_transactions_in_context(
     ]
     fig.update_layout(
         title={
-            "text": f"Sim {sim+1:04d} | Jan {transitions[0][0]} → Jan {transitions[0][1]} Transactions In-Context",
+            "text": f"Trial {trial+1:04d} | Jan {transitions[0][0]} → Jan {transitions[0][1]} Transactions In-Context",
         },
         sliders=sliders,
         margin=dict(l=50, r=50, t=80, b=50),
@@ -522,11 +538,11 @@ def plot_example_transactions_in_context(
     if show:
         fig.show()
     if save:
-        fig.write_html(f"{export_path}{sim+1:04d}_sankey_{ts}.html")
+        fig.write_html(f"{export_path}{trial+1:04d}_sankey_{ts}.html")
 
 
 def plot_example_forecast(
-    sim: int,
+    trial: int,
     hist_df: pd.DataFrame,
     forecast_df: pd.DataFrame,
     dob: str,
@@ -536,26 +552,36 @@ def plot_example_forecast(
     export_path: str = "export/",
 ):
     """
-    Renders and optionally saves the bucket‐by‐bucket forecast for one simulation.
+    Renders and optionally saves the bucket‐by‐bucket forecast for one trial.
     """
+    hist_df = coerce_month_column(hist_df.copy())
+    forecast_df = coerce_month_column(forecast_df.copy())
     full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
+
     cols = list(full_df.columns)
     cols.insert(1, cols.pop(cols.index("Net Worth")))
     full_df = full_df[cols]
-    title = f"Sim {sim+1:04d} | Forecast by Bucket"
 
-    # Extract bucket labels (excluding Date)
-    bucket_labels = [col for col in full_df.columns if col != "Date"]
+    title = f"Trial {trial+1:04d} | Forecast by Bucket"
+
+    # Extract bucket labels (excluding Month)
+    bucket_labels = [col for col in full_df.columns if col != "Month"]
 
     # Assign colors using base_label logic
     color_list = assign_colors_by_base_label(bucket_labels, COLOR_PALETTE)
     line_colors = dict(zip(bucket_labels, color_list))
 
     # Age trace
+    dob_period = pd.Period(dob, freq="M")
+    month_periods = pd.to_datetime(full_df["Month"]).dt.to_period("M")
+    month_offsets = month_periods.astype("int64")
+    dob_offset = dob_period.ordinal
+    age_years = (month_offsets - dob_offset) / 12
+
     traces = [
         go.Scatter(
-            x=full_df["Date"],
-            y=[(date - pd.to_datetime(dob)).days / 365 for date in full_df["Date"]],
+            x=full_df["Month"],
+            y=age_years,
             mode="lines",
             name="Age",
             line=dict(width=0, color="white"),
@@ -567,7 +593,7 @@ def plot_example_forecast(
     # Bucket traces with percent share
     for col in bucket_labels:
         if col == "Net Worth":
-            share_data = [100.0] * len(full_df)  # Net Worth is always 100% of itself
+            share_data = [100.0] * len(full_df)
         else:
             share_data = (
                 (full_df[col] / full_df["Net Worth"])
@@ -579,7 +605,7 @@ def plot_example_forecast(
 
         traces.append(
             go.Scatter(
-                x=full_df["Date"],
+                x=full_df["Month"],
                 y=full_df[col],
                 mode="lines",
                 name=col,
@@ -589,7 +615,7 @@ def plot_example_forecast(
                 ),
                 customdata=share_data,
                 hovertemplate=(
-                    f"{col}: %{{y:$,.0f}}" + " (%{customdata:.0f}%)<extra></extra>"
+                    f"{col}: %{{y:$,.0f}} (%{{customdata:.0f}}%)<extra></extra>"
                 ),
             )
         )
@@ -607,13 +633,13 @@ def plot_example_forecast(
     if show:
         fig.show()
     if save:
-        prefix = f"{export_path}{sim+1:04d}_"
+        prefix = f"{export_path}{trial+1:04d}_"
         bucket_csv = f"{prefix}buckets_{ts}.csv"
         html = f"{prefix}buckets_{ts}.html"
 
         full_df.to_csv(bucket_csv, index=False)
         fig.write_html(html)
-        logging.debug(f"Sim {sim+1:04d} | Saved sample forecast to {html}")
+        logging.debug(f"Trial {trial+1:04d} | Saved sample forecast to {html}")
 
 
 def plot_historical_balance(
@@ -626,22 +652,23 @@ def plot_historical_balance(
     """
     Renders and optionally saves the historical balance chart.
     """
+    hist_df = coerce_month_column(hist_df.copy())
     total_net_worth = pd.DataFrame(
         {
-            "Date": pd.to_datetime(hist_df["Date"]),
-            "Total Net Worth": hist_df.drop("Date", axis=1).sum(axis=1),
+            "Month": hist_df["Month"],
+            "Total Net Worth": hist_df.drop("Month", axis=1).sum(axis=1),
         }
     )
 
     monthly_net_worth_gain_loss = pd.DataFrame(
         {
-            "Date": hist_df["Date"],
+            "Month": hist_df["Month"],
             "Net Worth Gain": total_net_worth["Total Net Worth"].pct_change().fillna(0),
         }
     )
     annual_net_worth_gain_loss = pd.DataFrame(
         {
-            "Date": hist_df["Date"],
+            "Month": hist_df["Month"],
             "Net Worth Gain": total_net_worth["Total Net Worth"]
             .pct_change(12)
             .fillna(0),
@@ -650,7 +677,7 @@ def plot_historical_balance(
     fig = go.Figure(
         data=[
             go.Scatter(
-                x=total_net_worth["Date"],
+                x=total_net_worth["Month"],
                 y=total_net_worth["Total Net Worth"],
                 marker=dict(color="black", opacity=0.5),
                 name="Net Worth",
@@ -664,7 +691,7 @@ def plot_historical_balance(
                 opacity=0.75,
             ),
             go.Bar(
-                x=monthly_net_worth_gain_loss["Date"],
+                x=monthly_net_worth_gain_loss["Month"],
                 y=monthly_net_worth_gain_loss["Net Worth Gain"],
                 marker=dict(
                     color=[
@@ -677,7 +704,7 @@ def plot_historical_balance(
                 yaxis="y2",
             ),
             go.Bar(
-                x=annual_net_worth_gain_loss["Date"],
+                x=annual_net_worth_gain_loss["Month"],
                 y=annual_net_worth_gain_loss["Net Worth Gain"],
                 marker=dict(
                     color=[
@@ -726,8 +753,8 @@ def plot_historical_bucket_gains(
     import plotly.graph_objects as go
 
     df = hist_df.copy()
-    df["Date"] = pd.to_datetime(df["Date"])
-    df.set_index("Date", inplace=True)
+    df["Month"] = pd.to_datetime(df["Month"]).dt.to_period("M").dt.to_timestamp("M")
+    df.set_index("Month", inplace=True)
 
     # Identify bucket columns
     bucket_cols = [col for col in df.columns]
@@ -743,7 +770,7 @@ def plot_historical_bucket_gains(
 
     traces.append(
         go.Scatter(
-            x=monthly_pct["Date"],
+            x=monthly_pct["Month"],
             y=monthly_networth_change.values,
             mode="markers",
             name="Net Worth",
@@ -755,7 +782,7 @@ def plot_historical_bucket_gains(
 
     for col in bucket_cols:
         monthly_vals = monthly_pct[col].values
-        dates = monthly_pct["Date"]
+        dates = monthly_pct["Month"]
 
         # Get corresponding balance values from original df
         balance_vals = df[col].reindex(dates).fillna(0).values
@@ -819,36 +846,42 @@ def plot_mc_networth(
     save: bool,
     export_path: str = "export/",
 ):
-    """
-    Renders and optionally saves the Monte Carlo net-worth chart.
-    age_metrics: {
-       'age_minus_20': pct,
-       'age_minus_10': pct,
-       'age_end': pct,
-       'age_minus_20_label': int,
-       ...
-    }
-    """
     sim_size = len(mc_networth_df.columns)
-    # compute percentiles
+    mc_networth_df.index = pd.PeriodIndex(mc_networth_df.index, freq="M")
+
+    # Compute percentiles across trials
     pct_df = mc_networth_df.quantile([0.15, 0.5, 0.85], axis=1).T
     pct_df.columns = ["p15", "median", "p85"]
     pct_df["mean"] = pct_df.mean(axis=1)
-    dob_year = pd.to_datetime(dob).year
-    eol_year = pd.to_datetime(eol).year
-    eol_age = eol_year - dob_year
+    pct_df.index = mc_networth_df.index  # align index
 
-    # probability of positive net worth at final year
+    # Age logic
+    dob_period = pd.Period(dob, freq="M")
+    eol_period = pd.Period(eol, freq="M")
+    eol_age = (eol_period - dob_period).n // 12
+    dob_period = pd.Period(dob, freq="M")
+    ages = mc_networth_df.index.map(lambda p: (p - dob_period).n // 12).tolist()
+
+    def get_pct_at_age(age):
+        target_period = dob_period + age * 12
+        mask = mc_networth_df.index == target_period
+        if mask.any():
+            row = mc_networth_df[mask].iloc[0]
+            return (row > 0).mean()
+        else:
+            return np.nan
+
     age_metrics = {
         "age_minus_20": eol_age - 20,
-        "age_minus_20_pct": (mc_networth_df.loc[eol_year - 20] > 0).mean(),
+        "age_minus_20_pct": get_pct_at_age(eol_age - 20),
         "age_minus_10": eol_age - 10,
-        "age_minus_10_pct": (mc_networth_df.loc[eol_year - 10] > 0).mean(),
+        "age_minus_10_pct": get_pct_at_age(eol_age - 10),
         "age_end": eol_age,
-        "age_end_pct": (mc_networth_df.loc[eol_year] > 0).mean(),
+        "age_end_pct": get_pct_at_age(eol_age),
     }
 
-    # liquidation metrics
+    # Liquidation metrics
+    dob_year = dob_period.year
     min_liquidation_age = (
         summary["Minimum Property Liquidation Year"] - dob_year
         if summary["Minimum Property Liquidation Year"] is not None
@@ -856,11 +889,11 @@ def plot_mc_networth(
     )
     avg_liquidation_age = (
         int(
-            sum(date.year for date in summary["Property Liquidation Dates"])
-            / len(summary["Property Liquidation Dates"])
+            sum(date.year for date in summary["Property Liquidation Months"])
+            / len(summary["Property Liquidation Months"])
             - dob_year
         )
-        if len(summary["Property Liquidation Dates"]) > 0
+        if len(summary["Property Liquidation Months"]) > 0
         else None
     )
     max_liquidation_age = (
@@ -870,25 +903,23 @@ def plot_mc_networth(
     )
     pct_liquidation = summary["Property Liquidations"] / sim_size
 
-    years = pct_df.index.to_list()
-    ages = [year - dob_year for year in years]
-
     fig = go.Figure()
+
+    # Invisible age trace for hover
     fig.add_trace(
         go.Scatter(
-            x=years,
+            x=mc_networth_df.index.to_timestamp(),
             y=pct_df["median"],
             customdata=ages,
             mode="markers",
             marker=dict(size=0, opacity=0),
             line=dict(width=0),
             showlegend=False,
-            hovertemplate=("Age %{customdata:.0f}<extra></extra>"),
+            hovertemplate="Age %{customdata:.0f}<extra></extra>",
         )
     )
-    # Monte-Carlo samples - top/bottom 5%, examples in purple
 
-    # Compute 5th and 95th percentiles
+    # Monte Carlo examples
     final_values = mc_networth_df.iloc[-1]
     lower_bound = final_values.quantile(0.1)
     upper_bound = final_values.quantile(0.9)
@@ -899,17 +930,17 @@ def plot_mc_networth(
     ]
 
     for col in filtered_cols:
-        is_sample = col in sim_examples
-        color, opacity, width = ("purple", 0.6, 2) if is_sample else ("gray", 0.2, 1)
+        is_example = col in sim_examples
+        color, opacity, width = ("purple", 0.6, 2) if is_example else ("gray", 0.2, 1)
         hover_kwargs = (
-            {"hovertemplate": f"Sim {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
-            if is_sample
+            {"hovertemplate": f"Trial {int(col)+1:04d}: %{{y:$,.0f}}<extra></extra>"}
+            if is_example
             else {"hoverinfo": "skip"}
         )
 
         fig.add_trace(
             go.Scatter(
-                x=years,
+                x=mc_networth_df.index.to_timestamp(),
                 y=mc_networth_df[col],
                 showlegend=False,
                 line=dict(color=color, width=width),
@@ -928,36 +959,52 @@ def plot_mc_networth(
         )
 
     # Percentile lines
+    timestamp_index = mc_networth_df.index.to_timestamp()
     fig.add_trace(
         make_trace(
-            "85th Percentile", years, pct_df["p85"], color="blue", dash="dash", width=2
+            "85th Percentile",
+            timestamp_index,
+            pct_df["p85"],
+            color="blue",
+            width=1,
         )
     )
-    fig.add_trace(make_trace("Median", years, pct_df["median"], color="green", width=2))
+    fig.add_trace(
+        make_trace("Median", timestamp_index, pct_df["median"], color="green", width=2)
+    )
     fig.add_trace(
         make_trace(
-            "15th Percentile", years, pct_df["p15"], color="blue", dash="dash", width=2
+            "15th Percentile",
+            timestamp_index,
+            pct_df["p15"],
+            color="blue",
+            width=1,
         )
     )
 
-    for y, label, color in [
-        (pct_df["p15"][eol_year], "15th Percentile", "blue"),
-        (pct_df["median"][eol_year], "Median", "green"),
-        (pct_df["p85"][eol_year], "85th Percentile", "blue"),
-    ]:
-        fig.add_annotation(
-            x=eol_year,
-            y=y,
-            text=f"{label}: ${y:,.0f}",
-            showarrow=False,
-            font=dict(color=color),
-            bgcolor="rgba(255,255,255,0.8)",
-            bordercolor=color,
-            borderwidth=1,
-            xanchor="right",
-            yanchor="bottom",
-        )
+    # Annotations at EOL
+    eol_ts = pd.Period(eol, freq="M").to_timestamp()
+    if eol_ts in timestamp_index:
+        for col, label, color in [
+            ("p15", "15th Percentile", "blue"),
+            ("median", "Median", "green"),
+            ("p85", "85th Percentile", "blue"),
+        ]:
+            y = pct_df.loc[eol_ts, col]
+            fig.add_annotation(
+                x=eol_ts,
+                y=y,
+                text=f"{label}: ${y:,.0f}",
+                showarrow=False,
+                font=dict(color=color),
+                bgcolor="rgba(255,255,255,0.8)",
+                bordercolor=color,
+                borderwidth=1,
+                xanchor="right",
+                yanchor="bottom",
+            )
 
+    # Title logic
     confidence_color = (
         "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
     )
@@ -969,16 +1016,15 @@ def plot_mc_networth(
         return "green" if value < 0.25 else "blue" if value < 0.5 else "red"
 
     def getAgeColor(value):
-        ageColor = (
+        return (
             "green"
             if value is None
             else "green" if value > 75 else "blue" if value > 65 else "red"
         )
-        return ageColor
 
     title = (
         f"Monte Carlo Net Worth Forecast"
-        f" | <span style='color: {confidence_color}'>{sim_size} Simulations</span>"
+        f" | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
         f"<br><br>Postive Net Worth: <span style='color: {getPNWColor(age_metrics['age_minus_20_pct'])}'>{age_metrics['age_minus_20_pct']:.1%}"
         f" @ {age_metrics['age_minus_20']} y.o.</span>"
         f" | <span style='color: {getPNWColor(age_metrics['age_minus_10_pct'])}'>{age_metrics['age_minus_10_pct']:.1%}"
@@ -993,6 +1039,7 @@ def plot_mc_networth(
             f" | <span style='color: {getAgeColor(avg_liquidation_age)}'>Avg {avg_liquidation_age} y.o.</span>"
             f" | <span style='color: {getAgeColor(max_liquidation_age)}'>Max {max_liquidation_age} y.o.</span>"
         )
+
     fig.update_layout(
         title=title,
         title_x=0.5,
@@ -1006,7 +1053,7 @@ def plot_mc_networth(
     if show:
         fig.show()
     if save:
-        mc_networth_df.to_csv(f"{export_path}mc_networth_{ts}.csv", index_label="Year")
+        mc_networth_df.to_csv(f"{export_path}mc_networth_{ts}.csv", index_label="Month")
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo files saved to {html}")
@@ -1021,7 +1068,7 @@ def plot_mc_tax_bars(
     export_path: str = "export/",
 ):
     """
-    Renders and optionally saves a bar chart of total taxes per simulation.
+    Renders and optionally saves a bar chart of total taxes per trial.
     """
     sim_size = len(mc_tax_df.columns)
     mc_tax_df = mc_tax_df.copy()
@@ -1033,17 +1080,18 @@ def plot_mc_tax_bars(
     p85 = total_taxes.quantile(0.85)
 
     # Exclude the top 10% of total taxes from the chart
-    threshold = total_taxes.quantile(0.90)
+    threshold = total_taxes.quantile(0.95)
     total_taxes = total_taxes[total_taxes <= threshold]
-    sim_labels = [f"Sim {int(sim)+1:04d}" for sim in total_taxes.index]
+    trial_labels = [f"Trial {int(trial)+1:04d}" for trial in total_taxes.index]
     bar_colors = [
-        "purple" if sim in sim_examples else "lightgray" for sim in total_taxes.index
+        "purple" if trial in sim_examples else "lightgray"
+        for trial in total_taxes.index
     ]
     hover_texts = [f"Total Taxes: ${total:,.0f}" for total in total_taxes.values]
 
     fig = go.Figure(
         go.Bar(
-            x=sim_labels,
+            x=trial_labels,
             y=total_taxes.values,
             marker_color=bar_colors,
             opacity=0.5,
@@ -1055,7 +1103,7 @@ def plot_mc_tax_bars(
     # Reference lines using same x labels
     fig.add_trace(
         go.Scatter(
-            x=sim_labels,
+            x=trial_labels,
             y=[p85] * sim_size,
             mode="lines",
             name="85th Percentile",
@@ -1065,7 +1113,7 @@ def plot_mc_tax_bars(
     )
     fig.add_trace(
         go.Scatter(
-            x=sim_labels,
+            x=trial_labels,
             y=[median] * sim_size,
             mode="lines",
             name="Median",
@@ -1075,7 +1123,7 @@ def plot_mc_tax_bars(
     )
     fig.add_trace(
         go.Scatter(
-            x=sim_labels,
+            x=trial_labels,
             y=[p15] * sim_size,
             mode="lines",
             name="15th Percentile",
@@ -1091,7 +1139,7 @@ def plot_mc_tax_bars(
         (p85, "85th Percentile", "blue"),
     ]:
         fig.add_annotation(
-            x=sim_labels[-1],
+            x=trial_labels[-1],
             y=y,
             text=f" {label}: ${y:,.0f} ",
             showarrow=False,
@@ -1106,8 +1154,8 @@ def plot_mc_tax_bars(
     )
 
     title = (
-        f"Total Tax Burden per Simulation"
-        f" | <span style='color: {confidence_color}'>{sim_size} Simulations</span>"
+        f"Total Tax Burden per Trial"
+        f" | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
     )
 
     fig.update_layout(
@@ -1123,9 +1171,7 @@ def plot_mc_tax_bars(
     if show:
         fig.show()
     if save:
-        total_taxes.to_csv(
-            f"{export_path}mc_tax_totals_{ts}.csv", index_label="Simulation"
-        )
+        total_taxes.to_csv(f"{export_path}mc_tax_totals_{ts}.csv", index_label="Trial")
         html = f"{export_path}mc_tax_totals_{ts}.html"
         fig.write_html(html)
         logging.info(f"Monte Carlo tax totals saved to {html}")

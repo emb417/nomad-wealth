@@ -22,7 +22,7 @@ class FixedTransaction(RuleTransaction):
         self, df: pd.DataFrame, taxable_eligibility: Optional[pd.Period] = None
     ):
         self.df = df.copy()
-        self.df["Date"] = pd.to_datetime(self.df["Date"])
+        self.df["Month"] = pd.to_datetime(self.df["Month"])
         self.taxable_eligibility = (
             taxable_eligibility
             if isinstance(taxable_eligibility, pd.Period)
@@ -34,7 +34,7 @@ class FixedTransaction(RuleTransaction):
         )
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
-        hits = self.df[self.df["Date"].dt.to_period("M") == tx_month]
+        hits = self.df[self.df["Month"].dt.to_period("M") == tx_month]
         for _, row in hits.iterrows():
             bucket_name = str(row.get("Bucket", "Cash")).strip()
             if bucket_name not in buckets:
@@ -79,8 +79,12 @@ class RecurringTransaction(RuleTransaction):
         ] = None,
     ):
         self.df = df.copy()
-        self.df["Start Date"] = pd.to_datetime(self.df["Start Date"])
-        self.df["End Date"] = pd.to_datetime(self.df["End Date"], errors="coerce")
+        self.df["Start Month"] = pd.to_datetime(self.df["Start Month"]).dt.to_period(
+            "M"
+        )
+        self.df["End Month"] = pd.to_datetime(
+            self.df["End Month"], errors="coerce"
+        ).dt.to_period("M")
         self.taxable_eligibility = (
             taxable_eligibility
             if isinstance(taxable_eligibility, pd.Period)
@@ -94,8 +98,8 @@ class RecurringTransaction(RuleTransaction):
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         for _, row in self.df.iterrows():
-            start = row["Start Date"].to_period("M")
-            end = row["End Date"].to_period("M") if pd.notna(row["End Date"]) else None
+            start = row["Start Month"]
+            end = row["End Month"] if pd.notna(row["End Month"]) else None
             if not (start <= tx_month and (end is None or tx_month <= end)):
                 continue
 
@@ -104,7 +108,7 @@ class RecurringTransaction(RuleTransaction):
                 logging.warning(f"{tx_month} — Bucket '{bucket_name}' not found")
                 continue
 
-            base_year = row["Start Date"].year
+            base_year = row["Start Month"].year
             current_year = tx_month.start_time.year
             amount = float(row["Amount"])
             desc = row["Description"]

@@ -1,7 +1,7 @@
 import pandas as pd
 
 from abc import ABC, abstractmethod
-from typing import Dict, Optional
+from typing import Dict
 
 # Internal Imports
 from buckets import Bucket
@@ -366,78 +366,42 @@ class SalaryTransaction(PolicyTransaction):
 
 
 class SEPPTransaction(PolicyTransaction):
+    """
+    Transfer a fixed SEPP withdrawal amount from a tax-deferred source to a target bucket.
+
+    The SEPP amount is calculated externally (e.g., in ForecastEngine) based on IRS RMD method.
+    """
+
     is_tax_deferred = True
-    is_taxable = False
+    is_taxable = False  # SEPP withdrawals are ordinary income but penalty-exempt
 
-    def __init__(
-        self,
-        dob: str,
-        buckets: Dict[str, Bucket],
-        start_date: str,
-        end_date: str,
-        source: str,
-        target: str,
-        source_percentage: Optional[float] = 1.0,
-    ):
-        self.start_date = pd.to_datetime(start_date)
-        self.dob = pd.to_datetime(dob)
-        self.source_bucket = source
-        self.target_bucket = target
-        self.source_percentage = source_percentage
+    def __init__(self, source_bucket: str, target_bucket: str):
+        super().__init__()
+        self.source_bucket = source_bucket
+        self.target_bucket = target_bucket
+        self._monthly_withdrawals: Dict[pd.Period, int] = {}
 
-        # IRS requires SEPP to continue for the longer of:
-        # - 5 years from start
-        # - until age 59½ (21718 days)
-        five_years = self.start_date + pd.DateOffset(years=5)
-        age_59_5 = self.dob + pd.DateOffset(days=21718)
-        default_end = max(five_years, age_59_5)
-
-        self.end_date = (
-            pd.to_datetime(end_date)
-            if end_date
-            else default_end + pd.offsets.MonthEnd(1)
-        )
-
-        age_at_start = (self.start_date - self.dob).days // 365
-        life_expectancy = self._get_uniform_life_expectancy(age_at_start)
-        starting_balance = buckets[self.source_bucket].balance()
-        adjusted_balance = starting_balance * (
-            self.source_percentage if self.source_percentage is not None else 1.0
-        )
-        annual_amount = adjusted_balance / life_expectancy
-        self.monthly_amount = int(annual_amount / 12)
-
-    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period):
-        tx_date = tx_month.start_time
-        if self.start_date <= tx_date < self.end_date:
-            source = buckets[self.source_bucket]
-            target = buckets[self.target_bucket]
-            source.transfer(
-                amount=self.monthly_amount,
-                target_bucket=target,
-                tx_month=tx_month,
-            )
+    def apply(
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period, amount: int
+    ) -> int:
+        src = buckets.get(self.source_bucket)
+        tgt = buckets.get(self.target_bucket)
+        if src is None or tgt is None or src.balance() <= 0:
+            return 0
+        applied = src.transfer(amount, tgt, tx_month)
+        self._monthly_withdrawals[tx_month] = applied
+        return applied
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
-        tx_date = tx_month.start_time
-        return self.monthly_amount if self.start_date <= tx_date < self.end_date else 0
+        return self._monthly_withdrawals.get(
+            tx_month, 0
+        )  # SEPP income considered tax-deferred withdrawal
+
+    def get_taxable_gain(self, tx_month: pd.Period) -> int:
+        return 0  # SEPP withdrawals are not capital gains
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
-        return 0  # SEPP withdrawals are always penalty-exempt
-
-    def _get_uniform_life_expectancy(self, age: int) -> float:
-        table = {
-            50: 33.1,
-            55: 29.6,
-            60: 25.2,
-            65: 21.0,
-            70: 17.0,
-            75: 13.4,
-            80: 10.2,
-            85: 7.6,
-            90: 5.5,
-        }
-        return next((v for a, v in sorted(table.items()) if age <= a), 33.1)
+        return 0  # SEPP withdrawals are exempt from early withdrawal penalties
 
 
 class SocialSecurityTransaction(PolicyTransaction):
