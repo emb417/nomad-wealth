@@ -1056,7 +1056,7 @@ def plot_mc_networth(
         mc_networth_df.to_csv(f"{export_path}mc_networth_{ts}.csv", index_label="Month")
         html = f"{export_path}mc_networth_{ts}.html"
         fig.write_html(html)
-        logging.info(f"Monte Carlo files saved to {html}")
+        logging.debug(f"Monte Carlo files saved to {html}")
 
 
 def plot_mc_tax_bars(
@@ -1174,4 +1174,4 @@ def plot_mc_tax_bars(
         total_taxes.to_csv(f"{export_path}mc_tax_totals_{ts}.csv", index_label="Trial")
         html = f"{export_path}mc_tax_totals_{ts}.html"
         fig.write_html(html)
-        logging.info(f"Monte Carlo tax totals saved to {html}")
+        logging.debug(f"Monte Carlo tax totals saved to {html}")

@@ -132,7 +132,7 @@ class ForecastEngine:
         life_expectancy = self._get_uniform_life_expectancy(int(age))
         monthly_amount = int(adjusted_balance / life_expectancy / 12)
 
-        logging.info(
+        logging.debug(
             f"Applying SEPP withdrawal of ${monthly_amount} from {source_bucket} to {target_bucket} in {tx_month}."
         )
         sepp_txn = SEPPTransaction(source_bucket, target_bucket)
@@ -392,7 +392,7 @@ class ForecastEngine:
     ) -> int:
         # Use MAGI directly if available for the current year
         if tx_month is not None and tx_month.year in self.magi:
-            logging.info(
+            logging.debug(
                 f"tx_month.year: {tx_month.year}, self.magi[tx_month.year]: {self.magi[tx_month.year]},standard_deduction: {standard_deduction}"
             )
             ordinary_income = max(0, self.magi[tx_month.year] - standard_deduction)
