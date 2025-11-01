@@ -383,7 +383,7 @@ def plot_example_transactions_in_context(
 
     bucket_names = [col for col in forecast_df.columns if col != "Month"]
     years = forecast_df["Month"].dt.year.tolist()
-    transitions = [(years[i], years[i + 1]) for i in range(len(years) - 1)]
+    transitions = [(y - 1, y) for y in years]
 
     flow_df = flow_df.copy()
     flow_df["date"] = flow_df["date"].dt.to_timestamp()
@@ -394,9 +394,9 @@ def plot_example_transactions_in_context(
     for y0, y1 in transitions:
         target_month = pd.Period(f"{y1}-12", freq="M").to_timestamp("M")
         bal_end = forecast_df.loc[forecast_df["Month"] == target_month].iloc[0]
-        flows_y0 = flow_df[flow_df["year"] == y0].copy()
+        flows_y = flow_df[flow_df["year"] == y1].copy()
         agg = (
-            flows_y0.groupby(["source", "target", "type"])["amount"].sum().reset_index()
+            flows_y.groupby(["source", "target", "type"])["amount"].sum().reset_index()
         )
 
         sources_raw, targets_raw, values, colors = [], [], [], []
