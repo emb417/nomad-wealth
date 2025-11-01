@@ -112,6 +112,18 @@ class ForecastEngine:
         latest_record = max(candidates, key=lambda r: r["Month"])
         return latest_record.get(bucket_name, 0)
 
+    def _calculate_amortized_payment(
+        self, principal: float, interest_rate: float, periods: int
+    ) -> int:
+        """
+        Calculate fixed monthly payment using the amortization formula.
+        """
+        if interest_rate == 0:
+            return int(principal / periods)
+        r = interest_rate / 12
+        payment = principal * (r * (1 + r) ** periods) / ((1 + r) ** periods - 1)
+        return int(payment)
+
     def _apply_sepp_withdrawal(self, tx_month: pd.Period):
         if not self.sepp_policies.get("Enabled", False):
             return
@@ -124,16 +136,28 @@ class ForecastEngine:
 
         source_bucket = self.sepp_policies["Source"]
         target_bucket = self.sepp_policies["Target"]
-        source_pct = self.sepp_policies.get("Source Percentage", 1.0)
 
-        balance = self._get_prior_year_end_balance(tx_month, source_bucket)
-        adjusted_balance = balance * source_pct
-        age = self._get_age_in_years(tx_month)
-        life_expectancy = self._get_uniform_life_expectancy(int(age))
-        monthly_amount = int(adjusted_balance / life_expectancy / 12)
+        # Cache the monthly payment at the start of the SEPP period
+        if not hasattr(self, "_sepp_monthly_amount"):
+            principal = self._get_prior_year_end_balance(start_month, source_bucket)
+            age = self._get_age_in_years(start_month)
+            life_expectancy = self._get_uniform_life_expectancy(int(age))
+            periods = (end_month - start_month).n
+            interest_rate = 0.03  # default annual rate; make configurable if needed
+            self._sepp_monthly_amount = self._calculate_amortized_payment(
+                principal, interest_rate, periods
+            )
+            logging.debug(
+                f"[SEPP] Initialized amortized monthly payment: ${self._sepp_monthly_amount} "
+                f"from principal ${principal}, rate {interest_rate:.2%}, periods {periods}"
+            )
+
+        monthly_amount = self._sepp_monthly_amount
+        if monthly_amount <= 0:
+            return
 
         logging.debug(
-            f"Applying SEPP withdrawal of ${monthly_amount} from {source_bucket} to {target_bucket} in {tx_month}."
+            f"[SEPP] Applying withdrawal of ${monthly_amount} from {source_bucket} to {target_bucket} in {tx_month}"
         )
         sepp_txn = SEPPTransaction(source_bucket, target_bucket)
         sepp_txn.apply(self.buckets, tx_month, monthly_amount)

@@ -80,6 +80,15 @@
     "allow_cash_fallback": false,
     "bucket_type": "tax_deferred"
   },
+  "SEPP IRA": {
+    "holdings": [
+      { "asset_class": "Bonds", "weight": 0.6 },
+      { "asset_class": "Stocks", "weight": 0.4 }
+    ],
+    "can_go_negative": false,
+    "allow_cash_fallback": false,
+    "bucket_type": "tax_deferred"
+  },
   "Tax Collection": {
     "holdings": [{ "asset_class": "Cash", "weight": 1.0 }],
     "can_go_negative": false,

@@ -32,30 +32,29 @@
   },
   "Roth Conversions": {
     "early": {
-      "Max Tax Rate": 0.1,
-      "Max Conversion Amount": 10000,
-      "Allow Conversion": true,
-      "Cutoff Age": 59.5
+      "Max Tax Rate": 0.12,
+      "Max Conversion Amount": 100000,
+      "Allow Conversion": false,
+      "Cutoff Age": 60
     },
     "prime": {
-      "Max Tax Rate": 0.22,
+      "Max Tax Rate": 0.12,
       "Max Conversion Amount": 100000,
       "Allow Conversion": true,
-      "Cutoff Age": 61
+      "Cutoff Age": 70
     },
     "late": {
       "Max Tax Rate": 0.24,
-      "Max Conversion Amount": 50000,
-      "Allow Conversion": true,
+      "Max Conversion Amount": 1000,
+      "Allow Conversion": false,
       "Cutoff Age": 75
     }
   },
   "SEPP": {
     "Enabled": true,
-    "Start Month": "2030-10",
-    "End Month": "2034-09",
-    "Source": "Tax-Deferred",
-    "Source Percentage": 0.75,
+    "Start Month": "2029-01",
+    "End Month": "2034-12",
+    "Source": "SEPP IRA",
     "Target": "Cash"
   },
   "liquidation": {
@@ -69,6 +68,6 @@
       "Vehicles",
       "Property"
     ],
-    "Monthly Rent": 3000
+    "Monthly Rent": 2500
   }
 }
