@@ -379,7 +379,7 @@ def plot_example_transactions_in_context(
     export_path: str = "export/",
 ):
     forecast_df = coerce_month_column(forecast_df.copy())
-    forecast_df = forecast_df[forecast_df["Month"].dt.month == 1].sort_values("Month")
+    forecast_df = forecast_df[forecast_df["Month"].dt.month == 12].sort_values("Month")
 
     bucket_names = [col for col in forecast_df.columns if col != "Month"]
     years = forecast_df["Month"].dt.year.tolist()
@@ -392,7 +392,7 @@ def plot_example_transactions_in_context(
 
     sankey_traces = []
     for y0, y1 in transitions:
-        target_month = pd.Period(f"{y1}-01", freq="M").to_timestamp("M")
+        target_month = pd.Period(f"{y1}-12", freq="M").to_timestamp("M")
         bal_end = forecast_df.loc[forecast_df["Month"] == target_month].iloc[0]
         flows_y0 = flow_df[flow_df["year"] == y0].copy()
         agg = (
@@ -517,19 +517,20 @@ def plot_example_transactions_in_context(
                     {"visible": vis},
                     {
                         "title": {
-                            "text": f"Trial {trial+1:04d} | Jan {y0} → Jan {y1} Transactions In-Context"
+                            "text": f"Trial {trial+1:04d} | Dec {y0} → Dec {y1} Transactions In-Context"
                         }
                     },
                 ],
                 label=f"{y0}→{y1}",
             )
         )
+
     sliders = [
         dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
     ]
     fig.update_layout(
         title={
-            "text": f"Trial {trial+1:04d} | Jan {transitions[0][0]} → Jan {transitions[0][1]} Transactions In-Context",
+            "text": f"Trial {trial+1:04d} | Dec {transitions[0][0]} → Dec {transitions[0][1]} Transactions In-Context",
         },
         sliders=sliders,
         margin=dict(l=50, r=50, t=80, b=50),
