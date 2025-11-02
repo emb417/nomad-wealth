@@ -232,6 +232,80 @@ def plot_example_income_taxes(
         logging.debug(f"Trial {trial+1:04d} | Saved sample forecast to {html}")
 
 
+def plot_example_monthly_expenses(
+    flow_df: pd.DataFrame,
+    trial: int,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves a stacked bar chart of monthly cash withdrawals by category,
+    with an overlay line for total monthly withdrawals.
+    """
+    # Filter for withdrawals from Cash
+    cash_outflows = flow_df[
+        (flow_df["source"] == "Cash") & (flow_df["type"] == "withdraw")
+    ]
+
+    # Aggregate by month and target category
+    monthly_totals = (
+        cash_outflows.groupby(["date", "target"])["amount"].sum().unstack(fill_value=0)
+    )
+
+    # Convert PeriodIndex to string for Plotly compatibility
+    x_labels = monthly_totals.index.astype(str)
+
+    # Align category colors using shared label logic
+    base_labels = [f" {label} " for label in monthly_totals.columns]
+    bar_colors = assign_colors_by_base_label(base_labels, COLOR_PALETTE)
+    color_map = dict(zip(monthly_totals.columns, bar_colors))
+
+    # Build stacked bar chart using graph_objects
+    fig = go.Figure()
+
+    for category in monthly_totals.columns:
+        fig.add_bar(
+            x=x_labels,
+            y=monthly_totals[category],
+            name=category,
+            marker_color=color_map[category],
+            hovertemplate=f"{category}: $%{{y:,.0f}}<extra></extra>",
+        )
+
+    # Add total monthly withdrawal trace
+    monthly_sums = monthly_totals.sum(axis=1)
+    fig.add_trace(
+        go.Scatter(
+            x=x_labels,
+            y=monthly_sums,
+            mode="markers",
+            marker=dict(symbol="line-ew-open", color="black"),
+            name="Total Monthly Withdrawal",
+            hovertemplate="Total: $%{y:,.0f}<extra></extra>",
+        )
+    )
+
+    fig.update_layout(
+        title=f"Trial {trial+1:04d} | Monthly Cash Withdrawals",
+        yaxis_tickformat="$,.0f",
+        barmode="stack",
+        template="plotly_white",
+        hovermode="x unified",
+        hoverlabel=dict(align="left"),
+    )
+
+    if show:
+        fig.show()
+    if save:
+        csv_path = f"{export_path}monthly_cash_withdrawals_{ts}.csv"
+        html_path = f"{export_path}monthly_cash_withdrawals_{ts}.html"
+        monthly_totals.to_csv(csv_path, index_label="Month")
+        fig.write_html(html_path)
+        logging.debug(f"Monthly cash withdrawals saved to {html_path}")
+
+
 def plot_example_transactions(
     flow_df: pd.DataFrame,
     trial: int,

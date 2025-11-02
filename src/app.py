@@ -32,6 +32,7 @@ from taxes import TaxCalculator
 from visualization import (
     plot_example_forecast,
     plot_example_income_taxes,
+    plot_example_monthly_expenses,
     plot_example_transactions_in_context,
     plot_example_transactions,
     plot_historical_balance,
@@ -66,6 +67,8 @@ SHOW_EXAMPLE_TRANSACTIONS_CHART = False
 SAVE_EXAMPLE_TRANSACTIONS_CHART = False
 SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
 SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART = False
+SHOW_MONTHLY_EXPENSES_CHART = False
+SAVE_MONTHLY_EXPENSES_CHART = False
 SHOW_NETWORTH_CHART = False
 SAVE_NETWORTH_CHART = False
 SHOW_TAXES_CHART = False
@@ -469,6 +472,17 @@ def main():
                 mc_tax_by_trial[trial] = tax_series
 
                 if trial in sim_examples:
+                    plot_example_monthly_expenses(
+                        flow_df=flow_df,
+                        trial=trial,
+                        ts=ts,
+                        show=(
+                            SHOW_MONTHLY_EXPENSES_CHART
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
+                        ),
+                        save=SAVE_MONTHLY_EXPENSES_CHART,
+                    )
                     plot_example_transactions(
                         flow_df=flow_df,
                         trial=trial,
