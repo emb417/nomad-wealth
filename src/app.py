@@ -233,6 +233,7 @@ def stage_init_components(
     profile = json_data["profile"]
     policies_config = json_data["policies"]
     tax_brackets = json_data["tax_brackets"]
+    first_forecast_period = future_df["Month"].iloc[0]
 
     # Build buckets from canonical buckets.json
     buckets = seed_buckets_from_config(hist_df, buckets_config, flow_tracker)
@@ -277,12 +278,18 @@ def stage_init_components(
     market_gains = MarketGains(gain_table, inflation_thresholds, base_inflation)
 
     # transactions
-    fixed_tx = FixedTransaction(dfs["fixed"])
+    fixed_tx = FixedTransaction(
+        df=dfs["fixed"],
+        taxable_eligibility=eligibility,
+        description_inflation_modifiers=description_inflation_modifiers,
+        simulation_start_year=first_forecast_period,
+    )
 
     recur_tx = RecurringTransaction(
         df=dfs["recurring"],
         taxable_eligibility=eligibility,
         description_inflation_modifiers=description_inflation_modifiers,
+        simulation_start_year=first_forecast_period,
     )
 
     rental_profile = description_inflation_modifiers.get("Rental", {})

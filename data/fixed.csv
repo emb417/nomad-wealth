@@ -1,18 +1,18 @@
-Month,Bucket,Amount,Description
-2026-07,Cash,-20000,Japan Trip
-2026-09,529K,-25000,College Tuition #1
-2027-07,Cash,-10000,Alaska Trip
-2027-09,529K,-25000,College Tuition #2
-2028-01,Cash,-10000,Home Maintenance
-2028-09,529K,-40000,College Tuition #3
-2029-09,529K,-40000,College Tuition #4
-2030-01,Cash,-10000,Home Maintenance
-2030-10,Cash,-20000,Europe Trip
-2035-01,Cash,-10000,Home Maintenance
-2035-10,Cash,-20000,South East Asia Trip 
-2040-01,Cash,-10000,Home Maintenance
-2040-07,Cash,-25000,Australia New Zealand Trip
-2045-01,Cash,-10000,Home Maintenance
-2050-01,Cash,-10000,Home Maintenance
-2055-01,Cash,-10000,Home Maintenance
-2060-01,Cash,-10000,Home Maintenance
+Month,Bucket,Amount,Type,Description
+2026-07,Cash,-20000,Travel,Japan Trip
+2026-09,529K,-25000,Education,College Tuition #1
+2027-07,Cash,-10000,Travel,Alaska Trip
+2027-09,529K,-25000,Education,College Tuition #2
+2028-01,Cash,-10000,Goods,Home Maintenance
+2028-09,529K,-40000,Education,College Tuition #3
+2029-09,529K,-40000,Education,College Tuition #4
+2030-01,Cash,-10000,Goods,Home Maintenance
+2030-10,Cash,-20000,Travel,Europe Trip
+2035-01,Cash,-10000,Goods,Home Maintenance
+2035-10,Cash,-20000,Travel,South East Asia Trip 
+2040-01,Cash,-10000,Goods,Home Maintenance
+2040-07,Cash,-25000,Travel,Australia New Zealand Trip
+2045-01,Cash,-10000,Goods,Home Maintenance
+2050-01,Cash,-10000,Goods,Home Maintenance
+2055-01,Cash,-10000,Goods,Home Maintenance
+2060-01,Cash,-10000,Goods,Home Maintenance

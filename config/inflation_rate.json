@@ -8,7 +8,7 @@
     "Utilities": { "avg": 0.02, "std": 0.02 },
     "Travel": { "avg": 0.035, "std": 0.03 },
     "Auto Maintenance": { "avg": 0.025, "std": 0.015 },
-    "Health and Prescriptions": { "avg": 0.035, "std": 0.015 },
+    "Health": { "avg": 0.035, "std": 0.015 },
     "Voice and Data": { "avg": 0.0075, "std": 0.01 },
     "Restaurants": { "avg": 0.033, "std": 0.02 },
     "Auto Insurance": { "avg": 0.025, "std": 0.02 },
@@ -16,6 +16,7 @@
     "Subscriptions": { "avg": 0.02, "std": 0.01 },
     "Property Taxes": { "avg": 0.03, "std": 0.015 },
     "Home Insurance": { "avg": 0.05, "std": 0.03 },
-    "Rental": { "avg": 0.025, "std": 0.01 }
+    "Rental": { "avg": 0.025, "std": 0.01 },
+    "Education": { "avg": 0.045, "std": 0.025 }
   }
 }
