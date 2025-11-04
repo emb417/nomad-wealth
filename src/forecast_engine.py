@@ -112,16 +112,16 @@ class ForecastEngine:
         latest_record = max(candidates, key=lambda r: r["Month"])
         return latest_record.get(bucket_name, 0)
 
-    def _calculate_amortized_payment(
-        self, principal: float, interest_rate: float, periods: int
+    def _calculate_sepp_amortized_annual_payment(
+        self, principal: int, interest_rate: float, life_expectancy: float
     ) -> int:
         """
-        Calculate fixed monthly payment using the amortization formula.
+        Calculate annual SEPP payment using IRS amortization method.
         """
         if interest_rate == 0:
-            return int(round(principal / periods))
-        r = interest_rate / 12
-        payment = principal * (r * (1 + r) ** periods) / ((1 + r) ** periods - 1)
+            return int(round(principal / life_expectancy))
+        r = interest_rate
+        payment = principal * (r / (1 - (1 + r) ** (-life_expectancy)))
         return int(round(payment))
 
     def _apply_sepp_withdrawal(self, tx_month: pd.Period):
@@ -140,14 +140,18 @@ class ForecastEngine:
         # Cache the monthly payment at the start of the SEPP period
         if not hasattr(self, "_sepp_monthly_amount"):
             principal = self._get_prior_year_end_balance(start_month, source_bucket)
-            periods = (end_month - start_month).n
             interest_rate = self.sepp_policies["Interest Rate"]
-            self._sepp_monthly_amount = self._calculate_amortized_payment(
-                principal, interest_rate, periods
+            age = int(self._get_age_in_years(start_month))
+            life_expectancy = self._get_uniform_life_expectancy(age)
+
+            annual_payment = self._calculate_sepp_amortized_annual_payment(
+                principal, interest_rate, life_expectancy
             )
+            self._sepp_monthly_amount = int(round(annual_payment / 12))
+
             logging.debug(
-                f"[SEPP] Initialized amortized monthly payment: ${self._sepp_monthly_amount} "
-                f"from principal ${principal}, rate {interest_rate:.2%}, periods {periods}"
+                f"[SEPP] Initialized IRS-compliant amortized monthly payment: ${self._sepp_monthly_amount} "
+                f"from principal ${principal}, rate {interest_rate:.2%}, life expectancy {life_expectancy}"
             )
 
         monthly_amount = self._sepp_monthly_amount

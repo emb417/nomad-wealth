@@ -8,8 +8,8 @@
     "Fixed-Income": 30000
   },
   "Sources": {
-    "Cash": ["Fixed-Income", "Taxable", "Tax-Deferred", "Tax-Free"],
-    "Fixed-Income": ["Taxable", "Tax-Deferred", "Tax-Free"]
+    "Cash": ["Fixed-Income", "Taxable", "Tax-Deferred", "SEPP IRA", "Tax-Free"],
+    "Fixed-Income": ["Taxable", "Tax-Deferred", "SEPP IRA", "Tax-Free"]
   },
   "Salary": {
     "Targets": {
@@ -22,7 +22,7 @@
     "Annual Gross Income": 200000,
     "Annual Bonus Month": "2027-04",
     "Annual Bonus Amount": 40000,
-    "Retirement Month": "2030-09"
+    "Retirement Month": "2029-12"
   },
   "Social Security": {
     "Target": "Cash",
@@ -52,9 +52,9 @@
   },
   "SEPP": {
     "Enabled": true,
-    "Start Month": "2029-01",
+    "Start Month": "2030-01",
     "End Month": "2034-12",
-    "Interest Rate": 0.03,
+    "Interest Rate": 0.05,
     "Source": "SEPP IRA",
     "Target": "Cash"
   },
@@ -65,6 +65,7 @@
       "Taxable",
       "Fixed-Income",
       "Tax-Deferred",
+      "SEPP IRA",
       "Tax-Free",
       "Vehicles",
       "Property"

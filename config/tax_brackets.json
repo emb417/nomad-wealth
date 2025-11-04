@@ -1,5 +1,5 @@
 {
-  "Standard Deduction": 30000,
+  "Standard Deduction": 31500,
   "Ordinary": {
     "Federal 2025": [
       { "min_salary": 0, "tax_rate": 0.1 },
