@@ -591,11 +591,11 @@ def plot_example_transactions_in_context(
                     {"visible": vis},
                     {
                         "title": {
-                            "text": f"Trial {trial+1:04d} | Dec {y0} → Dec {y1} Transactions In-Context"
+                            "text": f"Trial {trial+1:04d} | {y1} Transactions In-Context"
                         }
                     },
                 ],
-                label=f"{y0}→{y1}",
+                label=y1,
             )
         )
 
@@ -604,7 +604,7 @@ def plot_example_transactions_in_context(
     ]
     fig.update_layout(
         title={
-            "text": f"Trial {trial+1:04d} | Dec {transitions[0][0]} → Dec {transitions[0][1]} Transactions In-Context",
+            "text": f"Trial {trial+1:04d} | {transitions[0][1]} Transactions In-Context",
         },
         sliders=sliders,
         margin=dict(l=50, r=50, t=80, b=50),
