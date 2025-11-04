@@ -67,7 +67,16 @@
       "Tax-Free",
       "Vehicles",
       "Property"
-    ],
+    ]
+  },
+  "Property": {
+    "Market Value": 550000,
+    "Annual Maintenance": 0.0075,
+    "Remaining Principal": 247102.54,
+    "Mortgage APR": 0.05375,
+    "Monthly Principal and Interest": 2666.43,
+    "Monthly Taxes": 724.0,
+    "Monthly Insurance": 169.4,
     "Monthly Rent": 2500
   }
 }

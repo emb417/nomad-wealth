@@ -1,31 +1,26 @@
 Start Month,End Month,Bucket,Amount,Type,Description
-2025-08,2031-07,Cash,-3000,Mortgage,Mortgage
-2025-08,2030-09,Cash,-500,Health,Health Insurance
-2025-08,2030-09,Cash,-15,Health,Dental Insurance
-2025-08,2030-09,Cash,-5,Health,Vision Insurance
-2025-09,2030-09,Cash,-1250,Food,Food
-2025-09,2030-09,Cash,-1250,Goods,Goods
-2025-09,2030-09,Cash,-500,Goods,Home Maintenance
-2025-09,2030-09,Cash,-600,Utilities,Utilities
-2025-09,2030-09,Cash,-400,Travel,Travel
-2025-09,2030-09,Cash,-400,Auto Maintenance,Auto Maintenance
-2025-09,2030-04,Cash,-325,Health,Health and Prescriptions
-2025-08,2026-12,Cash,-345,Voice and Data,Voice and Data
-2025-09,2030-09,Cash,-200,Restaurants,Restaurants
 2025-09,2030-09,Cash,-290,Auto Insurance,Auto Insurance
-2025-09,2030-09,Cash,-140,Entertainment,Entertainment
-2025-09,2030-09,Cash,-95,Subscriptions,Subscriptions
-2027-01,2075-04,Cash,-250,Voice and Data,Voice and Data
-2030-10,2075-04,Cash,-1000,Food,Food
-2030-10,2075-04,Cash,-1000,Goods,Goods
-2030-10,2075-04,Cash,-500,Goods,Home Maintenance
-2030-10,2075-04,Cash,-600,Utilities,Utilities
-2030-10,2075-04,Cash,-600,Travel,Travel
-2030-10,2075-04,Cash,-300,Auto Maintenance,Auto Maintenance
-2030-10,2075-04,Cash,-425,Health,Health and Prescriptions
-2030-10,2075-04,Cash,-200,Restaurants,Restaurants
 2030-10,2075-04,Cash,-290,Auto Insurance,Auto Insurance
-2030-10,2075-04,Cash,-140,Entertainment,Entertainment
-2030-10,2075-04,Cash,-95,Subscriptions,Subscriptions
-2031-08,2075-04,Cash,-650,Property Taxes,Property Taxes
-2031-08,2075-04,Cash,-150,Home Insurance,Home Insurance
+2025-09,2030-09,Cash,-400,Auto Maintenance,Auto Maintenance
+2030-10,2075-04,Cash,-300,Auto Maintenance,Auto Maintenance
+2025-09,2030-09,Cash,-140,Entertainment,Entertainment Parks and Rec
+2030-10,2075-04,Cash,-140,Entertainment,Entertainment Parks and Rec
+2025-09,2030-09,Cash,-95,Subscriptions,Entertainment Subscriptions
+2030-10,2075-04,Cash,-95,Subscriptions,Entertainment Subscriptions
+2025-09,2030-09,Cash,-1250,Food,Food Groceries
+2030-10,2075-04,Cash,-1000,Food,Food Groceries
+2030-10,2075-04,Cash,-200,Restaurants,Food Restaurants
+2025-09,2030-09,Cash,-200,Restaurants,Food Restaurants
+2025-09,2030-09,Cash,-1250,Goods,Goods
+2030-10,2075-04,Cash,-1000,Goods,Goods
+2025-08,2030-09,Cash,-500,Health,Health Medical Insurance
+2025-08,2030-09,Cash,-15,Health,Health Dental Insurance
+2025-08,2030-09,Cash,-5,Health,Health Vision Insurance
+2025-09,2030-04,Cash,-325,Health,Health Prescriptions etc
+2030-10,2075-04,Cash,-425,Health,Health Prescriptions etc
+2025-09,2030-09,Cash,-400,Travel,Travel in US
+2030-10,2075-04,Cash,-600,Travel,Travel in US
+2025-08,2026-12,Cash,-345,Voice and Data,Utils Voice and Data
+2027-01,2075-04,Cash,-250,Voice and Data,Utils Voice and Data
+2025-09,2030-09,Cash,-600,Utilities,Utils Water Electric etc
+2030-10,2075-04,Cash,-600,Utilities,Utils Water Electric etc

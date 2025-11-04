@@ -19,7 +19,8 @@ from forecast_engine import ForecastEngine
 from load_data import load_csv, load_json
 from policies_engine import ThresholdRefillPolicy
 from policies_transactions import (
-    RentalTransaction,
+    PropertyTransaction,
+    RentTransaction,
     RequiredMinimumDistributionTransaction,
     SalaryTransaction,
     SocialSecurityTransaction,
@@ -293,11 +294,16 @@ def stage_init_components(
         simulation_start_year=first_forecast_period,
     )
 
-    rental_profile = description_inflation_modifiers.get("Rental", {})
-    rental_tx = RentalTransaction(
-        monthly_amount=policies_config["Liquidation"]["Monthly Rent"],
-        annual_infl=rental_profile,
-        description_key="Rental",
+    property_tx = PropertyTransaction(
+        property_config=policies_config["Property"],
+        inflation_modifiers=description_inflation_modifiers,
+    )
+
+    rent_profile = description_inflation_modifiers.get("Rent", {})
+    rent_tx = RentTransaction(
+        monthly_amount=policies_config["Property"]["Monthly Rent"],
+        annual_infl=rent_profile,
+        description_key="Rent",
     )
 
     rmd_tx = RequiredMinimumDistributionTransaction(dob=dob)
@@ -320,7 +326,7 @@ def stage_init_components(
 
     rule_txns = [fixed_tx, recur_tx]
     policy_txns = [
-        tx for tx in [rental_tx, rmd_tx, salary_tx, ss_txn] if tx is not None
+        tx for tx in [property_tx, rent_tx, rmd_tx, salary_tx, ss_txn] if tx is not None
     ]
 
     return (

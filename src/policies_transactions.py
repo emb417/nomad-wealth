@@ -37,6 +37,88 @@ class PolicyTransaction(ABC):
         return 0
 
 
+class PropertyTransaction(PolicyTransaction):
+    def __init__(
+        self,
+        property_config: Dict,
+        inflation_modifiers: Dict[str, Dict[int, Dict[str, float]]],
+    ):
+        super().__init__()
+        self.config = property_config
+        self.inflation_modifiers = inflation_modifiers
+        self.starting_principal = float(property_config.get("Remaining Principal", 0))
+        self.remaining_principal = self.starting_principal
+        self.property_owned = self.remaining_principal > 0
+        self.source_bucket = "Cash"
+
+    def _inflated(self, key: str, tx_month: pd.Period) -> float:
+        base_year = min(
+            self.inflation_modifiers.get(key, {}).keys(), default=tx_month.year
+        )
+        current_year = tx_month.start_time.year
+        base_modifier = (
+            self.inflation_modifiers.get(key, {})
+            .get(base_year, {})
+            .get("modifier", 1.0)
+        )
+        current_modifier = (
+            self.inflation_modifiers.get(key, {})
+            .get(current_year, {})
+            .get("modifier", 1.0)
+        )
+        return current_modifier / base_modifier
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        property_bucket = buckets.get("Property")
+        if property_bucket is None or property_bucket.balance() <= 0:
+            return
+
+        cash = buckets["Cash"]
+
+        # Inflation multipliers
+        tax_infl = self._inflated("Property Taxes", tx_month)
+        insurance_infl = self._inflated("Home Insurance", tx_month)
+        maintenance_infl = self._inflated("Home Maintenance", tx_month)
+
+        # Maintenance
+        home_value = float(self.config.get("Market Value", 0))
+        maintenance_rate = float(self.config.get("Annual Maintenance", 0))
+        maintenance_base = home_value * maintenance_rate / 12
+        maintenance_payment = maintenance_base * maintenance_infl
+        cash.withdraw(int(round(maintenance_payment)), "Property Maintenance", tx_month)
+
+        # Mortgage logic
+        apr = float(self.config.get("Mortgage APR", 0))
+        monthly_p_and_i = float(self.config.get("Monthly Principal and Interest", 0))
+        monthly_interest = self.remaining_principal * (apr / 12)
+        principal_payment = monthly_p_and_i - monthly_interest
+
+        # Escrow components (inflated)
+        tax_base = float(self.config.get("Monthly Taxes", 0))
+        insurance_base = float(self.config.get("Monthly Insurance", 0))
+        tax_payment = tax_base * tax_infl
+        insurance_payment = insurance_base * insurance_infl
+        escrow_payment = tax_payment + insurance_payment
+
+        if self.remaining_principal > 0:
+            if self.remaining_principal <= principal_payment:
+                final_p_and_i = self.remaining_principal + monthly_interest
+                final_total = final_p_and_i + escrow_payment
+                cash.withdraw(int(round(final_total)), "Property Mortgage", tx_month)
+                self.remaining_principal = 0
+            else:
+                total_payment = monthly_p_and_i + escrow_payment
+                cash.withdraw(int(round(total_payment)), "Property Mortgage", tx_month)
+                self.remaining_principal = max(
+                    0, self.remaining_principal - principal_payment
+                )
+
+        # Escrow logic after payoff
+        if self.remaining_principal == 0:
+            cash.withdraw(int(round(tax_payment)), "Property Tax", tx_month)
+            cash.withdraw(int(round(insurance_payment)), "Property Insurance", tx_month)
+
+
 class RefillTransaction(PolicyTransaction):
     """
     Internal refill transaction:
@@ -114,12 +196,12 @@ class RefillTransaction(PolicyTransaction):
         return self._taxfree_amount
 
 
-class RentalTransaction(PolicyTransaction):
+class RentTransaction(PolicyTransaction):
     def __init__(
         self,
         monthly_amount: int,
         annual_infl: Dict[int, Dict[str, float]],
-        description_key: str = "Rental",
+        description_key: str = "Rent",
     ):
         super().__init__()
         self.monthly_amount = int(monthly_amount)
@@ -155,7 +237,7 @@ class RentalTransaction(PolicyTransaction):
             return
 
         amt = self._inflated_amount_for_month(tx_month)
-        src.withdraw(amt, "Rental", tx_month)
+        src.withdraw(amt, "Rent", tx_month)
 
 
 class RequiredMinimumDistributionTransaction(PolicyTransaction):
