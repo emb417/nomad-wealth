@@ -247,12 +247,12 @@ def stage_init_components(
 
     # Refill policy
     refill_policy = ThresholdRefillPolicy(
-        thresholds=policies_config["thresholds"],
-        source_by_target=policies_config["sources"],
-        amounts=policies_config["amounts"],
+        refill_thresholds=policies_config["Refill Thresholds"],
+        source_by_target=policies_config["Sources"],
+        refill_amounts=policies_config["Refill Amounts"],
         taxable_eligibility=eligibility,
-        liquidation_threshold=policies_config["liquidation"]["threshold"],
-        liquidation_buckets=policies_config["liquidation"]["buckets"],
+        liquidation_threshold=policies_config["Liquidation"]["Threshold"],
+        liquidation_buckets=policies_config["Liquidation"]["Buckets"],
     )
 
     # Tax calculator
@@ -295,7 +295,7 @@ def stage_init_components(
 
     rental_profile = description_inflation_modifiers.get("Rental", {})
     rental_tx = RentalTransaction(
-        monthly_amount=policies_config["liquidation"]["Monthly Rent"],
+        monthly_amount=policies_config["Liquidation"]["Monthly Rent"],
         annual_infl=rental_profile,
         description_key="Rental",
     )

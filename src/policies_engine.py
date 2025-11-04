@@ -16,16 +16,16 @@ class ThresholdRefillPolicy:
 
     def __init__(
         self,
-        thresholds: Dict[str, int],
+        refill_thresholds: Dict[str, int],
         source_by_target: Dict[str, List[str]],
-        amounts: Dict[str, int],
+        refill_amounts: Dict[str, int],
         taxable_eligibility: Optional[pd.Period] = None,
         liquidation_threshold: int = 0,
         liquidation_buckets: Optional[List[str]] = None,
     ):
-        self.thresholds = thresholds or {}
+        self.refill_thresholds = refill_thresholds or {}
         self.sources = source_by_target or {}
-        self.amounts = amounts or {}
+        self.refill_amounts = refill_amounts or {}
         self.taxable_eligibility = taxable_eligibility
         self.liquidation_threshold = liquidation_threshold
         self.liquidation_buckets = liquidation_buckets or [
@@ -40,7 +40,7 @@ class ThresholdRefillPolicy:
     ) -> List[RefillTransaction]:
         txns: List[RefillTransaction] = []
 
-        for target, threshold in self.thresholds.items():
+        for target, threshold in self.refill_thresholds.items():
             tgt_bucket = buckets.get(target)
             if tgt_bucket is None:
                 logging.warning(
@@ -51,7 +51,7 @@ class ThresholdRefillPolicy:
             if tgt_bucket.balance() >= threshold:
                 continue
 
-            per_pass = int(self.amounts.get(target, 0))
+            per_pass = int(self.refill_amounts.get(target, 0))
             if per_pass <= 0:
                 logging.warning(
                     f"[RefillPolicy] {tx_month} — no refill amount for '{target}'"
@@ -126,7 +126,7 @@ class ThresholdRefillPolicy:
 
             if bucket_name == "Property":
                 take = src.balance()
-                normal_take = min(take, self.amounts.get("Cash", 0))
+                normal_take = min(take, self.refill_amounts.get("Cash", 0))
                 taxable_take = take - normal_take
                 logging.debug(
                     f"[Emergency Liquidation] {tx_month} — ${normal_take:,} Property Liquidated to Cash, ${taxable_take:,} to Taxable"
