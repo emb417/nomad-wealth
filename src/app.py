@@ -39,6 +39,7 @@ from visualization import (
     plot_historical_bucket_gains,
     plot_mc_networth,
     plot_mc_tax_bars,
+    plot_mc_taxable_balances,
 )
 
 logging.basicConfig(
@@ -73,6 +74,8 @@ SHOW_NETWORTH_CHART = False
 SAVE_NETWORTH_CHART = False
 SHOW_TAXES_CHART = False
 SAVE_TAXES_CHART = False
+SHOW_TAXABLE_CHART = False
+SAVE_TAXABLE_CHART = False
 
 rng = np.random.default_rng()
 sim_examples = np.sort(rng.choice(SIM_SIZE, size=SIM_EXAMPLE_SIZE, replace=False))
@@ -451,6 +454,7 @@ def main():
 
         mc_networth_by_trial = {}
         mc_tax_by_trial = {}
+        mc_taxable_by_trial = {}
 
         with ProcessPoolExecutor() as executor:
             futures = [
@@ -466,6 +470,19 @@ def main():
                 desc="Running Monte Carlo Simulation",
             ):
                 trial, forecast_df, taxes_df, flow_df = future.result()
+
+                taxable_cols = [col for col in forecast_df.columns if "Taxable" in col]
+
+                target_row = forecast_df[
+                    forecast_df["Month"]
+                    == pd.Period(json_data["policies"]["SEPP"]["End Month"], freq="M")
+                ]
+                taxable_balance = (
+                    target_row[taxable_cols].sum(axis=1).values[0]
+                    if not target_row.empty
+                    else 0
+                )
+                mc_taxable_by_trial[trial] = taxable_balance
 
                 update_property_liquidation_summary(summary, forecast_df)
 
@@ -539,6 +556,8 @@ def main():
                     )
 
         # Build DataFrame: rows = simulations, columns = years
+        mc_taxable_df = pd.Series(mc_taxable_by_trial, name="Taxable").to_frame()
+
         mc_networth_df = (
             pd.DataFrame.from_dict(mc_networth_by_trial, orient="index").sort_index().T
         )
@@ -546,6 +565,13 @@ def main():
             pd.DataFrame.from_dict(mc_tax_by_trial, orient="index").sort_index().T
         )
 
+        plot_mc_taxable_balances(
+            mc_taxable_df=mc_taxable_df,
+            sim_examples=sim_examples,
+            ts=ts,
+            show=SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
+            save=SAVE_TAXABLE_CHART,
+        )
         plot_mc_tax_bars(
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,

@@ -1250,3 +1250,120 @@ def plot_mc_tax_bars(
         html = f"{export_path}mc_tax_totals_{ts}.html"
         fig.write_html(html)
         logging.debug(f"Monte Carlo tax totals saved to {html}")
+
+
+def plot_mc_taxable_balances(
+    mc_taxable_df: pd.DataFrame,
+    sim_examples: np.ndarray,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves a bar chart of Taxable balances in Jan 2035 per trial.
+    """
+    sim_size = len(mc_taxable_df)
+    mc_taxable_df = mc_taxable_df.copy()
+    mc_taxable_df.index = pd.Index(mc_taxable_df.index).astype(int)
+    taxable_balances = mc_taxable_df["Taxable"]
+
+    p15 = taxable_balances.quantile(0.15)
+    median = taxable_balances.median()
+    p85 = taxable_balances.quantile(0.85)
+
+    trial_labels = [f"Trial {int(trial)+1:04d}" for trial in taxable_balances.index]
+    bar_colors = [
+        "purple" if trial in sim_examples else "lightgray"
+        for trial in taxable_balances.index
+    ]
+    hover_texts = [f"Taxable Balance: ${val:,.0f}" for val in taxable_balances.values]
+
+    percent_positive = 100 * (mc_taxable_df["Taxable"] > 0).sum() / len(mc_taxable_df)
+
+    def get_color(value):
+        return "green" if value > 84 else "blue" if value > 74 else "red"
+
+    confidence_color = (
+        "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
+    )
+
+    fig = go.Figure(
+        go.Bar(
+            x=trial_labels,
+            y=taxable_balances.values,
+            marker_color=bar_colors,
+            opacity=0.5,
+            hovertext=hover_texts,
+            hovertemplate="%{hovertext}<extra></extra>",
+        )
+    )
+
+    # Reference lines
+    fig.add_trace(
+        go.Scatter(
+            x=trial_labels,
+            y=[p85] * len(trial_labels),
+            mode="lines",
+            name="85th Percentile",
+            line=dict(color="blue", dash="dash"),
+            hovertemplate="85th Percentile: %{y:$,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=trial_labels,
+            y=[median] * len(trial_labels),
+            mode="lines",
+            name="Median",
+            line=dict(color="green", width=2),
+            hovertemplate="Median: %{y:$,.0f}<extra></extra>",
+        )
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=trial_labels,
+            y=[p15] * len(trial_labels),
+            mode="lines",
+            name="15th Percentile",
+            line=dict(color="blue", dash="dash"),
+            hovertemplate="15th Percentile: %{y:$,.0f}<extra></extra>",
+        )
+    )
+
+    # Annotate reference lines
+    for y, label, color in [
+        (p15, "15th Percentile", "blue"),
+        (median, "Median", "green"),
+        (p85, "85th Percentile", "blue"),
+    ]:
+        fig.add_annotation(
+            x=trial_labels[-1],
+            y=y,
+            text=f" {label}: ${y:,.0f} ",
+            showarrow=False,
+            font=dict(color=color),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor=color,
+            borderwidth=1,
+        )
+
+    fig.update_layout(
+        title=f"Taxable Balance in Jan 2035 | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
+        f"<br><span style='color: {get_color(percent_positive)}'>{percent_positive:.1f}% Positive Taxable Balance</span>",
+        title_x=0.5,
+        yaxis=dict(tickformat="$,.0f"),
+        template="plotly_white",
+        hoverlabel=dict(align="left"),
+        hovermode="x unified",
+        showlegend=False,
+    )
+
+    if show:
+        fig.show()
+    if save:
+        csv_path = f"{export_path}mc_taxable_balances_{ts}.csv"
+        html_path = f"{export_path}mc_taxable_balances_{ts}.html"
+        taxable_balances.to_csv(csv_path, index_label="Trial")
+        fig.write_html(html_path)
+        logging.debug(f"Monte Carlo taxable balances saved to {html_path}")
