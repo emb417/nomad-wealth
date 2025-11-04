@@ -305,13 +305,15 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
             return self._cached_annual_rmd[year]
 
         prior_year = year - 1
-        b = buckets.get("Tax-Deferred")
-        prior_balance = b.balance_at_period_end(prior_year) if b else 0
-        age = self._age_at_period(pd.Period(f"{year}-12", freq="M"))
-        divisor = RequiredMinimumDistributionTransaction.DEFAULT_DIVISOR_TABLE.get(
-            age, 25.6
+        total_balance = sum(
+            b.balance_at_period_end(prior_year)
+            for b in buckets.values()
+            if getattr(b, "bucket_type", None) == "tax_deferred"
         )
-        rmd = int(round(prior_balance / divisor)) if divisor > 0 else 0
+
+        age = self._age_at_period(pd.Period(f"{year}-12", freq="M"))
+        divisor = self.DEFAULT_DIVISOR_TABLE.get(age, 25.6)
+        rmd = int(round(total_balance / divisor)) if divisor > 0 else 0
         self._cached_annual_rmd[year] = rmd
         return rmd
 
@@ -323,7 +325,6 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
 
         if age < self.start_age:
             return
-
         if not self.monthly_spread and month != self.rmd_month:
             return
         if self.monthly_spread and month < self.rmd_month:
@@ -331,22 +332,20 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
 
         annual_rmd = self._compute_annual_rmd(year, buckets)
         months_to_spread = max(1, 13 - self.rmd_month)
-        if self.monthly_spread:
-            if self.rounding == "annual":
-                base = annual_rmd // months_to_spread
-                remainder = annual_rmd - base * months_to_spread
-                month_index = month - self.rmd_month
-                amount = base + (remainder if month_index == 0 else 0)
-            else:
-                amount = int(round(annual_rmd / months_to_spread))
-        else:
-            amount = annual_rmd
+        amount = (
+            annual_rmd
+            if not self.monthly_spread
+            else int(round(annual_rmd / months_to_spread))
+        )
 
-        src = buckets.get("Tax-Deferred")
-        tgt = buckets.get("Taxable")
-        if src and tgt and amount > 0:
-            applied = src.transfer(amount, tgt, tx_month)
-            self._applied_amount = applied
+        tgt = buckets.get("Fixed-Income")
+        if tgt and amount > 0:
+            remaining = amount
+            for b in buckets.values():
+                if getattr(b, "bucket_type", None) == "tax_deferred" and remaining > 0:
+                    applied = b.transfer(remaining, tgt, tx_month)
+                    self._applied_amount += applied
+                    remaining -= applied
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self._applied_amount
