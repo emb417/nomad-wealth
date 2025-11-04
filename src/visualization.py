@@ -1255,6 +1255,7 @@ def plot_mc_tax_bars(
 def plot_mc_taxable_balances(
     mc_taxable_df: pd.DataFrame,
     sim_examples: np.ndarray,
+    sepp_end_month: str,
     ts: str,
     show: bool,
     save: bool,
@@ -1349,7 +1350,7 @@ def plot_mc_taxable_balances(
         )
 
     fig.update_layout(
-        title=f"Taxable Balance in Jan 2035 | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
+        title=f"Taxable Balance {sepp_end_month} | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
         f"<br><span style='color: {get_color(percent_positive)}'>{percent_positive:.1f}% Positive Taxable Balance</span>",
         title_x=0.5,
         yaxis=dict(tickformat="$,.0f"),

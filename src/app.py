@@ -566,6 +566,7 @@ def main():
         plot_mc_taxable_balances(
             mc_taxable_df=mc_taxable_df,
             sim_examples=sim_examples,
+            sepp_end_month=json_data["policies"]["SEPP"]["End Month"],
             ts=ts,
             show=SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
             save=SAVE_TAXABLE_CHART,
