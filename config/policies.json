@@ -54,6 +54,7 @@
     "Enabled": true,
     "Start Month": "2029-01",
     "End Month": "2034-12",
+    "Interest Rate": 0.03,
     "Source": "SEPP IRA",
     "Target": "Cash"
   },

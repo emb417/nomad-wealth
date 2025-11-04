@@ -119,10 +119,10 @@ class ForecastEngine:
         Calculate fixed monthly payment using the amortization formula.
         """
         if interest_rate == 0:
-            return int(principal / periods)
+            return int(round(principal / periods))
         r = interest_rate / 12
         payment = principal * (r * (1 + r) ** periods) / ((1 + r) ** periods - 1)
-        return int(payment)
+        return int(round(payment))
 
     def _apply_sepp_withdrawal(self, tx_month: pd.Period):
         if not self.sepp_policies.get("Enabled", False):
@@ -140,10 +140,8 @@ class ForecastEngine:
         # Cache the monthly payment at the start of the SEPP period
         if not hasattr(self, "_sepp_monthly_amount"):
             principal = self._get_prior_year_end_balance(start_month, source_bucket)
-            age = self._get_age_in_years(start_month)
-            life_expectancy = self._get_uniform_life_expectancy(int(age))
             periods = (end_month - start_month).n
-            interest_rate = 0.03  # default annual rate; make configurable if needed
+            interest_rate = self.sepp_policies["Interest Rate"]
             self._sepp_monthly_amount = self._calculate_amortized_payment(
                 principal, interest_rate, periods
             )
