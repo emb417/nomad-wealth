@@ -31,11 +31,11 @@ class TaxCalculator:
             return 0  # fallback if config is missing
 
         # Step 1: Compute provisional income using AGI + ½ SS
-        provisional = agi + int(0.5 * ss_benefits)
+        provisional = agi + int(round(0.5 * ss_benefits))
 
         # Step 2: Determine maximum taxable portion
         max_rate = max(bracket["rate"] for bracket in brackets)
-        max_taxable = int(max_rate * ss_benefits)
+        max_taxable = int(round(max_rate * ss_benefits))
 
         # Step 3: Layer provisional income through brackets
         taxable = 0
@@ -51,9 +51,9 @@ class TaxCalculator:
                 continue
 
             chunk = min(provisional, upper) - lower
-            taxable += chunk * bracket["rate"]
+            taxable += int(round(chunk * bracket["rate"]))
 
-        return min(int(taxable), max_taxable)
+        return min(taxable, max_taxable)
 
     def calculate_tax(
         self,
@@ -89,19 +89,19 @@ class TaxCalculator:
 
         # Early withdrawal penalty (only on penalty-eligible withdrawals)
         penalty_tax = 0
-        penalty_tax = int(0.10 * penalty_basis)
+        penalty_tax = int(round(0.10 * penalty_basis))
 
         total_tax = int(ordinary_tax + gains_tax + penalty_tax)
 
         return {
-            "agi": int(agi),
-            "capital_gains_tax": int(gains_tax),
-            "ordinary_income": int(ordinary_income),
-            "ordinary_tax": int(ordinary_tax),
-            "penalty_tax": int(penalty_tax),
-            "roth_conversions": int(roth),
-            "taxable_ss": int(taxable_ss),
-            "total_tax": int(total_tax),
+            "agi": agi,
+            "capital_gains_tax": gains_tax,
+            "ordinary_income": ordinary_income,
+            "ordinary_tax": ordinary_tax,
+            "penalty_tax": penalty_tax,
+            "roth_conversions": roth,
+            "taxable_ss": taxable_ss,
+            "total_tax": total_tax,
         }
 
     def _calculate_ordinary_tax(

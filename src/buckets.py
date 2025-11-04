@@ -44,7 +44,7 @@ class Holding:
         Apply a sampled return to this holding.
         """
         rate = self.asset_class.sample_return(avg, std)
-        growth = int(self.amount * rate)
+        growth = int(round(self.amount * rate))
         self.amount += growth
         # keep cost_basis unchanged on market returns
 
