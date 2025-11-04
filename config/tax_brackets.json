@@ -1,5 +1,6 @@
 {
-  "ordinary": {
+  "Standard Deduction": 30000,
+  "Ordinary": {
     "Federal 2025": [
       { "min_salary": 0, "tax_rate": 0.1 },
       { "min_salary": 22000, "tax_rate": 0.12 },
@@ -25,14 +26,14 @@
     ],
     "Portland Metro SHS 2025": [{ "min_salary": 200000, "tax_rate": 0.01 }]
   },
-  "capital_gains": {
+  "Capital Gains": {
     "long_term": [
       { "min_salary": 0, "tax_rate": 0.0 },
       { "min_salary": 89250, "tax_rate": 0.15 },
       { "min_salary": 553850, "tax_rate": 0.2 }
     ]
   },
-  "social_security_taxability": [
+  "Social Security Taxability": [
     { "min_provisional": 0, "rate": 0.0 },
     { "min_provisional": 32000, "rate": 0.5 },
     { "min_provisional": 44000, "rate": 0.85 }

@@ -395,10 +395,8 @@ class ForecastEngine:
                 "gains": ytd_raw["Taxable Gains"],
                 "roth": ytd_raw["Roth Conversions"],
             }
-            age = self._get_age_in_years(forecast_date)
-            estimate = self.tax_calc.calculate_tax(
-                **ytd, age=age, standard_deduction=27700
-            )["total_tax"]
+
+            estimate = self.tax_calc.calculate_tax(**ytd)["total_tax"]
             paid = buckets["Tax Collection"].balance()
             self.monthly_tax_drip = int(
                 max(estimate - paid, 0) / max(12 - forecast_date.month, 1)
@@ -411,9 +409,9 @@ class ForecastEngine:
         withdrawals: int,
         gains: int,
         max_rate: float,
-        standard_deduction: int = 27700,
         tx_month: Optional[pd.Period] = None,
     ) -> int:
+        standard_deduction = self.tax_calc.standard_deduction
         # Use MAGI directly if available for the current year
         if tx_month is not None and tx_month.year in self.magi:
             logging.debug(
@@ -520,9 +518,7 @@ class ForecastEngine:
             withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
             gains=ylog.get("Taxable Gains", 0),
             roth=converted,
-            age=age,
             penalty_basis=penalty_basis,
-            standard_deduction=27700,
         )
 
         # Pay from Tax Collection, then Cash if needed

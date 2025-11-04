@@ -256,13 +256,11 @@ def stage_init_components(
     )
 
     # Tax calculator
-    ordinary_brackets = tax_brackets["ordinary"]
-    capital_gains_brackets = tax_brackets["capital_gains"]
-    social_security_brackets = tax_brackets["social_security_taxability"]
     tax_calc = TaxCalculator(
-        ordinary_brackets=ordinary_brackets,
-        capital_gains_brackets=capital_gains_brackets,
-        social_security_brackets=social_security_brackets,
+        standard_deduction=tax_brackets["Standard Deduction"],
+        ordinary_brackets=tax_brackets["Ordinary"],
+        capital_gains_brackets=tax_brackets["Capital Gains"],
+        social_security_brackets=tax_brackets["Social Security Taxability"],
     )
 
     # base inflation and modifiers

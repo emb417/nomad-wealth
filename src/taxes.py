@@ -11,10 +11,12 @@ class TaxCalculator:
 
     def __init__(
         self,
+        standard_deduction: int,
         ordinary_brackets: Dict[str, List[Dict[str, float]]],
         capital_gains_brackets: Dict[str, List[Dict[str, float]]],
         social_security_brackets: List[Dict[str, float]],
     ):
+        self.standard_deduction = standard_deduction
         self.ordinary_tax_brackets = ordinary_brackets
         self.capital_gains_tax_brackets = capital_gains_brackets
         self.social_security_brackets = social_security_brackets
@@ -60,9 +62,7 @@ class TaxCalculator:
         withdrawals: int = 0,
         gains: int = 0,
         roth: int = 0,
-        age: Optional[float] = None,
         penalty_basis: int = 0,
-        standard_deduction: int = 27700,
     ) -> Dict[str, int]:
         # Compute taxable Social Security
         provisional_income = salary + withdrawals + roth + gains
@@ -73,7 +73,7 @@ class TaxCalculator:
 
         # Compute ordinary income after standard deduction
         ordinary_income = max(
-            0, salary + withdrawals + roth + taxable_ss - standard_deduction
+            0, salary + withdrawals + roth + taxable_ss - self.standard_deduction
         )
 
         # Ordinary tax
