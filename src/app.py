@@ -244,7 +244,7 @@ def stage_init_components(
 
     # Penalty tax eligibility period
     dob = profile.get("Birth Month")
-    eligibility = retirement_period_from_dob(dob) if dob else None
+    eligibility = retirement_period_from_dob(dob)
 
     # Refill policy
     refill_policy = ThresholdRefillPolicy(
@@ -253,7 +253,8 @@ def stage_init_components(
         refill_amounts=policies_config["Refill"]["Amounts"],
         taxable_eligibility=eligibility,
         liquidation_threshold=policies_config["Liquidation"]["Threshold"],
-        liquidation_buckets=policies_config["Liquidation"]["Buckets"],
+        liquidation_sources=policies_config["Liquidation"]["Sources"],
+        liquidation_targets=policies_config["Liquidation"]["Targets"],
     )
 
     # Tax calculator

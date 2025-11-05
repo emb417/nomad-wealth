@@ -19,21 +19,18 @@ class ThresholdRefillPolicy:
         refill_thresholds: Dict[str, int],
         source_by_target: Dict[str, List[str]],
         refill_amounts: Dict[str, int],
-        taxable_eligibility: Optional[pd.Period] = None,
-        liquidation_threshold: int = 0,
-        liquidation_buckets: Optional[List[str]] = None,
+        liquidation_sources: List[str],
+        liquidation_targets: Dict[str, int],
+        liquidation_threshold: int,
+        taxable_eligibility: pd.Period,
     ):
-        self.refill_thresholds = refill_thresholds or {}
-        self.sources = source_by_target or {}
-        self.refill_amounts = refill_amounts or {}
+        self.refill_thresholds = refill_thresholds
+        self.sources = source_by_target
+        self.refill_amounts = refill_amounts
         self.taxable_eligibility = taxable_eligibility
         self.liquidation_threshold = liquidation_threshold
-        self.liquidation_buckets = liquidation_buckets or [
-            "Taxable",
-            "Fixed-Income",
-            "Tax-Deferred",
-            "Property",
-        ]
+        self.liquidation_sources = liquidation_sources
+        self.liquidation_targets = liquidation_targets
 
     def generate_refills(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period
@@ -112,11 +109,12 @@ class ThresholdRefillPolicy:
         cash = buckets.get("Cash")
         if cash is None:
             return txns
+
         shortfall = self.liquidation_threshold - cash.balance()
         if shortfall <= 0:
             return txns
 
-        for bucket_name in self.liquidation_buckets:
+        for bucket_name in self.liquidation_sources:
             if bucket_name == "Cash":
                 continue
 
@@ -124,34 +122,7 @@ class ThresholdRefillPolicy:
             if not src or src.balance() <= 0:
                 continue
 
-            if bucket_name == "Property":
-                take = src.balance()
-                normal_take = min(take, self.refill_amounts.get("Cash", 0))
-                taxable_take = take - normal_take
-                logging.debug(
-                    f"[Emergency Liquidation] {tx_month} — ${normal_take:,} Property Liquidated to Cash, ${taxable_take:,} to Taxable"
-                )
-                txns.append(
-                    RefillTransaction(
-                        source=bucket_name,
-                        target="Cash",
-                        amount=normal_take,
-                        is_tax_deferred=False,
-                        is_taxable=True,
-                    )
-                )
-                txns.append(
-                    RefillTransaction(
-                        source=bucket_name,
-                        target="Taxable",
-                        amount=taxable_take,
-                        is_tax_deferred=False,
-                        is_taxable=True,
-                    )
-                )
-            else:
-                take = min(src.balance(), shortfall)
-
+            full_balance = src.balance()
             bt = getattr(src, "bucket_type", None)
             is_def = bt == "tax_deferred"
             is_tax = bt == "taxable"
@@ -160,18 +131,32 @@ class ThresholdRefillPolicy:
                 and self.taxable_eligibility is not None
                 and tx_month < self.taxable_eligibility
             )
-            txns.append(
-                RefillTransaction(
-                    source=bucket_name,
-                    target="Cash",
-                    amount=take,
-                    is_tax_deferred=is_def,
-                    is_taxable=is_tax,
-                    is_penalty_applicable=is_penalty_applicable,
-                )
-            )
 
-            shortfall -= take
+            # Distribute full balance across targets
+            for tgt_name, pct in self.liquidation_targets.items():
+                if pct <= 0:
+                    continue
+                tgt_bucket = buckets.get(tgt_name)
+                if not tgt_bucket:
+                    continue
+
+                tgt_amount = int(round(full_balance * pct))
+                if tgt_amount <= 0:
+                    continue
+
+                txns.append(
+                    RefillTransaction(
+                        source=bucket_name,
+                        target=tgt_name,
+                        amount=tgt_amount,
+                        is_tax_deferred=is_def,
+                        is_taxable=is_tax,
+                        is_penalty_applicable=is_penalty_applicable,
+                    )
+                )
+
+            # Stop if we've covered the shortfall
+            shortfall -= full_balance
             if shortfall <= 0:
                 break
 

@@ -76,7 +76,7 @@
   },
   "Liquidation": {
     "Threshold": -20000,
-    "Buckets": [
+    "Sources": [
       "Cash",
       "Taxable",
       "Fixed-Income",
@@ -85,7 +85,12 @@
       "Tax-Free",
       "Vehicles",
       "Property"
-    ]
+    ],
+    "Targets": {
+      "Cash": 0.2,
+      "Fixed-Income": 0.6,
+      "Taxable": 0.2
+    }
   },
   "Property": {
     "Market Value": 550000,
