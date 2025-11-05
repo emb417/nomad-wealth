@@ -32,12 +32,26 @@
     "Annual Bonus Amount": 40000,
     "Retirement Month": "2029-12"
   },
-  "Social Security": {
-    "Target": "Cash",
-    "Start Month": "2037-04",
-    "Amount": 3800,
-    "Percentage": 1.0
-  },
+  "Social Security": [
+    {
+      "Profile": "p1",
+      "DOB": "1975-04",
+      "Target": "Cash",
+      "Full Age": "67",
+      "Full Benefit": 4058,
+      "Start Age": "67",
+      "Percentage Payout": 1.0
+    },
+    {
+      "Profile": "p2",
+      "DOB": "1978-07",
+      "Target": "Cash",
+      "Full Age": "67",
+      "Full Benefit": 1569,
+      "Start Age": "67",
+      "Percentage Payout": 1.0
+    }
+  ],
   "RMD": {
     "Targets": {
       "Cash": 0.1,
