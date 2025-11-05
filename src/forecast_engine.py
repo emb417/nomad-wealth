@@ -74,8 +74,6 @@ class ForecastEngine:
             )
             self._apply_refill_transactions(refill_txns, self.buckets, forecast_month)
 
-            self._withhold_monthly_taxes(self.buckets, forecast_month)
-
             liq_txns = self.refill_policy.generate_liquidation(
                 self.buckets, forecast_month
             )
@@ -266,11 +264,6 @@ class ForecastEngine:
         for tx in refill_txns:
             tx.apply(buckets, tx_month)
 
-    def _withhold_monthly_taxes(self, buckets, tx_month):
-        buckets["Cash"].transfer(
-            self.monthly_tax_drip, buckets["Tax Collection"], tx_month
-        )
-
     def _apply_liquidation_transactions(self, liq_txns, buckets, tx_month):
         for tx in liq_txns:
             tx.apply(buckets, tx_month)
@@ -282,8 +275,6 @@ class ForecastEngine:
         all_policy_txns: List[PolicyTransaction],
     ):
         year = forecast_month.year
-        quarter = (forecast_month.month - 1) // 3 + 1
-        qkey = (year, quarter)
 
         salary, ss, deferred, realized, taxable, penalty, taxfree = (
             self._accumulate_monthly_tax_inputs(forecast_month, all_policy_txns)
@@ -291,9 +282,7 @@ class ForecastEngine:
 
         self._update_tax_logs(
             year,
-            qkey,
             self.yearly_tax_log,
-            self.quarterly_tax_log,
             salary,
             ss,
             deferred,
@@ -304,6 +293,7 @@ class ForecastEngine:
         )
 
         self._update_tax_estimate_if_needed(forecast_month, buckets)
+        self._withhold_monthly_taxes(forecast_month, buckets)
 
         if forecast_month.month == 12:
             self._apply_year_end_reconciliation(
@@ -328,9 +318,7 @@ class ForecastEngine:
     def _update_tax_logs(
         self,
         year,
-        qkey,
         yearly_log,
-        quarterly_log,
         salary,
         ss,
         deferred,
@@ -360,49 +348,32 @@ class ForecastEngine:
         ylog["Penalty Tax"] += penalty
         ylog["Tax-Free Withdrawals"] += taxfree
 
-        qlog = quarterly_log.setdefault(
-            qkey,
-            {
-                "Tax-Deferred Withdrawals": 0,
-                "Taxable Gains": 0,
-                "Roth Conversions": 0,
-                "Social Security": 0,
-                "Salary": 0,
-            },
-        )
-        qlog["Salary"] += salary
-        qlog["Social Security"] += ss
-        qlog["Tax-Deferred Withdrawals"] += deferred
-        qlog["Taxable Gains"] += taxable
-
     def _update_tax_estimate_if_needed(self, forecast_date, buckets):
-        if forecast_date.month in {3, 6, 9, 12}:
-            year = forecast_date.year
-            quarter = (forecast_date.month - 1) // 3 + 1
-            ytd_raw = {
-                "Salary": 0,
-                "Social Security": 0,
-                "Tax-Deferred Withdrawals": 0,
-                "Taxable Gains": 0,
-                "Roth Conversions": 0,
-            }
-            for q in range(1, quarter + 1):
-                qlog = self.quarterly_tax_log.get((year, q), {})
-                for k in ytd_raw:
-                    ytd_raw[k] += qlog.get(k, 0)
-            ytd = {
-                "salary": ytd_raw["Salary"],
-                "ss_benefits": ytd_raw["Social Security"],
-                "withdrawals": ytd_raw["Tax-Deferred Withdrawals"],
-                "gains": ytd_raw["Taxable Gains"],
-                "roth": ytd_raw["Roth Conversions"],
-            }
+        year = forecast_date.year
+        month = forecast_date.month
 
-            estimate = self.tax_calc.calculate_tax(**ytd)["total_tax"]
-            paid = buckets["Tax Collection"].balance()
-            self.monthly_tax_drip = int(
-                max(estimate - paid, 0) / max(12 - forecast_date.month, 1)
-            )
+        ylog = self.yearly_tax_log.get(year)
+        if not ylog:
+            self.monthly_tax_drip = 0
+            return
+
+        ytd = {
+            "salary": ylog.get("Salary", 0),
+            "ss_benefits": ylog.get("Social Security", 0),
+            "withdrawals": ylog.get("Tax-Deferred Withdrawals", 0),
+            "gains": ylog.get("Taxable Gains", 0),
+            "roth": ylog.get("Roth Conversions", 0),
+        }
+
+        estimate = self.tax_calc.calculate_tax(**ytd)["total_tax"]
+        paid = buckets["Tax Collection"].balance()
+        months_remaining = max(12 - month, 1)
+        self.monthly_tax_drip = int(max(estimate - paid, 0) / months_remaining)
+
+    def _withhold_monthly_taxes(self, tx_month, buckets):
+        buckets["Cash"].transfer(
+            self.monthly_tax_drip, buckets["Tax Collection"], tx_month
+        )
 
     def _estimate_roth_headroom(
         self,
@@ -502,8 +473,6 @@ class ForecastEngine:
             raise RuntimeError(
                 f"Missing yearly_tax_log entry for {year} before reconciliation"
             )
-
-        age = self._get_age_in_years(forecast_month)
 
         # Apply Roth conversion using finalized year-end snapshot
         converted = self._apply_roth_conversion_if_eligible(

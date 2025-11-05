@@ -241,6 +241,7 @@ class RentTransaction(PolicyTransaction):
 
 
 class RequiredMinimumDistributionTransaction(PolicyTransaction):
+    is_tax_deferred = True
     DEFAULT_DIVISOR_TABLE = {
         70: 27.4,
         71: 26.5,
@@ -279,7 +280,7 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
         self,
         dob: str,
         targets: Dict[str, float],
-        start_age: int = 72,
+        start_age: int = 75,
         rmd_month: int = 12,
         monthly_spread: bool = False,
         rounding: str = "monthly",

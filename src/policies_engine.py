@@ -123,6 +123,14 @@ class ThresholdRefillPolicy:
                 continue
 
             full_balance = src.balance()
+            take = (
+                full_balance
+                if bucket_name == "Property"
+                else min(full_balance, shortfall)
+            )
+            if take <= 0:
+                continue
+
             bt = getattr(src, "bucket_type", None)
             is_def = bt == "tax_deferred"
             is_tax = bt == "taxable"
@@ -132,7 +140,7 @@ class ThresholdRefillPolicy:
                 and tx_month < self.taxable_eligibility
             )
 
-            # Distribute full balance across targets
+            # Distribute 'take' across targets based on percentages
             for tgt_name, pct in self.liquidation_targets.items():
                 if pct <= 0:
                     continue
@@ -140,7 +148,7 @@ class ThresholdRefillPolicy:
                 if not tgt_bucket:
                     continue
 
-                tgt_amount = int(round(full_balance * pct))
+                tgt_amount = int(round(take * pct))
                 if tgt_amount <= 0:
                     continue
 
@@ -155,8 +163,7 @@ class ThresholdRefillPolicy:
                     )
                 )
 
-            # Stop if we've covered the shortfall
-            shortfall -= full_balance
+            shortfall -= take
             if shortfall <= 0:
                 break
 
