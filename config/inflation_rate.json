@@ -1,8 +1,6 @@
 {
   "default": { "avg": 0.023, "std": 0.02 },
   "profiles": {
-    "Auto Insurance": { "avg": 0.025, "std": 0.02 },
-    "Auto Maintenance": { "avg": 0.025, "std": 0.015 },
     "Education": { "avg": 0.045, "std": 0.025 },
     "Entertainment": { "avg": 0.028, "std": 0.02 },
     "Food": { "avg": 0.03, "std": 0.02 },
@@ -16,6 +14,8 @@
     "Subscriptions": { "avg": 0.02, "std": 0.01 },
     "Travel": { "avg": 0.035, "std": 0.03 },
     "Utilities": { "avg": 0.02, "std": 0.02 },
+    "Vehicle Insurance": { "avg": 0.025, "std": 0.02 },
+    "Vehicle Maintenance": { "avg": 0.025, "std": 0.015 },
     "Voice and Data": { "avg": 0.0075, "std": 0.01 }
   }
 }
