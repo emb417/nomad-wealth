@@ -278,6 +278,7 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
     def __init__(
         self,
         dob: str,
+        targets: Dict[str, float],
         start_age: int = 72,
         rmd_month: int = 12,
         monthly_spread: bool = False,
@@ -285,6 +286,7 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
     ):
         super().__init__()
         self.dob = pd.to_datetime(dob)
+        self.targets = targets
         self.start_age = int(start_age)
         self.rmd_month = int(rmd_month)
         self.monthly_spread = monthly_spread
@@ -338,14 +340,30 @@ class RequiredMinimumDistributionTransaction(PolicyTransaction):
             else int(round(annual_rmd / months_to_spread))
         )
 
-        tgt = buckets.get("Fixed-Income")
-        if tgt and amount > 0:
-            remaining = amount
-            for b in buckets.values():
-                if getattr(b, "bucket_type", None) == "tax_deferred" and remaining > 0:
-                    applied = b.transfer(remaining, tgt, tx_month)
-                    self._applied_amount += applied
-                    remaining -= applied
+        # Aggregate all tax-deferred sources
+        sources = [
+            b
+            for b in buckets.values()
+            if getattr(b, "bucket_type", None) == "tax_deferred"
+        ]
+
+        # Distribute RMD across target buckets based on percentage
+        for tgt_name, pct in self.targets.items():
+            if pct <= 0:
+                continue
+            tgt_bucket = buckets.get(tgt_name)
+            if not tgt_bucket:
+                continue
+
+            target_amount = int(round(amount * pct))
+            remaining = target_amount
+
+            for src_bucket in sources:
+                if remaining <= 0:
+                    break
+                applied = src_bucket.transfer(remaining, tgt_bucket, tx_month)
+                self._applied_amount += applied
+                remaining -= applied
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
         return self._applied_amount

@@ -1,15 +1,23 @@
 {
-  "Refill Thresholds": {
-    "Cash": 30000,
-    "Fixed-Income": 90000
-  },
-  "Refill Amounts": {
-    "Cash": 20000,
-    "Fixed-Income": 30000
-  },
-  "Sources": {
-    "Cash": ["Fixed-Income", "Taxable", "Tax-Deferred", "SEPP IRA", "Tax-Free"],
-    "Fixed-Income": ["Taxable", "Tax-Deferred", "SEPP IRA", "Tax-Free"]
+  "Refill": {
+    "Thresholds": {
+      "Cash": 30000,
+      "Fixed-Income": 90000
+    },
+    "Amounts": {
+      "Cash": 20000,
+      "Fixed-Income": 30000
+    },
+    "Sources": {
+      "Cash": [
+        "Fixed-Income",
+        "Taxable",
+        "SEPP IRA",
+        "Tax-Deferred",
+        "Tax-Free"
+      ],
+      "Fixed-Income": ["Taxable", "SEPP IRA", "Tax-Deferred", "Tax-Free"]
+    }
   },
   "Salary": {
     "Targets": {
@@ -28,7 +36,15 @@
     "Target": "Cash",
     "Start Month": "2037-04",
     "Amount": 3800,
-    "Percentage": 0.8
+    "Percentage": 1.0
+  },
+  "RMD": {
+    "Targets": {
+      "Cash": 0.1,
+      "Fixed-Income": 0.4,
+      "Taxable": 0.0,
+      "Tax-Free": 0.5
+    }
   },
   "Roth Conversions": {
     "early": {

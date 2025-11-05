@@ -248,9 +248,9 @@ def stage_init_components(
 
     # Refill policy
     refill_policy = ThresholdRefillPolicy(
-        refill_thresholds=policies_config["Refill Thresholds"],
-        source_by_target=policies_config["Sources"],
-        refill_amounts=policies_config["Refill Amounts"],
+        refill_thresholds=policies_config["Refill"]["Thresholds"],
+        source_by_target=policies_config["Refill"]["Sources"],
+        refill_amounts=policies_config["Refill"]["Amounts"],
         taxable_eligibility=eligibility,
         liquidation_threshold=policies_config["Liquidation"]["Threshold"],
         liquidation_buckets=policies_config["Liquidation"]["Buckets"],
@@ -306,7 +306,9 @@ def stage_init_components(
         description_key="Rent",
     )
 
-    rmd_tx = RequiredMinimumDistributionTransaction(dob=dob)
+    rmd_tx = RequiredMinimumDistributionTransaction(
+        dob=dob, targets=policies_config["RMD"]["Targets"]
+    )
 
     salary_tx = SalaryTransaction(
         annual_gross=policies_config["Salary"]["Annual Gross Income"],
