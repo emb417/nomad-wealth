@@ -393,14 +393,14 @@ class ForecastEngine:
 
         # Get inflation-adjusted deduction and brackets
         standard_deduction = self.tax_calc.standard_deduction_by_year.get(year_str, 0)
-        federal_brackets = self.tax_calc.ordinary_tax_brackets_by_year.get(year_str, [])
+        federal_brackets = self.tax_calc.ordinary_tax_brackets_by_year.get(
+            f"Federal {year}", []
+        )
 
-        # Use MAGI directly if available
+        # Prefer MAGI if available
         if year in self.magi:
-            logging.debug(
-                f"tx_month.year: {year}, self.magi[{year}]: {self.magi[year]}, standard_deduction: {standard_deduction}"
-            )
-            ordinary_income = max(0, self.magi[year] - standard_deduction)
+            magi = self.magi[year]
+            ordinary_income = max(0, magi - standard_deduction)
         else:
             taxable_ss = self.tax_calc._taxable_social_security(
                 year, ss_benefits, salary + withdrawals + gains
@@ -409,17 +409,26 @@ class ForecastEngine:
                 0, salary + withdrawals + taxable_ss - standard_deduction
             )
 
-        # Find next bracket threshold above max_rate
-        for bracket in federal_brackets:
-            if bracket["tax_rate"] > max_rate:
-                next_threshold = bracket["min_salary"]
+        # Estimate Roth headroom before exceeding max_rate
+        headroom = 0
+        for i, bracket in enumerate(federal_brackets):
+            rate = bracket["tax_rate"]
+            if rate > max_rate:
                 break
-        else:
-            next_threshold = float("inf")
 
-        headroom = max(0, next_threshold - ordinary_income)
-        if math.isinf(headroom):
-            return 0
+            lower = bracket["min_salary"]
+            upper = (
+                federal_brackets[i + 1]["min_salary"]
+                if i + 1 < len(federal_brackets)
+                else float("inf")
+            )
+
+            if ordinary_income >= upper:
+                continue
+
+            bracket_headroom = upper - max(ordinary_income, lower)
+            headroom += bracket_headroom
+
         return int(headroom)
 
     def _apply_roth_conversion_if_eligible(
