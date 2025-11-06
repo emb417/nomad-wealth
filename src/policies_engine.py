@@ -1,7 +1,6 @@
 import logging
 import pandas as pd
-
-from typing import Dict, List, Optional
+from typing import Dict, List
 
 # Internal Imports
 from buckets import Bucket
@@ -11,7 +10,8 @@ from policies_transactions import RefillTransaction
 class ThresholdRefillPolicy:
     """
     Refill policy using buckets.json metadata attached to Bucket instances.
-    Inline eligibility gating is performed using taxable_eligibility (a pd.Period or Timestamp).
+    Inline eligibility gating is performed using taxable_eligibility (a pd.Period or Timestamp),
+    and SEPP gating is enforced for all tax_deferred bucket types during the SEPP period.
     """
 
     def __init__(
@@ -23,6 +23,8 @@ class ThresholdRefillPolicy:
         liquidation_targets: Dict[str, int],
         liquidation_threshold: int,
         taxable_eligibility: pd.Period,
+        sepp_start_month: str,
+        sepp_end_month: str,
     ):
         self.refill_thresholds = refill_thresholds
         self.sources = source_by_target
@@ -31,6 +33,8 @@ class ThresholdRefillPolicy:
         self.liquidation_threshold = liquidation_threshold
         self.liquidation_sources = liquidation_sources
         self.liquidation_targets = liquidation_targets
+        self.sepp_start_month = pd.Period(sepp_start_month, freq="M")
+        self.sepp_end_month = pd.Period(sepp_end_month, freq="M")
 
     def generate_refills(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period
@@ -61,15 +65,28 @@ class ThresholdRefillPolicy:
                 if src_bucket is None:
                     continue
 
+                bt = getattr(src_bucket, "bucket_type", None)
+
                 # Age-gate tax-advantaged bucket types
-                if self.taxable_eligibility is not None and getattr(
-                    src_bucket, "bucket_type", None
-                ) in {"tax_free", "tax_deferred"}:
+                if self.taxable_eligibility is not None and bt in {
+                    "tax_free",
+                    "tax_deferred",
+                }:
                     if tx_month < self.taxable_eligibility:
                         logging.debug(
-                            f"[RefillPolicy] {tx_month} — source '{source}' age-gated (bucket_type={src_bucket.bucket_type})"
+                            f"[RefillPolicy] {tx_month} — source '{source}' age-gated (bucket_type={bt})"
                         )
                         continue
+
+                # SEPP-gate all tax_deferred buckets during SEPP period
+                if (
+                    bt == "tax_deferred"
+                    and self.sepp_start_month <= tx_month <= self.sepp_end_month
+                ):
+                    logging.debug(
+                        f"[RefillPolicy] {tx_month} — source '{source}' blocked due to SEPP period ({self.sepp_start_month} to {self.sepp_end_month})"
+                    )
+                    continue
 
                 available = max(0, src_bucket.balance())
                 allow_fallback = getattr(src_bucket, "allow_cash_fallback", False)
@@ -82,7 +99,6 @@ class ThresholdRefillPolicy:
                 if transfer <= 0:
                     continue
 
-                bt = getattr(src_bucket, "bucket_type", None)
                 is_def = bt == "tax_deferred"
                 is_tax = bt == "taxable"
 
@@ -122,6 +138,18 @@ class ThresholdRefillPolicy:
             if not src or src.balance() <= 0:
                 continue
 
+            bt = getattr(src, "bucket_type", None)
+
+            # SEPP-gate all tax_deferred buckets during SEPP period
+            if (
+                bt == "tax_deferred"
+                and self.sepp_start_month <= tx_month <= self.sepp_end_month
+            ):
+                logging.debug(
+                    f"[LiquidationPolicy] {tx_month} — source '{bucket_name}' blocked due to SEPP period ({self.sepp_start_month} to {self.sepp_end_month})"
+                )
+                continue
+
             full_balance = src.balance()
             take = (
                 full_balance
@@ -131,13 +159,12 @@ class ThresholdRefillPolicy:
             if take <= 0:
                 continue
 
-            bt = getattr(src, "bucket_type", None)
             is_def = bt == "tax_deferred"
             is_tax = bt == "taxable"
             is_penalty_applicable = (
-                is_def
-                and self.taxable_eligibility is not None
+                self.taxable_eligibility is not None
                 and tx_month < self.taxable_eligibility
+                and bt in {"tax_deferred", "tax_free"}
             )
 
             # Distribute 'take' across targets based on percentages

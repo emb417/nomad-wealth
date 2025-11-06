@@ -255,6 +255,8 @@ def stage_init_components(
         liquidation_threshold=policies_config["Liquidation"]["Threshold"],
         liquidation_sources=policies_config["Liquidation"]["Sources"],
         liquidation_targets=policies_config["Liquidation"]["Targets"],
+        sepp_start_month=policies_config["SEPP"]["Start Month"],
+        sepp_end_month=policies_config["SEPP"]["End Month"],
     )
 
     # base inflation and modifiers

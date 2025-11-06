@@ -125,6 +125,7 @@ class RefillTransaction(PolicyTransaction):
       - uses Bucket.transfer for clean internal movement
       - records tax flags only (tax accounting done elsewhere)
       - estimates taxable gains for withdrawals from taxable buckets
+      - supports penalty logic for both tax-deferred and tax-free buckets
     """
 
     def __init__(
@@ -173,6 +174,7 @@ class RefillTransaction(PolicyTransaction):
             self._taxable_gain = int(round(applied * 0.5))
             self._realized_gain = int(round(applied))
 
+        # Track tax-free withdrawal amount
         if getattr(src, "bucket_type", None) == "tax_free" and applied > 0:
             self._taxfree_amount = int(round(applied))
 
@@ -186,11 +188,11 @@ class RefillTransaction(PolicyTransaction):
         return self._taxable_gain
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
-        return (
-            self._applied_amount
-            if self.is_tax_deferred and self.is_penalty_applicable
-            else 0
-        )
+        if self.is_penalty_applicable and (
+            self.is_tax_deferred or self._taxfree_amount > 0
+        ):
+            return self._applied_amount
+        return 0
 
     def get_taxfree_withdrawal(self, tx_month: pd.Period) -> int:
         return self._taxfree_amount
