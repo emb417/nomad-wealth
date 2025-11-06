@@ -15,6 +15,9 @@ class PolicyTransaction(ABC):
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         pass
 
+    def get_unemployment(self, tx_month: pd.Period) -> int:
+        return 0
+
     def get_salary(self, tx_month: pd.Period) -> int:
         return 0
 
@@ -605,3 +608,32 @@ class SocialSecurityTransaction(PolicyTransaction):
         return sum(
             self._get_optimal_benefit(i, tx_month) for i in range(len(self.profiles))
         )
+
+
+class UnemploymentTransaction(PolicyTransaction):
+    def __init__(
+        self,
+        start_month: str,
+        end_month: str,
+        monthly_amount: int,
+        target_bucket: str,
+    ):
+        self.start_period = pd.Period(start_month, freq="M")
+        self.end_period = pd.Period(end_month, freq="M")
+        self.monthly_amount = int(monthly_amount)
+        self.target_bucket = target_bucket
+
+    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+        if not (self.start_period <= tx_month <= self.end_period):
+            return
+
+        bucket = buckets.get(self.target_bucket)
+        if bucket is None:
+            return
+
+        bucket.deposit(self.monthly_amount, "Unemployment", tx_month)
+
+    def get_unemployment(self, tx_month: pd.Period) -> int:
+        if self.start_period <= tx_month <= self.end_period:
+            return self.monthly_amount
+        return 0

@@ -113,6 +113,7 @@ class TaxCalculator:
         self,
         year: int,
         salary: int = 0,
+        unemployment: int = 0,
         ss_benefits: int = 0,
         withdrawals: int = 0,
         gains: int = 0,
@@ -128,12 +129,15 @@ class TaxCalculator:
             f"long_term {year}", []
         )
 
+        # Unemployment is taxable, but not part of provisional income for SS
         provisional_income = salary + withdrawals + roth + gains
         taxable_ss = self._taxable_social_security(
             year, ss_benefits, provisional_income
         )
-        agi = salary + withdrawals + roth + gains + taxable_ss
-        ordinary_income = max(0, salary + withdrawals + roth + taxable_ss - deduction)
+        agi = salary + unemployment + withdrawals + roth + gains + taxable_ss
+        ordinary_income = max(
+            0, salary + unemployment + withdrawals + roth + taxable_ss - deduction
+        )
 
         ordinary_tax = self._calculate_ordinary_tax(ordinary_brackets, ordinary_income)
         gains_tax = self._calculate_capital_gains_tax(
@@ -151,6 +155,7 @@ class TaxCalculator:
             "roth_conversions": roth,
             "taxable_ss": taxable_ss,
             "total_tax": total_tax,
+            "unemployment_income": unemployment,
         }
 
     def _calculate_ordinary_tax(

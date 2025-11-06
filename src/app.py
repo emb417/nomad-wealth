@@ -24,6 +24,7 @@ from policies_transactions import (
     RequiredMinimumDistributionTransaction,
     SalaryTransaction,
     SocialSecurityTransaction,
+    UnemploymentTransaction,
 )
 from rules_transactions import (
     FixedTransaction,
@@ -311,6 +312,16 @@ def stage_init_components(
         dob=dob, targets=policies_config["RMD"]["Targets"]
     )
 
+    unemployment_config = policies_config.get("Unemployment")
+    unemployment_tx = None
+    if unemployment_config:
+        unemployment_tx = UnemploymentTransaction(
+            start_month=unemployment_config["Start Month"],
+            end_month=unemployment_config["End Month"],
+            monthly_amount=unemployment_config["Monthly Amount"],
+            target_bucket=unemployment_config["Target"],
+        )
+
     salary_tx = SalaryTransaction(
         annual_gross=policies_config["Salary"]["Annual Gross Income"],
         annual_bonus=policies_config["Salary"]["Annual Bonus Amount"],
@@ -326,7 +337,9 @@ def stage_init_components(
 
     rule_txns = [fixed_tx, recur_tx]
     policy_txns = [
-        tx for tx in [property_tx, rent_tx, rmd_tx, salary_tx, ss_txn] if tx is not None
+        tx
+        for tx in [property_tx, rent_tx, rmd_tx, unemployment_tx, salary_tx, ss_txn]
+        if tx is not None
     ]
 
     return (

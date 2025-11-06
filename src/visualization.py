@@ -103,7 +103,8 @@ def plot_example_income_taxes(
 
     # Color palettes
     income_colors = {
-        "Salary": "#022239",
+        "Unemployment": "#08306b",
+        "Salary": "#08306b",
         "Social Security": "#08306b",
         "Tax-Deferred Withdrawals": "#1f77b4",
         "Roth Conversions": "#4dabf7",

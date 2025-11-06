@@ -277,13 +277,14 @@ class ForecastEngine:
     ):
         year = forecast_month.year
 
-        salary, ss, deferred, realized, taxable, penalty, taxfree = (
+        unemployment, salary, ss, deferred, realized, taxable, penalty, taxfree = (
             self._accumulate_monthly_tax_inputs(forecast_month, all_policy_txns)
         )
 
         self._update_tax_logs(
             year,
             self.yearly_tax_log,
+            unemployment,
             salary,
             ss,
             deferred,
@@ -307,6 +308,7 @@ class ForecastEngine:
         self._record_snapshot(forecast_month, buckets)
 
     def _accumulate_monthly_tax_inputs(self, tx_month, txs):
+        unemployment = sum(tx.get_unemployment(tx_month) for tx in txs)
         salary = sum(tx.get_salary(tx_month) for tx in txs)
         ss = sum(tx.get_social_security(tx_month) for tx in txs)
         deferred = sum(tx.get_withdrawal(tx_month) for tx in txs)
@@ -314,12 +316,13 @@ class ForecastEngine:
         taxable = sum(tx.get_taxable_gain(tx_month) for tx in txs)
         penalty = sum(tx.get_penalty_eligible_withdrawal(tx_month) for tx in txs)
         taxfree = sum(tx.get_taxfree_withdrawal(tx_month) for tx in txs)
-        return salary, ss, deferred, realized, taxable, penalty, taxfree
+        return unemployment, salary, ss, deferred, realized, taxable, penalty, taxfree
 
     def _update_tax_logs(
         self,
         year,
         yearly_log,
+        unemployment,
         salary,
         ss,
         deferred,
@@ -338,9 +341,11 @@ class ForecastEngine:
                 "Roth Conversions": 0,
                 "Social Security": 0,
                 "Salary": 0,
+                "Unemployment": 0,
                 "Tax-Free Withdrawals": 0,
             },
         )
+        ylog["Unemployment"] += unemployment
         ylog["Salary"] += salary
         ylog["Social Security"] += ss
         ylog["Tax-Deferred Withdrawals"] += deferred
@@ -359,6 +364,7 @@ class ForecastEngine:
             return
 
         ytd = {
+            "unemployment": ylog.get("Unemployment", 0),
             "salary": ylog.get("Salary", 0),
             "ss_benefits": ylog.get("Social Security", 0),
             "withdrawals": ylog.get("Tax-Deferred Withdrawals", 0),
@@ -505,6 +511,7 @@ class ForecastEngine:
         penalty_basis = ylog.get("Penalty Tax", 0)
         final_tax = self.tax_calc.calculate_tax(
             year=year,
+            unemployment=ylog.get("Unemployment", 0),
             salary=ylog.get("Salary", 0),
             ss_benefits=ylog.get("Social Security", 0),
             withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
@@ -545,6 +552,7 @@ class ForecastEngine:
                 "Taxable Gains": ylog.get("Taxable Gains", 0),
                 "Capital Gains Tax": final_tax["capital_gains_tax"],
                 "Roth Conversions": converted,
+                "Unemployment": ylog.get("Unemployment", 0),
                 "Salary": ylog.get("Salary", 0),
                 "Social Security": ylog.get("Social Security", 0),
                 "Taxable Social Security": final_tax.get("taxable_ss"),
