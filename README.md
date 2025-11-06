@@ -37,9 +37,31 @@ Traditional forecasting relies on single-point estimates or historical averages 
 
 Its policy-first architecture is a game-changer. Instead of hardcoding generic rules, you explicitly define all critical financial decisions—from monthly cash-flow triggers and bucket refill strategies to withdrawal order and liquidation thresholds—in declarative JSON. This makes your plan fully transparent, repeatable, and adaptable as your life circumstances or tax laws change.
 
+Absolutely, Eric. Here's a patched version of that section with the IRS Compliance Checklist integrated for clarity and audit confidence:
+
+---
+
 ### Accurate Projections through Inflation and Tax Reality
 
 By incorporating inflation-adjusted gain sampling and a sophisticated tax engine that models capital gains, income tax, and specific withdrawal penalties, the framework paints a far more realistic picture of future net worth and sustainable withdrawal rates. You get projections based on real purchasing power, avoiding the pitfalls of over-optimistic nominal returns.
+
+To ensure audit clarity and strategic integrity, the simulation logic conforms to IRS rules as publicly documented today:
+
+#### IRS Compliance Checklist
+
+- **Standard Deduction**: Inflation-adjusted annually using cumulative modifiers from a base year
+- **Ordinary Tax Brackets**: Marginal bracket floors inflated from their source year using compounded inflation
+- **Capital Gains Tax**: Applied above ordinary income using correct marginal layering and bracket thresholds
+- **Social Security Taxability**: Based on provisional income and inflation-adjusted `min_provisional` thresholds, capped at 85%
+- **Penalty Tax**: Applied only when flagged in transaction metadata, respecting early withdrawal rules
+- **Adjusted Gross Income (AGI)**: Includes salary, withdrawals, Roth conversions, gains, and taxable Social Security
+- **Ordinary Income**: Deduction subtracted before bracket application, ensuring correct taxable base
+- **Inflation Modeling**: Stochastic, cumulative, and anchored to a base year for realistic long-term forecasting
+- **Bracket Application Logic**: Marginal, layered, and capped per IRS methodology
+
+This foundation enables confident scenario modeling, strategic tax planning, and transparent auditability across decades.
+
+---
 
 ### Gain Deep, Auditable Insight into Every Future Dollar
 

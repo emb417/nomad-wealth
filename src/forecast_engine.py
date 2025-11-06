@@ -1,5 +1,6 @@
 import logging
 import pandas as pd
+import math
 
 from typing import Any, Dict, List, Tuple, Optional, Union
 
@@ -365,7 +366,7 @@ class ForecastEngine:
             "roth": ylog.get("Roth Conversions", 0),
         }
 
-        estimate = self.tax_calc.calculate_tax(**ytd)["total_tax"]
+        estimate = self.tax_calc.calculate_tax(year=year, **ytd)["total_tax"]
         paid = buckets["Tax Collection"].balance()
         months_remaining = max(12 - month, 1)
         self.monthly_tax_drip = int(max(estimate - paid, 0) / months_remaining)
@@ -384,23 +385,31 @@ class ForecastEngine:
         max_rate: float,
         tx_month: Optional[pd.Period] = None,
     ) -> int:
-        standard_deduction = self.tax_calc.standard_deduction
-        # Use MAGI directly if available for the current year
-        if tx_month is not None and tx_month.year in self.magi:
+        if tx_month is None:
+            raise ValueError("tx_month is required to estimate Roth headroom")
+
+        year = tx_month.year
+        year_str = str(year)
+
+        # Get inflation-adjusted deduction and brackets
+        standard_deduction = self.tax_calc.standard_deduction_by_year.get(year_str, 0)
+        federal_brackets = self.tax_calc.ordinary_tax_brackets_by_year.get(year_str, [])
+
+        # Use MAGI directly if available
+        if year in self.magi:
             logging.debug(
-                f"tx_month.year: {tx_month.year}, self.magi[tx_month.year]: {self.magi[tx_month.year]},standard_deduction: {standard_deduction}"
+                f"tx_month.year: {year}, self.magi[{year}]: {self.magi[year]}, standard_deduction: {standard_deduction}"
             )
-            ordinary_income = max(0, self.magi[tx_month.year] - standard_deduction)
+            ordinary_income = max(0, self.magi[year] - standard_deduction)
         else:
             taxable_ss = self.tax_calc._taxable_social_security(
-                ss_benefits, salary + withdrawals + gains
+                year, ss_benefits, salary + withdrawals + gains
             )
             ordinary_income = max(
                 0, salary + withdrawals + taxable_ss - standard_deduction
             )
 
-        federal_brackets = self.tax_calc.ordinary_tax_brackets["Federal 2025"]
-
+        # Find next bracket threshold above max_rate
         for bracket in federal_brackets:
             if bracket["tax_rate"] > max_rate:
                 next_threshold = bracket["min_salary"]
@@ -409,6 +418,8 @@ class ForecastEngine:
             next_threshold = float("inf")
 
         headroom = max(0, next_threshold - ordinary_income)
+        if math.isinf(headroom):
+            return 0
         return int(headroom)
 
     def _apply_roth_conversion_if_eligible(
@@ -484,6 +495,7 @@ class ForecastEngine:
         # Final tax calculation
         penalty_basis = ylog.get("Penalty Tax", 0)
         final_tax = self.tax_calc.calculate_tax(
+            year=year,
             salary=ylog.get("Salary", 0),
             ss_benefits=ylog.get("Social Security", 0),
             withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
@@ -491,7 +503,6 @@ class ForecastEngine:
             roth=converted,
             penalty_basis=penalty_basis,
         )
-
         # Pay from Tax Collection, then Cash if needed
         if final_tax["total_tax"] > 0:
             paid_from_tc = buckets["Tax Collection"].withdraw(

@@ -1,6 +1,5 @@
 import logging
-
-from typing import List, Dict, Optional
+from typing import List, Dict, Any
 
 
 class TaxCalculator:
@@ -11,33 +10,90 @@ class TaxCalculator:
 
     def __init__(
         self,
-        standard_deduction: int,
-        ordinary_brackets: Dict[str, List[Dict[str, float]]],
-        capital_gains_brackets: Dict[str, List[Dict[str, float]]],
-        social_security_brackets: List[Dict[str, float]],
+        base_brackets: Dict[str, Any],
+        base_inflation: Dict[int, Dict[str, float]],
     ):
-        self.standard_deduction = standard_deduction
-        self.ordinary_tax_brackets = ordinary_brackets
-        self.capital_gains_tax_brackets = capital_gains_brackets
-        self.social_security_brackets = social_security_brackets
+        self.base_inflation = base_inflation
+        self.standard_deduction_by_year = self._inflate_deductions(
+            base_brackets["Standard Deduction"]
+        )
+        self.ordinary_tax_brackets_by_year = self._inflate_brackets_by_year(
+            base_brackets["Ordinary"]
+        )
+        self.capital_gains_tax_brackets_by_year = self._inflate_cap_gains_brackets(
+            base_brackets["Capital Gains"]
+        )
+        self.social_security_brackets_by_year = self._inflate_social_security_brackets(
+            base_brackets["Social Security Taxability"]
+        )
 
-    def _taxable_social_security(self, ss_benefits: int, agi: int) -> int:
+    def _inflate_social_security_brackets(self, base_brackets):
+        inflated = {}
+        for year, inflation in self.base_inflation.items():
+            modifier = inflation.get("modifier", 1.0)
+            inflated[year] = [
+                {**b, "min_provisional": int(round(b["min_provisional"] * modifier))}
+                for b in base_brackets
+            ]
+        return inflated
+
+    def _inflate_cap_gains_brackets(
+        self, brackets_by_type: Dict[str, List[Dict[str, float]]]
+    ) -> Dict[str, List[Dict[str, float]]]:
+        inflated = {}
+        for label, bracket_list in brackets_by_type.items():
+            inflated[label] = []
+            for year, inflation in self.base_inflation.items():
+                modifier = inflation.get("modifier", 1.0)
+                inflated_key = f"{label} {year}"
+                inflated[inflated_key] = [
+                    {**b, "min_salary": int(round(b["min_salary"] * modifier))}
+                    for b in bracket_list
+                ]
+        return inflated
+
+    def _inflate_deductions(self, deduction: int) -> Dict[str, int]:
+        return {
+            str(year): int(
+                round(
+                    deduction * self.base_inflation.get(year, {}).get("modifier", 1.0)
+                )
+            )
+            for year in self.base_inflation
+        }
+
+    def _inflate_brackets_by_year(self, brackets_by_label):
+        inflated = {}
+        for label, bracket_list in brackets_by_label.items():
+            try:
+                base_year = int(label.split()[-1])
+                base_label = " ".join(label.split()[:-1])
+            except (ValueError, IndexError):
+                logging.warning(f"Could not extract year from bracket label: {label}")
+                continue
+
+            for year, inflation in self.base_inflation.items():
+                modifier = inflation.get("modifier", 1.0)
+                inflated_key = f"{base_label} {year}"
+                inflated[inflated_key] = [
+                    {**b, "min_salary": int(round(b["min_salary"] * modifier))}
+                    for b in bracket_list
+                ]
+        return inflated
+
+    def _taxable_social_security(self, year: int, ss_benefits: int, agi: int) -> int:
         if ss_benefits <= 0:
             return 0
 
-        brackets = self.social_security_brackets
+        brackets = self.social_security_brackets_by_year.get(year, [])
         if not brackets:
             logging.warning("Social Security taxability brackets not found")
-            return 0  # fallback if config is missing
+            return 0
 
-        # Step 1: Compute provisional income using AGI + ½ SS
         provisional = agi + int(round(0.5 * ss_benefits))
-
-        # Step 2: Determine maximum taxable portion
         max_rate = max(bracket["rate"] for bracket in brackets)
         max_taxable = int(round(max_rate * ss_benefits))
 
-        # Step 3: Layer provisional income through brackets
         taxable = 0
         for i, bracket in enumerate(brackets):
             lower = bracket["min_provisional"]
@@ -46,10 +102,8 @@ class TaxCalculator:
                 if i + 1 < len(brackets)
                 else float("inf")
             )
-
             if provisional < lower:
                 continue
-
             chunk = min(provisional, upper) - lower
             taxable += int(round(chunk * bracket["rate"]))
 
@@ -57,6 +111,7 @@ class TaxCalculator:
 
     def calculate_tax(
         self,
+        year: int,
         salary: int = 0,
         ss_benefits: int = 0,
         withdrawals: int = 0,
@@ -64,33 +119,27 @@ class TaxCalculator:
         roth: int = 0,
         penalty_basis: int = 0,
     ) -> Dict[str, int]:
-        # Compute taxable Social Security
-        provisional_income = salary + withdrawals + roth + gains
-        taxable_ss = self._taxable_social_security(ss_benefits, provisional_income)
-
-        # Compute AGI including all taxable income
-        agi = salary + withdrawals + roth + gains + taxable_ss
-
-        # Compute ordinary income after standard deduction
-        ordinary_income = max(
-            0, salary + withdrawals + roth + taxable_ss - self.standard_deduction
+        year_str = str(year)
+        deduction = self.standard_deduction_by_year.get(year_str, 0)
+        ordinary_brackets = self.ordinary_tax_brackets_by_year.get(
+            f"Federal {year}", []
+        )
+        capital_gains_brackets = self.capital_gains_tax_brackets_by_year.get(
+            f"long_term {year}", []
         )
 
-        # Ordinary tax
-        ordinary_tax = 0
-        for bracket_name, bracket_list in self.ordinary_tax_brackets.items():
-            if bracket_name != "social_security_taxability":
-                ordinary_tax += self._calculate_ordinary_tax(
-                    {bracket_name: bracket_list}, ordinary_income
-                )
+        provisional_income = salary + withdrawals + roth + gains
+        taxable_ss = self._taxable_social_security(
+            year, ss_benefits, provisional_income
+        )
+        agi = salary + withdrawals + roth + gains + taxable_ss
+        ordinary_income = max(0, salary + withdrawals + roth + taxable_ss - deduction)
 
-        # Capital gains tax
-        gains_tax = self._calculate_capital_gains_tax(ordinary_income, gains)
-
-        # Early withdrawal penalty (only on penalty-eligible withdrawals)
-        penalty_tax = 0
+        ordinary_tax = self._calculate_ordinary_tax(ordinary_brackets, ordinary_income)
+        gains_tax = self._calculate_capital_gains_tax(
+            ordinary_income, gains, capital_gains_brackets
+        )
         penalty_tax = int(round(0.10 * penalty_basis))
-
         total_tax = int(ordinary_tax + gains_tax + penalty_tax)
 
         return {
@@ -105,49 +154,42 @@ class TaxCalculator:
         }
 
     def _calculate_ordinary_tax(
-        self, brackets: Dict[str, List[Dict[str, float]]], income: int
+        self, bracket_list: List[Dict[str, float]], income: int
     ) -> int:
         tax = 0
-        for _, bracket_list in brackets.items():
-            for i, bracket in enumerate(bracket_list):
-                next_bracket = (
-                    bracket_list[i + 1] if i + 1 < len(bracket_list) else None
+        for i, bracket in enumerate(bracket_list):
+            next_bracket = bracket_list[i + 1] if i + 1 < len(bracket_list) else None
+            if income > bracket["min_salary"]:
+                upper = next_bracket["min_salary"] if next_bracket else float("inf")
+                taxable_chunk = min(income, upper) - bracket["min_salary"]
+                logging.debug(
+                    f"Bracket {i}: {bracket['min_salary']}–{upper} at {bracket['tax_rate']}, "
+                    f"taxable_chunk={taxable_chunk}"
                 )
-                if income > bracket["min_salary"]:
-                    taxable_chunk = (
-                        min(
-                            income,
-                            (
-                                next_bracket["min_salary"]
-                                if next_bracket
-                                else float("inf")
-                            ),
-                        )
-                        - bracket["min_salary"]
-                    )
-                    tax += taxable_chunk * bracket["tax_rate"]
-                else:
-                    break
+                tax += taxable_chunk * bracket["tax_rate"]
+            else:
+                logging.debug(
+                    f"Income {income} not above bracket floor {bracket['min_salary']}"
+                )
+
         return int(tax)
 
-    def _calculate_capital_gains_tax(self, ordinary_income: int, gains: int) -> int:
+    def _calculate_capital_gains_tax(
+        self, ordinary_income: int, gains: int, brackets: List[Dict[str, float]]
+    ) -> int:
         if gains <= 0:
             return 0
 
-        brackets = self.capital_gains_tax_brackets["long_term"]
         tax = 0
         remaining_gains = gains
-
         for i, bracket in enumerate(brackets):
             lower = bracket["min_salary"]
             upper = (
                 brackets[i + 1]["min_salary"] if i + 1 < len(brackets) else float("inf")
             )
-
             bracket_floor = max(lower, ordinary_income)
             if remaining_gains <= 0 or upper <= bracket_floor:
                 continue
-
             taxable_chunk = min(remaining_gains, upper - bracket_floor)
             tax += taxable_chunk * bracket["tax_rate"]
             remaining_gains -= taxable_chunk

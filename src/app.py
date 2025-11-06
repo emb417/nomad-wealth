@@ -257,14 +257,6 @@ def stage_init_components(
         liquidation_targets=policies_config["Liquidation"]["Targets"],
     )
 
-    # Tax calculator
-    tax_calc = TaxCalculator(
-        standard_deduction=tax_brackets["Standard Deduction"],
-        ordinary_brackets=tax_brackets["Ordinary"],
-        capital_gains_brackets=tax_brackets["Capital Gains"],
-        social_security_brackets=tax_brackets["Social Security Taxability"],
-    )
-
     # base inflation and modifiers
     inflation_defaults = inflation_rate.get("default", {"avg": 0.02, "std": 0.01})
     inflation_profiles = inflation_rate.get("profiles", {})
@@ -275,6 +267,12 @@ def stage_init_components(
     base_inflation = infl_gen.generate()
     description_inflation_modifiers = build_description_inflation_modifiers(
         base_inflation, inflation_profiles, inflation_defaults, years
+    )
+
+    # Tax Calculator
+    tax_calc = TaxCalculator(
+        base_brackets=tax_brackets,
+        base_inflation=base_inflation,
     )
 
     # gains
