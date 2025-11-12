@@ -3,18 +3,22 @@
     "holdings": [{ "asset_class": "Cash", "weight": 1.0 }],
     "can_go_negative": true,
     "allow_cash_fallback": false,
-    "bucket_type": "other"
+    "bucket_type": "cash"
   },
-  "Fixed-Income": {
-    "holdings": [{ "asset_class": "Bonds", "weight": 1.0 }],
+  "CD Ladder": {
+    "holdings": [
+      { "asset_class": "Bonds", "weight": 0.995 },
+      { "asset_class": "Cash", "weight": 0.005 }
+    ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
-    "bucket_type": "other"
+    "bucket_type": "taxable"
   },
-  "Taxable": {
+  "Brokerage": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.4 },
-      { "asset_class": "Stocks", "weight": 0.6 }
+      { "asset_class": "Bonds", "weight": 0.32 },
+      { "asset_class": "Stocks", "weight": 0.66 },
+      { "asset_class": "Cash", "weight": 0.02 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
@@ -22,7 +26,7 @@
   },
   "Tax-Deferred": {
     "holdings": [
-      { "asset_class": "Stocks", "weight": 0.8 },
+      { "asset_class": "Stocks", "weight": 0.9 },
       { "asset_class": "Bonds", "weight": 0.05 },
       { "asset_class": "Cash", "weight": 0.05 }
     ],
@@ -54,13 +58,15 @@
     "holdings": [{ "asset_class": "Vehicles", "weight": 1.0 }],
     "can_go_negative": false,
     "allow_cash_fallback": false,
-    "bucket_type": "taxable"
+    "bucket_type": "other"
   },
   "Property": {
-    "holdings": [{ "asset_class": "Property", "weight": 1.0 }],
+    "holdings": [
+      { "asset_class": "Property", "weight": 1.0, "cost_basis": 388000 }
+    ],
     "can_go_negative": false,
     "allow_cash_fallback": false,
-    "bucket_type": "taxable"
+    "bucket_type": "property"
   },
   "529K": {
     "holdings": [
@@ -71,19 +77,10 @@
     "allow_cash_fallback": true,
     "bucket_type": "other"
   },
-  "Deferred Comp": {
-    "holdings": [
-      { "asset_class": "Bonds", "weight": 0.6 },
-      { "asset_class": "Stocks", "weight": 0.4 }
-    ],
-    "can_go_negative": false,
-    "allow_cash_fallback": false,
-    "bucket_type": "tax_deferred"
-  },
   "SEPP IRA": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.6 },
-      { "asset_class": "Stocks", "weight": 0.4 }
+      { "asset_class": "Bonds", "weight": 0.4 },
+      { "asset_class": "Stocks", "weight": 0.6 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": false,

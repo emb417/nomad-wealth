@@ -1,3 +1,4 @@
+import logging
 import pandas as pd
 
 from abc import ABC, abstractmethod
@@ -5,6 +6,7 @@ from typing import Dict, List, Any
 
 # Internal Imports
 from buckets import Bucket
+from taxes import TaxCalculator
 
 
 class PolicyTransaction(ABC):
@@ -37,6 +39,57 @@ class PolicyTransaction(ABC):
         return 0
 
     def get_taxfree_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0
+
+    def get_fixed_income_interest(self, tx_month: pd.Period) -> int:
+        return 0
+
+    def get_fixed_income_withdrawal(self, tx_month: pd.Period) -> int:
+        return 0
+
+
+class MarketGainTransaction(PolicyTransaction):
+    def __init__(
+        self,
+        bucket_name: str,
+        asset_class: str,
+        amount: int,
+        flow_type: str,  # "gain", "loss", or "deposit" for bonds
+    ):
+        super().__init__()
+        self.bucket_name = bucket_name
+        self.asset_class = asset_class
+        self.amount = int(amount)
+        self.flow_type = flow_type
+        self._taxable_gain = 0
+
+    def apply(
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period, tax_calc: TaxCalculator
+    ) -> None:
+        bucket = buckets.get(self.bucket_name)
+        if bucket is None or self.amount == 0:
+            return
+
+        label = (
+            "Fixed Income Interest"
+            if self.asset_class == "Bonds" and self.flow_type == "deposit"
+            else (
+                f"Market Gains {self.asset_class}"
+                if self.amount > 0
+                else f"Market Losses {self.asset_class}"
+            )
+        )
+
+        bucket.deposit(
+            amount=self.amount,
+            source=label,
+            tx_month=tx_month,
+            flow_type=self.flow_type,
+        )
+
+    def get_fixed_income_interest(self, tx_month: pd.Period) -> int:
+        if self.asset_class == "Bonds" and self.flow_type == "deposit":
+            return self.amount
         return 0
 
 
@@ -138,6 +191,7 @@ class RefillTransaction(PolicyTransaction):
         amount: int,
         is_tax_deferred: bool = False,
         is_taxable: bool = False,
+        is_tax_free: bool = False,
         is_penalty_applicable: bool = False,
     ):
         super().__init__()
@@ -146,43 +200,75 @@ class RefillTransaction(PolicyTransaction):
         self.amount = int(amount)
         self.is_tax_deferred = bool(is_tax_deferred)
         self.is_taxable = bool(is_taxable)
+        self.is_tax_free = bool(is_tax_free)
         self.is_penalty_applicable = bool(is_penalty_applicable)
         # runtime-applied amounts and estimated gains (set by apply)
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
         self._realized_gain: int = 0
-        self._taxfree_amount: int = 0
 
-    def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
+    def apply(
+        self, buckets: Dict[str, Bucket], tx_month: pd.Period, tax_calc: TaxCalculator
+    ) -> None:
         src = buckets.get(self.source)
         tgt = buckets.get(self.target)
         self._applied_amount = 0
         self._taxable_gain = 0
         self._realized_gain = 0
-        self._taxfree_amount = 0
 
         if src is None or tgt is None or self.amount <= 0:
             return
 
-        # Use internal transfer for refill
         applied = src.transfer(self.amount, tgt, tx_month)
         self._applied_amount = applied
 
-        # Estimate taxable gain if applicable
-        if (
-            getattr(src, "bucket_type", None) == "taxable"
-            and self.is_taxable
-            and applied > 0
-        ):
-            self._taxable_gain = int(round(applied * 0.5))
-            self._realized_gain = int(round(applied))
+        if applied <= 0:
+            return
 
-        # Track tax-free withdrawal amount
-        if getattr(src, "bucket_type", None) == "tax_free" and applied > 0:
-            self._taxfree_amount = int(round(applied))
+        bucket_type = getattr(src, "bucket_type", None)
+        if bucket_type == "taxable" and self.is_taxable:
+            capital_gain = 0
+            for h in src.holdings:
+                asset = getattr(getattr(h, "asset_class", None), "name", None)
+                weight = getattr(h, "weight", 0.0)
+                if not isinstance(asset, str) or weight <= 0:
+                    continue
+                if asset == "Bonds":
+                    continue  # skip bond interest attribution
+                rate = tax_calc.TAXABLE_RATES.get(asset, 0.0)
+                slice_amount = applied * weight
+                capital_gain += slice_amount * rate
+
+            if getattr(tgt, "bucket_type", None) == "cash" and applied > 0:
+                self._realized_gain = (
+                    applied if not self._is_fixed_income_only(src) else 0
+                )
+
+            self._taxable_gain = int(round(capital_gain))
+
+        if bucket_type == "property" and self.is_taxable:
+            cost_basis = 0
+            for h in src.holdings:
+                cost_basis += int(getattr(h, "cost_basis", 0))
+
+            self._realized_gain = applied
+            self._taxable_gain = int(max(0, applied - cost_basis))
+
+    def _is_fixed_income_only(self, bucket: Bucket) -> bool:
+        return all(
+            getattr(getattr(h, "asset_class", None), "name", None) in {"Bonds", "Cash"}
+            for h in bucket.holdings
+        )
+
+    def get_fixed_income_withdrawal(self, tx_month: pd.Period) -> int:
+        if self.is_taxable and self._applied_amount > 0 and self._realized_gain == 0:
+            return self._applied_amount
+        return 0
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
-        return self._applied_amount if self.is_tax_deferred else 0
+        if self.is_tax_deferred:
+            return self._applied_amount
+        return 0
 
     def get_realized_gain(self, tx_month: pd.Period) -> int:
         return self._realized_gain
@@ -191,14 +277,20 @@ class RefillTransaction(PolicyTransaction):
         return self._taxable_gain
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
-        if self.is_penalty_applicable and (
-            self.is_tax_deferred or self._taxfree_amount > 0
-        ):
+        if self.is_penalty_applicable and (self.is_tax_deferred or self.is_tax_free):
             return self._applied_amount
         return 0
 
     def get_taxfree_withdrawal(self, tx_month: pd.Period) -> int:
-        return self._taxfree_amount
+        if self.is_tax_free:
+            return self._applied_amount
+        return 0
+
+    def get_salary(self, tx_month: pd.Period) -> int:
+        return 0
+
+    def get_unemployment(self, tx_month: pd.Period) -> int:
+        return 0
 
 
 class RentTransaction(PolicyTransaction):
@@ -399,6 +491,7 @@ class RothConversionTransaction(PolicyTransaction):
         super().__init__()
         self.source_bucket = source_bucket
         self.target_bucket = target_bucket
+        self._converted_amount = 0
 
     def apply(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period, amount: int
@@ -407,10 +500,12 @@ class RothConversionTransaction(PolicyTransaction):
         tgt = buckets.get(self.target_bucket)
         if src is None or tgt is None or src.balance() <= 0:
             return 0
-        return src.transfer(amount, tgt, tx_month)
+
+        self._converted_amount = src.transfer(amount, tgt, tx_month)
+        return self._converted_amount
 
     def get_withdrawal(self, tx_month: pd.Period) -> int:
-        return 0  # Roth conversions are penalty free withdrawals
+        return self._converted_amount
 
     def get_taxable_gain(self, tx_month: pd.Period) -> int:
         return 0  # Roth conversions are not capital gains
@@ -469,6 +564,9 @@ class SalaryTransaction(PolicyTransaction):
 
         return total
 
+    def get_unemployment(self, tx_month: pd.Period) -> int:
+        return 0
+
 
 class SEPPTransaction(PolicyTransaction):
     """
@@ -506,7 +604,7 @@ class SEPPTransaction(PolicyTransaction):
         return 0  # SEPP withdrawals are not capital gains
 
     def get_penalty_eligible_withdrawal(self, tx_month: pd.Period) -> int:
-        return 0  # SEPP withdrawals are exempt from early withdrawal penalties
+        return 0  # SEPP withdrawals are exempt
 
 
 class SocialSecurityTransaction(PolicyTransaction):
@@ -636,4 +734,7 @@ class UnemploymentTransaction(PolicyTransaction):
     def get_unemployment(self, tx_month: pd.Period) -> int:
         if self.start_period <= tx_month <= self.end_period:
             return self.monthly_amount
+        return 0
+
+    def get_salary(self, tx_month: pd.Period) -> int:
         return 0

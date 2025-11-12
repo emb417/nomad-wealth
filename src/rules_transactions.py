@@ -72,6 +72,9 @@ class FixedTransaction(RuleTransaction):
             amount = int(round(amount))
             bucket = buckets[bucket_name]
 
+            if amount == 0:
+                continue
+
             if amount >= 0:
                 bucket.deposit(amount, row["Description"], tx_month)
             else:
@@ -160,6 +163,8 @@ class RecurringTransaction(RuleTransaction):
 
             amount = int(round(amount))
             bucket = buckets[bucket_name]
+            if amount == 0:
+                continue
 
             if amount >= 0:
                 bucket.deposit(amount, row["Description"], tx_month)

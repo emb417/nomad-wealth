@@ -1,31 +1,19 @@
 {
   "Refill": {
     "Thresholds": {
-      "Cash": 30000,
-      "Fixed-Income": 90000
+      "Cash": 30000
     },
     "Amounts": {
-      "Cash": 20000,
-      "Fixed-Income": 30000
+      "Cash": 20000
     },
     "Sources": {
-      "Cash": [
-        "Fixed-Income",
-        "Taxable",
-        "SEPP IRA",
-        "Tax-Deferred",
-        "Tax-Free"
-      ],
-      "Fixed-Income": ["Taxable", "SEPP IRA", "Tax-Deferred", "Tax-Free"]
+      "Cash": ["Brokerage", "SEPP IRA", "Tax-Deferred", "Tax-Free"]
     }
   },
   "Salary": {
     "Targets": {
       "Cash": 0.9,
-      "Fixed-Income": 0.0,
-      "Taxable": 0.0,
-      "Tax-Deferred": 0.1,
-      "Tax-Free": 0.0
+      "Tax-Deferred": 0.1
     },
     "Annual Gross Income": 200000,
     "Annual Bonus Month": "2027-04",
@@ -54,15 +42,16 @@
   ],
   "RMD": {
     "Targets": {
-      "Cash": 0.1,
-      "Fixed-Income": 0.9,
-      "Taxable": 0.0
+      "Cash": 0.2,
+      "CD Ladder": 0.8
     }
   },
   "Roth Conversions": {
     "early": {
-      "Max Tax Rate": 0.12,
-      "Max Conversion Amount": 100000,
+      "Max Tax Rate": 0.1,
+      "Max Conversion Amount": 1000000,
+      "Tax Source Threshold": 50000,
+      "Tax Source Name": "Brokerage",
       "Allow Conversion": false,
       "Cutoff Age": 60
     },
@@ -90,17 +79,16 @@
   "Liquidation": {
     "Threshold": -20000,
     "Sources": [
-      "Taxable",
-      "Fixed-Income",
+      "Brokerage",
       "SEPP IRA",
       "Tax-Deferred",
+      "CD Ladder",
       "Tax-Free",
       "Vehicles",
       "Property"
     ],
     "Targets": {
-      "Cash": 0.1,
-      "Fixed-Income": 0.9
+      "Cash": 1.0
     }
   },
   "Property": {
@@ -112,5 +100,11 @@
     "Monthly Taxes": 724.0,
     "Monthly Insurance": 169.4,
     "Monthly Rent": 2500
+  },
+  "Unemployment": {
+    "Start Month": "2025-09",
+    "End Month": "2026-02",
+    "Monthly Amount": "3618",
+    "Target": "Cash"
   }
 }

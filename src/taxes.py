@@ -8,6 +8,12 @@ class TaxCalculator:
     brackets + SS rules), including standard deduction and early withdrawal penalties.
     """
 
+    TAXABLE_RATES: Dict[str, float] = {
+        "Stocks": 0.50,  # assuming 50% of gains are taxable
+        "Bonds": 0.04,  # interest-like exposure
+        "Penalty": 0.10,  # early-withdrawal fee
+    }
+
     def __init__(
         self,
         base_brackets: Dict[str, Any],
@@ -42,7 +48,6 @@ class TaxCalculator:
     ) -> Dict[str, List[Dict[str, float]]]:
         inflated = {}
         for label, bracket_list in brackets_by_type.items():
-            inflated[label] = []
             for year, inflation in self.base_inflation.items():
                 modifier = inflation.get("modifier", 1.0)
                 inflated_key = f"{label} {year}"
@@ -113,6 +118,7 @@ class TaxCalculator:
         self,
         year: int,
         salary: int = 0,
+        fixed_income_interest: int = 0,
         unemployment: int = 0,
         ss_benefits: int = 0,
         withdrawals: int = 0,
@@ -134,16 +140,31 @@ class TaxCalculator:
         taxable_ss = self._taxable_social_security(
             year, ss_benefits, provisional_income
         )
-        agi = salary + unemployment + withdrawals + roth + gains + taxable_ss
-        ordinary_income = max(
-            0, salary + unemployment + withdrawals + roth + taxable_ss - deduction
+        agi = (
+            salary
+            + unemployment
+            + withdrawals
+            + roth
+            + gains
+            + ss_benefits
+            + fixed_income_interest
         )
 
+        ordinary_income = max(
+            0,
+            salary
+            + unemployment
+            + withdrawals
+            + roth
+            + taxable_ss
+            + fixed_income_interest
+            - deduction,
+        )
         ordinary_tax = self._calculate_ordinary_tax(ordinary_brackets, ordinary_income)
         gains_tax = self._calculate_capital_gains_tax(
             ordinary_income, gains, capital_gains_brackets
         )
-        penalty_tax = int(round(0.10 * penalty_basis))
+        penalty_tax = int(round(self.TAXABLE_RATES["Penalty"] * penalty_basis))
         total_tax = int(ordinary_tax + gains_tax + penalty_tax)
 
         return {
@@ -155,7 +176,6 @@ class TaxCalculator:
             "roth_conversions": roth,
             "taxable_ss": taxable_ss,
             "total_tax": total_tax,
-            "unemployment_income": unemployment,
         }
 
     def _calculate_ordinary_tax(

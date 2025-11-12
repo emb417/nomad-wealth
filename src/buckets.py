@@ -1,6 +1,6 @@
 import pandas as pd
 import numpy as np
-from typing import List, Optional, Tuple
+from typing import List, Optional, Tuple, Dict, Any
 
 from audit import FlowTracker
 
@@ -36,8 +36,7 @@ class Holding:
         self.asset_class = asset_class
         self.weight = weight
         self.amount = amount
-        # default cost_basis to the current amount when not provided
-        self.cost_basis = cost_basis if cost_basis is not None else amount
+        self.cost_basis = cost_basis if cost_basis is not None else 11
 
     def apply_return(self, avg: float, std: float) -> None:
         """
@@ -46,7 +45,6 @@ class Holding:
         rate = self.asset_class.sample_return(avg, std)
         growth = int(round(self.amount * rate))
         self.amount += growth
-        # keep cost_basis unchanged on market returns
 
 
 class Bucket:
@@ -84,6 +82,12 @@ class Bucket:
     def balance(self) -> int:
         return sum(h.amount for h in self.holdings)
 
+    def holdings_as_dicts(self) -> List[Dict[str, Any]]:
+        return [
+            {"asset_class": h.asset_class.name, "weight": h.weight}
+            for h in self.holdings
+        ]
+
     def deposit(
         self,
         amount: int,
@@ -103,11 +107,9 @@ class Bucket:
         for h in self.holdings[:-1]:
             share = int(round(amount * (h.weight / total_weight)))
             h.amount += share
-            h.cost_basis += share
             remainder -= share
 
         self.holdings[-1].amount += remainder
-        self.holdings[-1].cost_basis += remainder
 
     def transfer(
         self,
@@ -133,10 +135,8 @@ class Bucket:
         for h in target_bucket.holdings[:-1]:
             share = int(round(transferring * (h.weight / total_weight)))
             h.amount += share
-            h.cost_basis += share
             remainder -= share
         target_bucket.holdings[-1].amount += remainder
-        target_bucket.holdings[-1].cost_basis += remainder
 
         # Record single transfer flow
         if self.flow_tracker and tx_month:
@@ -148,7 +148,7 @@ class Bucket:
 
     def _withdraw_from_holdings(self, amount: int) -> int:
         """
-        Core helper: remove up to `amount` from holdings, reducing cost_basis proportionally.
+        Core helper: remove up to `amount` from holdings.
         Returns actual withdrawn (non-negative).
         """
         if amount <= 0:
@@ -163,10 +163,6 @@ class Bucket:
         if self.can_go_negative and to_withdraw > available:
             primary = self.holdings[0]
             primary.amount -= to_withdraw
-            # once negative, cost_basis semantics are undefined; set to zero
-            primary.cost_basis = max(
-                0, primary.cost_basis - min(primary.cost_basis, to_withdraw)
-            )
             return to_withdraw
 
         # Otherwise deduct proportionally from holdings in order
@@ -175,14 +171,6 @@ class Bucket:
                 break
             deduct = min(h.amount, remaining)
             h.amount -= deduct
-            # reduce cost_basis pro rata (if cost_basis exists)
-            if h.cost_basis > 0:
-                basis_deduct = (
-                    int(round(deduct * (h.cost_basis / (h.amount + deduct))))
-                    if (h.amount + deduct) > 0
-                    else 0
-                )
-                h.cost_basis = max(0, h.cost_basis - basis_deduct)
             remaining -= deduct
 
         return to_withdraw

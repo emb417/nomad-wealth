@@ -40,7 +40,7 @@ from visualization import (
     plot_historical_balance,
     plot_historical_bucket_gains,
     plot_mc_networth,
-    plot_mc_tax_bars,
+    plot_mc_tax_totals,
     plot_mc_taxable_balances,
 )
 
@@ -129,7 +129,8 @@ def create_bucket(
         cls_name = piece["asset_class"]
         weight = float(piece["weight"])
         amt = int(round(starting_balance * weight))
-        holdings.append(Holding(AssetClass(cls_name), weight, amt))
+        basis = piece.get("cost_basis", amt)
+        holdings.append(Holding(AssetClass(cls_name), weight, amt, cost_basis=basis))
 
     # adjust for rounding drift
     drift = starting_balance - sum(h.amount for h in holdings)
@@ -488,12 +489,17 @@ def main():
             ):
                 trial, forecast_df, taxes_df, flow_df = future.result()
 
-                taxable_cols = [col for col in forecast_df.columns if "Taxable" in col]
+                taxable_cols = [
+                    col
+                    for col in forecast_df.columns
+                    if json_data["buckets"].get(col, {}).get("bucket_type") == "taxable"
+                ]
 
                 target_row = forecast_df[
                     forecast_df["Month"]
                     == pd.Period(json_data["policies"]["SEPP"]["End Month"], freq="M")
                 ]
+
                 taxable_balance = (
                     target_row[taxable_cols].sum(axis=1).values[0]
                     if not target_row.empty
@@ -503,7 +509,9 @@ def main():
 
                 update_property_liquidation_summary(summary, forecast_df)
 
-                forecast_df["Net Worth"] = forecast_df.iloc[:, 1:].sum(axis=1)
+                forecast_df["Net Worth"] = (
+                    forecast_df.iloc[:, 1:].sum(axis=1).apply(lambda x: int(round(x)))
+                )
                 forecast_df["Year"] = forecast_df["Month"].dt.year
 
                 # Store year-end net worth per trial
@@ -590,7 +598,7 @@ def main():
             show=SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
             save=SAVE_TAXABLE_CHART,
         )
-        plot_mc_tax_bars(
+        plot_mc_tax_totals(
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,

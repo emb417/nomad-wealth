@@ -107,8 +107,10 @@ def plot_example_income_taxes(
         "Salary": "#08306b",
         "Social Security": "#08306b",
         "Tax-Deferred Withdrawals": "#1f77b4",
+        "Fixed Income Interest": "#74b6da",
         "Roth Conversions": "#4dabf7",
-        "Realized Gains": "#a6cee3",
+        "Realized Gains": "#accfe1",
+        "Fixed Income Withdrawals": "#b1b1b1",
         "Tax-Free Withdrawals": "#1b9e77",
     }
     tax_colors = {
@@ -218,8 +220,8 @@ def plot_example_income_taxes(
     max_y = max(
         taxes_df["Adjusted Gross Income (AGI)"].max(), taxes_df["Total Tax"].max()
     )
-    fig.update_yaxes(range=[0, max_y], tickformat="$,.0f", row=1, col=1)
-    fig.update_yaxes(range=[0, max_y], tickformat="$,.0f", row=1, col=2)
+    fig.update_yaxes(tickformat="$,.0f", row=1, col=1)
+    fig.update_yaxes(tickformat="$,.0f", row=1, col=2)
 
     if show:
         fig.show()
@@ -300,8 +302,8 @@ def plot_example_monthly_expenses(
     if show:
         fig.show()
     if save:
-        csv_path = f"{export_path}monthly_cash_withdrawals_{ts}.csv"
-        html_path = f"{export_path}monthly_cash_withdrawals_{ts}.html"
+        csv_path = f"{export_path}{trial+1:04d}_monthly_expenses_{ts}.csv"
+        html_path = f"{export_path}{trial+1:04d}_monthly_expenses_{ts}.html"
         monthly_totals.to_csv(csv_path, index_label="Month")
         fig.write_html(html_path)
         logging.debug(f"Monthly cash withdrawals saved to {html_path}")
@@ -318,7 +320,6 @@ def plot_example_transactions(
     df = flow_df.copy()
     df["date"] = df["date"].dt.to_timestamp()
     df["year"] = df["date"].dt.year
-    df = df[df["trial"] == trial]
 
     years = sorted(df["year"].unique())
 
@@ -418,7 +419,6 @@ def plot_example_transactions(
                 method="update",
                 args=[
                     {"visible": visibility},
-                    {"title": {"text": f"Trial {trial+1:04d} | {year} Transactions"}},
                 ],
                 label=str(year),
             )
@@ -440,8 +440,8 @@ def plot_example_transactions(
     if show:
         fig.show()
     if save:
-        fig.write_html(f"{export_path}{trial+1:04d}_flow_transitions_{ts}.html")
-        flow_df.to_csv(f"{export_path}{trial+1:04d}_flow_transitions_{ts}.csv")
+        fig.write_html(f"{export_path}{trial+1:04d}_transactions_{ts}.html")
+        flow_df.to_csv(f"{export_path}{trial+1:04d}_transactions_{ts}.csv")
 
 
 def plot_example_transactions_in_context(
@@ -462,7 +462,6 @@ def plot_example_transactions_in_context(
 
     flow_df = flow_df.copy()
     flow_df["date"] = flow_df["date"].dt.to_timestamp()
-    flow_df = flow_df[flow_df["trial"] == trial]
     flow_df["year"] = flow_df["date"].dt.year
 
     sankey_traces = []
@@ -614,7 +613,7 @@ def plot_example_transactions_in_context(
     if show:
         fig.show()
     if save:
-        fig.write_html(f"{export_path}{trial+1:04d}_sankey_{ts}.html")
+        fig.write_html(f"{export_path}{trial+1:04d}_transactions_in_context_{ts}.html")
 
 
 def plot_example_forecast(
@@ -631,12 +630,16 @@ def plot_example_forecast(
     Renders and optionally saves the bucket‐by‐bucket forecast for one trial.
     """
     hist_df = coerce_month_column(hist_df.copy())
+    cols_to_sum = [col for col in hist_df.columns if col != "Month"]
+    hist_df["Net Worth"] = hist_df[cols_to_sum].sum(axis=1)
+
     forecast_df = coerce_month_column(forecast_df.copy())
     full_df = pd.concat([hist_df, forecast_df], ignore_index=True)
 
     cols = list(full_df.columns)
     cols.insert(1, cols.pop(cols.index("Net Worth")))
     full_df = full_df[cols]
+    full_df["Net Worth"] = full_df["Net Worth"].astype(int)
 
     title = f"Trial {trial+1:04d} | Forecast by Bucket"
 
@@ -709,9 +712,9 @@ def plot_example_forecast(
     if show:
         fig.show()
     if save:
-        prefix = f"{export_path}{trial+1:04d}_"
-        bucket_csv = f"{prefix}buckets_{ts}.csv"
-        html = f"{prefix}buckets_{ts}.html"
+        prefix = f"{export_path}{trial+1:04d}"
+        bucket_csv = f"{prefix}_forecast_{ts}.csv"
+        html = f"{prefix}_forecast_{ts}.html"
 
         full_df.to_csv(bucket_csv, index=False)
         fig.write_html(html)
@@ -1135,7 +1138,7 @@ def plot_mc_networth(
         logging.debug(f"Monte Carlo files saved to {html}")
 
 
-def plot_mc_tax_bars(
+def plot_mc_tax_totals(
     mc_tax_df: pd.DataFrame,
     sim_examples: np.ndarray,
     ts: str,

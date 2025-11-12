@@ -20,5 +20,7 @@ Start Month,End Month,Bucket,Amount,Type,Description
 2030-10,2075-04,Cash,-425,Health,Health Prescriptions etc
 2025-09,2030-09,Cash,-400,Travel,Travel in US
 2030-10,2075-04,Cash,-600,Travel,Travel in US
+2025-09,2075-04,Cash,-345,Utilities,Utils Elec and Gas
+2025-09,2075-04,Cash,-300,Utilities,Utils Waste and Water
 2025-08,2026-12,Cash,-345,Voice and Data,Utils Voice and Data
 2027-01,2075-04,Cash,-250,Voice and Data,Utils Voice and Data

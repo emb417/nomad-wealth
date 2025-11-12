@@ -100,7 +100,8 @@ class ThresholdRefillPolicy:
                     continue
 
                 is_def = bt == "tax_deferred"
-                is_tax = bt == "taxable"
+                is_tax = bt in {"taxable", "property"}
+                is_free = bt == "tax_free"
 
                 txns.append(
                     RefillTransaction(
@@ -109,6 +110,7 @@ class ThresholdRefillPolicy:
                         amount=int(transfer),
                         is_tax_deferred=is_def,
                         is_taxable=is_tax,
+                        is_tax_free=is_free,
                     )
                 )
 
@@ -160,7 +162,8 @@ class ThresholdRefillPolicy:
                 continue
 
             is_def = bt == "tax_deferred"
-            is_tax = bt == "taxable"
+            is_tax = bt in {"taxable", "property"}
+            is_free = bt == "tax_free"
             is_penalty_applicable = (
                 self.taxable_eligibility is not None
                 and tx_month < self.taxable_eligibility
@@ -186,6 +189,7 @@ class ThresholdRefillPolicy:
                         amount=tgt_amount,
                         is_tax_deferred=is_def,
                         is_taxable=is_tax,
+                        is_tax_free=is_free,
                         is_penalty_applicable=is_penalty_applicable,
                     )
                 )

@@ -1,6 +1,5 @@
 import logging
 import pandas as pd
-import math
 
 from typing import Any, Dict, List, Tuple, Optional, Union
 
@@ -68,7 +67,10 @@ class ForecastEngine:
             self._apply_irmaa_premiums(forecast_month)
             self._apply_rule_transactions(self.buckets, forecast_month)
             self._apply_policy_transactions(self.buckets, forecast_month)
-            self.market_gains.apply(self.buckets, forecast_month)
+            gain_txns = self.market_gains.apply(self.buckets, forecast_month)
+            self._apply_market_gain_transactions(
+                gain_txns, self.buckets, forecast_month
+            )
 
             refill_txns = self.refill_policy.generate_refills(
                 self.buckets, forecast_month
@@ -80,7 +82,9 @@ class ForecastEngine:
             )
             self._apply_liquidation_transactions(liq_txns, self.buckets, forecast_month)
 
-            all_policy_txns = self.policy_transactions + refill_txns + liq_txns
+            all_policy_txns = (
+                self.policy_transactions + gain_txns + refill_txns + liq_txns
+            )
 
             self._update_results(
                 forecast_month,
@@ -261,13 +265,17 @@ class ForecastEngine:
             if not isinstance(tx, (RothConversionTransaction, SEPPTransaction)):
                 tx.apply(buckets, tx_month)
 
+    def _apply_market_gain_transactions(self, gain_txns, buckets, tx_month):
+        for tx in gain_txns:
+            tx.apply(buckets, tx_month, self.tax_calc)
+
     def _apply_refill_transactions(self, refill_txns, buckets, tx_month):
         for tx in refill_txns:
-            tx.apply(buckets, tx_month)
+            tx.apply(buckets, tx_month, self.tax_calc)
 
     def _apply_liquidation_transactions(self, liq_txns, buckets, tx_month):
         for tx in liq_txns:
-            tx.apply(buckets, tx_month)
+            tx.apply(buckets, tx_month, self.tax_calc)
 
     def _update_results(
         self,
@@ -277,9 +285,18 @@ class ForecastEngine:
     ):
         year = forecast_month.year
 
-        unemployment, salary, ss, deferred, realized, taxable, penalty, taxfree = (
-            self._accumulate_monthly_tax_inputs(forecast_month, all_policy_txns)
-        )
+        (
+            fixed_income_interest,
+            fixed_income_withdrawals,
+            unemployment,
+            salary,
+            ss,
+            deferred,
+            realized,
+            taxable,
+            penalty,
+            taxfree,
+        ) = self._accumulate_monthly_tax_inputs(forecast_month, all_policy_txns)
 
         self._update_tax_logs(
             year,
@@ -290,8 +307,10 @@ class ForecastEngine:
             deferred,
             realized,
             taxable,
-            penalty,
+            fixed_income_interest,
+            fixed_income_withdrawals,
             taxfree,
+            penalty,
         )
 
         self._update_tax_estimate_if_needed(forecast_month, buckets)
@@ -308,6 +327,12 @@ class ForecastEngine:
         self._record_snapshot(forecast_month, buckets)
 
     def _accumulate_monthly_tax_inputs(self, tx_month, txs):
+        fixed_income_interest = sum(
+            tx.get_fixed_income_interest(tx_month) for tx in txs
+        )
+        fixed_income_withdrawals = sum(
+            tx.get_fixed_income_withdrawal(tx_month) for tx in txs
+        )
         unemployment = sum(tx.get_unemployment(tx_month) for tx in txs)
         salary = sum(tx.get_salary(tx_month) for tx in txs)
         ss = sum(tx.get_social_security(tx_month) for tx in txs)
@@ -316,7 +341,18 @@ class ForecastEngine:
         taxable = sum(tx.get_taxable_gain(tx_month) for tx in txs)
         penalty = sum(tx.get_penalty_eligible_withdrawal(tx_month) for tx in txs)
         taxfree = sum(tx.get_taxfree_withdrawal(tx_month) for tx in txs)
-        return unemployment, salary, ss, deferred, realized, taxable, penalty, taxfree
+        return (
+            fixed_income_interest,
+            fixed_income_withdrawals,
+            unemployment,
+            salary,
+            ss,
+            deferred,
+            realized,
+            taxable,
+            penalty,
+            taxfree,
+        )
 
     def _update_tax_logs(
         self,
@@ -328,8 +364,10 @@ class ForecastEngine:
         deferred,
         realized,
         taxable,
-        penalty,
+        fixed_income_interest,
+        fixed_income_withdrawals,
         taxfree,
+        penalty,
     ):
         ylog = yearly_log.setdefault(
             year,
@@ -339,20 +377,24 @@ class ForecastEngine:
                 "Taxable Gains": 0,
                 "Penalty Tax": 0,
                 "Roth Conversions": 0,
+                "Fixed Income Interest": 0,
                 "Social Security": 0,
                 "Salary": 0,
                 "Unemployment": 0,
                 "Tax-Free Withdrawals": 0,
+                "Fixed Income Withdrawals": 0,
             },
         )
         ylog["Unemployment"] += unemployment
         ylog["Salary"] += salary
         ylog["Social Security"] += ss
         ylog["Tax-Deferred Withdrawals"] += deferred
+        ylog["Fixed Income Interest"] += fixed_income_interest
         ylog["Realized Gains"] += realized
         ylog["Taxable Gains"] += taxable
         ylog["Penalty Tax"] += penalty
         ylog["Tax-Free Withdrawals"] += taxfree
+        ylog["Fixed Income Withdrawals"] += fixed_income_withdrawals
 
     def _update_tax_estimate_if_needed(self, forecast_date, buckets):
         year = forecast_date.year
@@ -365,6 +407,7 @@ class ForecastEngine:
 
         ytd = {
             "unemployment": ylog.get("Unemployment", 0),
+            "fixed_income_interest": ylog.get("Fixed Income Interest", 0),
             "salary": ylog.get("Salary", 0),
             "ss_benefits": ylog.get("Social Security", 0),
             "withdrawals": ylog.get("Tax-Deferred Withdrawals", 0),
@@ -439,6 +482,7 @@ class ForecastEngine:
 
     def _apply_roth_conversion_if_eligible(
         self,
+        buckets: Dict[str, Bucket],
         forecast_month: pd.Period,
         ylog: dict,
     ) -> int:
@@ -457,6 +501,18 @@ class ForecastEngine:
                 f"[Roth] Skipping conversion in {forecast_month} — phase disallows conversion"
             )
             return 0
+
+        source_name = phase_config.get("Tax Source Name")
+        min_threshold = phase_config.get("Tax Source Threshold")
+
+        if isinstance(source_name, str) and isinstance(min_threshold, (int, float)):
+            source_bucket = self.buckets.get(source_name)
+            source_balance = source_bucket.balance() if source_bucket else 0
+            if source_balance < min_threshold:
+                logging.debug(
+                    f"[Roth] Skipping conversion in {forecast_month} — {source_name} balance ${source_balance:,} below threshold ${min_threshold:,}"
+                )
+                return 0
 
         max_rate = phase_config.get("Max Tax Rate", 0.0)
 
@@ -502,6 +558,7 @@ class ForecastEngine:
 
         # Apply Roth conversion using finalized year-end snapshot
         converted = self._apply_roth_conversion_if_eligible(
+            buckets=buckets,
             forecast_month=forecast_month,
             ylog=ylog,
         )
@@ -511,7 +568,7 @@ class ForecastEngine:
         penalty_basis = ylog.get("Penalty Tax", 0)
         final_tax = self.tax_calc.calculate_tax(
             year=year,
-            unemployment=ylog.get("Unemployment", 0),
+            fixed_income_interest=ylog.get("Fixed Income Interest", 0),
             salary=ylog.get("Salary", 0),
             ss_benefits=ylog.get("Social Security", 0),
             withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
@@ -545,6 +602,7 @@ class ForecastEngine:
                 "Adjusted Gross Income (AGI)": final_tax.get("agi"),
                 "Ordinary Income": final_tax.get("ordinary_income"),
                 "Total Tax": final_tax["total_tax"],
+                "Fixed Income Withdrawals": ylog.get("Fixed Income Withdrawals", 0),
                 "Tax-Free Withdrawals": ylog.get("Tax-Free Withdrawals", 0),
                 "Tax-Deferred Withdrawals": ylog.get("Tax-Deferred Withdrawals", 0),
                 "Penalty Tax": final_tax["penalty_tax"],
@@ -552,6 +610,7 @@ class ForecastEngine:
                 "Taxable Gains": ylog.get("Taxable Gains", 0),
                 "Capital Gains Tax": final_tax["capital_gains_tax"],
                 "Roth Conversions": converted,
+                "Fixed Income Interest": ylog.get("Fixed Income Interest", 0),
                 "Unemployment": ylog.get("Unemployment", 0),
                 "Salary": ylog.get("Salary", 0),
                 "Social Security": ylog.get("Social Security", 0),
