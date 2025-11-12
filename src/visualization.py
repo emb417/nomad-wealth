@@ -291,7 +291,7 @@ def plot_example_monthly_expenses(
     )
 
     fig.update_layout(
-        title=f"Trial {trial+1:04d} | Monthly Cash Withdrawals",
+        title=f"Trial {trial+1:04d} | Monthly Expenses",
         yaxis_tickformat="$,.0f",
         barmode="stack",
         template="plotly_white",
