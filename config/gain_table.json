@@ -5,9 +5,9 @@
     "High": { "avg": 0.0056, "std": 0.04 }
   },
   "Bonds": {
-    "Low": { "avg": 0.001, "std": 0.0005 },
-    "Average": { "avg": 0.002, "std": 0.001 },
-    "High": { "avg": 0.0035, "std": 0.002 }
+    "Low": { "avg": 0.002, "std": 0.001 },
+    "Average": { "avg": 0.0035, "std": 0.0015 },
+    "High": { "avg": 0.005, "std": 0.002 }
   },
   "Property": {
     "Low": { "avg": 0.001, "std": 0.0015 },
