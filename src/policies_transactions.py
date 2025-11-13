@@ -547,7 +547,7 @@ class SalaryTransaction(PolicyTransaction):
             amount = int(round(total * pct))
             bucket.deposit(amount, "Salary", tx_month)
 
-        if tx_month == self.bonus_period:
+        if tx_month.month == self.bonus_period.month:
             bucket = buckets.get(list(self.bucket_pcts.keys())[0])
             if bucket is None:
                 return
