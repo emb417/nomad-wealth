@@ -1357,25 +1357,33 @@ def plot_mc_taxable_balances(
     export_path: str = "export/",
 ):
     """
-    Renders and optionally saves a bar chart of Taxable balances in Jan 2035 per trial.
+    Renders and optionally saves a bar chart of Taxable balances in Jan 2035 per trial,
+    excluding the top 10% of trials for display, but calculating percentiles from the full dataset.
     """
-    sim_size = len(mc_taxable_df)
     mc_taxable_df = mc_taxable_df.copy()
     mc_taxable_df.index = pd.Index(mc_taxable_df.index).astype(int)
-    taxable_balances = mc_taxable_df["Taxable"]
 
-    p15 = taxable_balances.quantile(0.15)
-    median = taxable_balances.median()
-    p85 = taxable_balances.quantile(0.85)
+    # Calculate percentiles from full dataset
+    p15 = mc_taxable_df["Taxable"].quantile(0.15)
+    median = mc_taxable_df["Taxable"].median()
+    p85 = mc_taxable_df["Taxable"].quantile(0.85)
 
-    trial_labels = [f"Trial {int(trial)+1:04d}" for trial in taxable_balances.index]
+    # Filter top 10% for display only
+    p90 = mc_taxable_df["Taxable"].quantile(0.90)
+    filtered_df = mc_taxable_df[mc_taxable_df["Taxable"] <= p90]
+
+    # Sort by trial index
+    sorted_df = filtered_df.sort_index()
+    trial_indices = sorted_df.index.to_list()
+    taxable_balances = sorted_df["Taxable"]
+    trial_labels = [f"Trial {trial+1:04d}" for trial in trial_indices]
     bar_colors = [
-        "purple" if trial in sim_examples else "lightgray"
-        for trial in taxable_balances.index
+        "purple" if trial in sim_examples else "lightgray" for trial in trial_indices
     ]
-    hover_texts = [f"Taxable Balance: ${val:,.0f}" for val in taxable_balances.values]
+    hover_texts = [f"Taxable Balance: ${val:,.0f}" for val in taxable_balances]
 
-    percent_positive = 100 * (mc_taxable_df["Taxable"] > 0).sum() / len(mc_taxable_df)
+    sim_size = len(mc_taxable_df)
+    percent_positive = 100 * (mc_taxable_df["Taxable"] > 0).sum() / sim_size
 
     def get_color(value):
         return "green" if value > 84 else "blue" if value > 74 else "red"
@@ -1395,44 +1403,24 @@ def plot_mc_taxable_balances(
         )
     )
 
-    # Reference lines
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[p85] * len(trial_labels),
-            mode="lines",
-            name="85th Percentile",
-            line=dict(color="blue", dash="dash"),
-            hovertemplate="85th Percentile: %{y:$,.0f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[median] * len(trial_labels),
-            mode="lines",
-            name="Median",
-            line=dict(color="green", width=2),
-            hovertemplate="Median: %{y:$,.0f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[p15] * len(trial_labels),
-            mode="lines",
-            name="15th Percentile",
-            line=dict(color="blue", dash="dash"),
-            hovertemplate="15th Percentile: %{y:$,.0f}<extra></extra>",
-        )
-    )
-
-    # Annotate reference lines
+    # Reference lines from full dataset
     for y, label, color in [
         (p15, "15th Percentile", "blue"),
         (median, "Median", "green"),
         (p85, "85th Percentile", "blue"),
     ]:
+        fig.add_trace(
+            go.Scatter(
+                x=trial_labels,
+                y=[y] * len(trial_labels),
+                mode="lines",
+                name=label,
+                line=dict(
+                    color=color, dash="dash" if "Percentile" in label else "solid"
+                ),
+                hovertemplate=f"{label}: %{{y:$,.0f}}<extra></extra>",
+            )
+        )
         fig.add_annotation(
             x=trial_labels[-1],
             y=y,
