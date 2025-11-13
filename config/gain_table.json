@@ -1,13 +1,13 @@
 {
   "Stocks": {
-    "Low": { "avg": 0.0035, "std": 0.035 },
-    "Average": { "avg": 0.0045, "std": 0.04 },
-    "High": { "avg": 0.0065, "std": 0.045 }
+    "Low": { "avg": 0.004, "std": 0.04 },
+    "Average": { "avg": 0.0065, "std": 0.044 },
+    "High": { "avg": 0.008, "std": 0.05 }
   },
   "Fixed-Income": {
-    "Low": { "avg": 0.0015, "std": 0.0001 },
-    "Average": { "avg": 0.0025, "std": 0.0002 },
-    "High": { "avg": 0.004, "std": 0.0003 }
+    "Low": { "avg": 0.0015, "std": 0.0002 },
+    "Average": { "avg": 0.0025, "std": 0.0004 },
+    "High": { "avg": 0.004, "std": 0.0004 }
   },
   "Property": {
     "Low": { "avg": 0.0005, "std": 0.0008 },
