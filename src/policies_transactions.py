@@ -1,4 +1,3 @@
-import logging
 import pandas as pd
 
 from abc import ABC, abstractmethod
@@ -193,6 +192,7 @@ class RefillTransaction(PolicyTransaction):
         is_taxable: bool = False,
         is_tax_free: bool = False,
         is_penalty_applicable: bool = False,
+        num_of_targets: int = 1,
     ):
         super().__init__()
         self.source = source
@@ -206,6 +206,7 @@ class RefillTransaction(PolicyTransaction):
         self._applied_amount: int = 0
         self._taxable_gain: int = 0
         self._realized_gain: int = 0
+        self.num_of_targets = int(num_of_targets)
 
     def apply(
         self, buckets: Dict[str, Bucket], tx_month: pd.Period, tax_calc: TaxCalculator
@@ -252,7 +253,9 @@ class RefillTransaction(PolicyTransaction):
                 cost_basis += int(getattr(h, "cost_basis", 0))
 
             self._realized_gain = applied
-            self._taxable_gain = int(max(0, applied - cost_basis))
+            self._taxable_gain = int(
+                max(0, applied - (cost_basis / self.num_of_targets))
+            )
 
     def _is_fixed_income_only(self, bucket: Bucket) -> bool:
         return all(

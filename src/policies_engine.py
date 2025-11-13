@@ -153,11 +153,7 @@ class ThresholdRefillPolicy:
                 continue
 
             full_balance = src.balance()
-            take = (
-                full_balance
-                if bucket_name == "Property"
-                else min(full_balance, shortfall)
-            )
+            take = full_balance if bt == "property" else min(full_balance, shortfall)
             if take <= 0:
                 continue
 
@@ -171,7 +167,7 @@ class ThresholdRefillPolicy:
             )
 
             # Determine target routing
-            if bucket_name == "Property":
+            if bt == "property":
                 targets = self.liquidation_targets
             else:
                 targets = {"Cash": 1.0}
@@ -197,6 +193,7 @@ class ThresholdRefillPolicy:
                         is_taxable=is_tax,
                         is_tax_free=is_free,
                         is_penalty_applicable=is_penalty_applicable,
+                        num_of_targets=len(targets),
                     )
                 )
 
