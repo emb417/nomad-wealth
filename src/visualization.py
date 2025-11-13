@@ -914,6 +914,97 @@ def plot_historical_bucket_gains(
         fig.write_html(export_path + f"historical_buckets_{ts}.html")
 
 
+def plot_mc_monthly_returns(
+    mc_monthly_returns_df: pd.DataFrame,
+    sim_examples: np.ndarray,
+    ts: str,
+    show: bool,
+    save: bool,
+    export_path: str = "export/",
+):
+    """
+    Renders and optionally saves a scatter plot of monthly return distributions for each asset class,
+    showing scenario, trial number, inflation rate, and modifier in hover info.
+    """
+    df = coerce_month_column(mc_monthly_returns_df.copy())
+
+    if "monthly_returns" not in df.columns or "inflation_rate" not in df.columns:
+        logging.warning("monthly_returns or inflation_rate missing from DataFrame.")
+        return
+
+    sim_size = df["Trial"].nunique()
+    df["MonthStr"] = df["Month"].dt.strftime("%Y-%m")
+
+    # Discover asset classes from first row
+    asset_classes = [
+        a
+        for a in list(df["monthly_returns"].iloc[0].keys())
+        if a not in ["Cash", "Vehicles"]
+    ]
+    scenario_color_map = {"Low": "#1f77b4", "Average": "#2ca02c", "High": "#d62728"}
+
+    for asset_class in asset_classes:
+        df_asset = df.copy()
+        df_asset["Scenario"] = df_asset["monthly_returns"].apply(
+            lambda d: d[asset_class]["scenario"]
+        )
+        df_asset["Rate"] = df_asset["monthly_returns"].apply(
+            lambda d: d[asset_class]["rate"]
+        )
+        df_asset["Inflation"] = df_asset["inflation_rate"]
+
+        fig = go.Figure()
+
+        for scenario, color in scenario_color_map.items():
+            scenario_df = df_asset[df_asset["Scenario"] == scenario]
+            fig.add_trace(
+                go.Scatter(
+                    x=scenario_df["MonthStr"],
+                    y=scenario_df["Rate"],
+                    mode="markers",
+                    marker=dict(color=color, size=6, opacity=0.6),
+                    name=scenario,
+                    text=(scenario_df["Trial"] + 1).map("{:04.0f}".format),
+                    customdata=scenario_df[["Inflation"]],
+                    hovertemplate=(
+                        "Month: %{x}<br>"
+                        "Trial: %{text}<br>"
+                        "Inflation: %{customdata[0]:.2%}<br>"
+                        f"Scenario: {scenario}<br>"
+                        "Return: %{y:.2%}<extra></extra>"
+                    ),
+                )
+            )
+
+        confidence_color = (
+            "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
+        )
+
+        title = (
+            f"Monthly Return Distribution for {asset_class}"
+            f" | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
+        )
+
+        fig.update_layout(
+            title=title,
+            title_x=0.5,
+            template="plotly_white",
+            hoverlabel=dict(align="left"),
+            hovermode="closest",
+            showlegend=False,
+            yaxis=dict(tickformat=".2%"),
+        )
+
+        if show:
+            fig.show()
+        if save:
+            csv_path = f"{export_path}mc_monthly_returns_{ts}.csv"
+            html_path = f"{export_path}mc_monthly_returns_{asset_class}_{ts}.html"
+            df.to_csv(csv_path, index=False)
+            fig.write_html(html_path)
+            logging.debug(f"Monthly returns for {asset_class} saved to {html_path}")
+
+
 def plot_mc_networth(
     mc_networth_df: pd.DataFrame,
     sim_examples: np.ndarray,
@@ -1000,8 +1091,8 @@ def plot_mc_networth(
 
     # Monte Carlo examples
     final_values = mc_networth_df.iloc[-1]
-    lower_bound = final_values.quantile(0.1)
-    upper_bound = final_values.quantile(0.9)
+    lower_bound = final_values.quantile(0.05)
+    upper_bound = final_values.quantile(0.95)
     filtered_cols = [
         col
         for col in mc_networth_df.columns

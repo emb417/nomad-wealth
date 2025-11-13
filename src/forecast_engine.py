@@ -56,8 +56,11 @@ class ForecastEngine:
         self.yearly_tax_log: Dict[int, Dict[str, int]] = {}
         self.quarterly_tax_log: Dict[Tuple[int, int], Dict[str, int]] = {}
 
-    def run(self, ledger_df: pd.DataFrame) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    def run(
+        self, ledger_df: pd.DataFrame
+    ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         self._initialize_results()
+        self.monthly_return_records = []
 
         for _, row in ledger_df.iterrows():
             forecast_month = row["Month"]
@@ -67,7 +70,10 @@ class ForecastEngine:
             self._apply_irmaa_premiums(forecast_month)
             self._apply_rule_transactions(self.buckets, forecast_month)
             self._apply_policy_transactions(self.buckets, forecast_month)
-            gain_txns = self.market_gains.apply(self.buckets, forecast_month)
+
+            gain_txns, monthly_returns = self.market_gains.apply(
+                self.buckets, forecast_month
+            )
             self._apply_market_gain_transactions(
                 gain_txns, self.buckets, forecast_month
             )
@@ -86,13 +92,18 @@ class ForecastEngine:
                 self.policy_transactions + gain_txns + refill_txns + liq_txns
             )
 
-            self._update_results(
-                forecast_month,
-                self.buckets,
-                all_policy_txns,
+            self._update_results(forecast_month, self.buckets, all_policy_txns)
+
+            # Log monthly returns for audit/visualization
+            self.monthly_return_records.append(
+                {"Month": forecast_month, **monthly_returns}
             )
 
-        return pd.DataFrame(self.records), pd.DataFrame(self.tax_records)
+        return (
+            pd.DataFrame(self.records),
+            pd.DataFrame(self.tax_records),
+            pd.DataFrame(self.monthly_return_records),
+        )
 
     def _initialize_results(self):
         self.records = []

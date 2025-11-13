@@ -39,6 +39,7 @@ from visualization import (
     plot_example_transactions,
     plot_historical_balance,
     plot_historical_bucket_gains,
+    plot_mc_monthly_returns,
     plot_mc_networth,
     plot_mc_tax_totals,
     plot_mc_taxable_balances,
@@ -56,6 +57,7 @@ SIM_EXAMPLE_SIZE = 1
 SHOW_HISTORICAL = True
 SHOW_MONTE_CARLO = True
 SHOW_EXAMPLES = True
+DEBUG = False
 
 # Visualization settings (overrides)
 SHOW_HISTORICAL_BALANCE_CHART = False
@@ -78,6 +80,8 @@ SHOW_TAXES_CHART = False
 SAVE_TAXES_CHART = False
 SHOW_TAXABLE_CHART = False
 SAVE_TAXABLE_CHART = False
+SHOW_MONTHLY_RETURNS_CHART = False
+SAVE_MONTHLY_RETURNS_CHART = False
 
 rng = np.random.default_rng()
 sim_examples = np.sort(rng.choice(SIM_SIZE, size=SIM_EXAMPLE_SIZE, replace=False))
@@ -231,6 +235,7 @@ def stage_init_components(
     hist_df: pd.DataFrame,
     future_df: pd.DataFrame,
     flow_tracker: FlowTracker,
+    trial: int,
 ):
     gain_table = json_data["gain_table"]
     buckets_config = json_data["buckets"]
@@ -266,7 +271,7 @@ def stage_init_components(
     inflation_profiles = inflation_rate.get("profiles", {})
     years = sorted(future_df["Month"].dt.year.unique())
     infl_gen = InflationGenerator(
-        years, avg=inflation_defaults["avg"], std=inflation_defaults["std"]
+        years, avg=inflation_defaults["avg"], std=inflation_defaults["std"], seed=trial
     )
     base_inflation = infl_gen.generate()
     description_inflation_modifiers = build_description_inflation_modifiers(
@@ -360,7 +365,7 @@ def run_one_trial(
     json_data: dict,
     dfs: dict,
     hist_df: pd.DataFrame,
-) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
     Runs Monte Carlo trial, returns (forecast_df, flow_df).
     """
@@ -375,7 +380,7 @@ def run_one_trial(
         base_inflation,
         rule_txns,
         policy_txns,
-    ) = stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker)
+    ) = stage_init_components(json_data, dfs, hist_df, future_df, flow_tracker, trial)
 
     # wire up flow_tracker
     for b in buckets.values():
@@ -397,22 +402,22 @@ def run_one_trial(
         irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
         marketplace_premiums=json_data["marketplace_premiums"],
     )
-    forecast_df, taxes_df = engine.run(future_df)
+    forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
 
     flow_df = flow_tracker.to_dataframe()
     flow_df["trial"] = trial
 
-    return forecast_df, taxes_df, flow_df
+    return forecast_df, taxes_df, monthly_returns_df, flow_df
 
 
 def run_simulation(trial, future_df, json_data, dfs, hist_df):
     """
     Wrapper for run_one_trial to inject trial index into the result.
     """
-    forecast_df, taxes_df, flow_df = run_one_trial(
+    forecast_df, taxes_df, monthly_returns_df, flow_df = run_one_trial(
         trial, future_df, json_data, dfs, hist_df
     )
-    return trial, forecast_df, taxes_df, flow_df
+    return trial, forecast_df, taxes_df, monthly_returns_df, flow_df
 
 
 def update_property_liquidation_summary(summary, forecast_df):
@@ -473,6 +478,7 @@ def main():
         mc_networth_by_trial = {}
         mc_tax_by_trial = {}
         mc_taxable_by_trial = {}
+        mc_monthly_returns_by_trial = {}
 
         with ProcessPoolExecutor() as executor:
             futures = [
@@ -487,7 +493,9 @@ def main():
                 total=SIM_SIZE,
                 desc="Running Monte Carlo Simulation",
             ):
-                trial, forecast_df, taxes_df, flow_df = future.result()
+                trial, forecast_df, taxes_df, monthly_returns_df, flow_df = (
+                    future.result()
+                )
 
                 taxable_cols = [
                     col
@@ -514,22 +522,21 @@ def main():
                 )
                 forecast_df["Year"] = forecast_df["Month"].dt.year
 
-                # Store year-end net worth per trial
+                # Aggregate trial data
                 monthly_nw_series = forecast_df.set_index("Month")["Net Worth"]
                 mc_networth_by_trial[trial] = monthly_nw_series
                 tax_series = taxes_df.set_index("Year")["Total Tax"]
                 mc_tax_by_trial[trial] = tax_series
+                mc_monthly_returns_by_trial[trial] = monthly_returns_df.assign(
+                    Trial=trial
+                )
 
                 if trial in sim_examples:
                     plot_example_monthly_expenses(
                         flow_df=flow_df,
                         trial=trial,
                         ts=ts,
-                        show=(
-                            SHOW_MONTHLY_EXPENSES_CHART
-                            if not SHOW_EXAMPLES
-                            else SHOW_EXAMPLES
-                        ),
+                        show=(SHOW_MONTHLY_EXPENSES_CHART if not DEBUG else DEBUG),
                         save=SAVE_MONTHLY_EXPENSES_CHART,
                     )
                     plot_example_transactions(
@@ -550,8 +557,8 @@ def main():
                         ts=ts,
                         show=(
                             SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART
-                            if not SHOW_EXAMPLES
-                            else SHOW_EXAMPLES
+                            if not DEBUG
+                            else DEBUG
                         ),
                         save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                     )
@@ -589,6 +596,17 @@ def main():
         mc_tax_df = (
             pd.DataFrame.from_dict(mc_tax_by_trial, orient="index").sort_index().T
         )
+        mc_monthly_returns_df = pd.concat(
+            mc_monthly_returns_by_trial.values(), ignore_index=True
+        )
+
+        plot_mc_monthly_returns(
+            mc_monthly_returns_df=mc_monthly_returns_df,
+            sim_examples=sim_examples,
+            ts=ts,
+            show=(SHOW_MONTHLY_RETURNS_CHART if not DEBUG else DEBUG),
+            save=SAVE_MONTHLY_RETURNS_CHART,
+        )
 
         plot_mc_taxable_balances(
             mc_taxable_df=mc_taxable_df,
@@ -602,7 +620,7 @@ def main():
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
+            show=SHOW_TAXES_CHART if not DEBUG else DEBUG,
             save=SAVE_TAXES_CHART,
         )
 

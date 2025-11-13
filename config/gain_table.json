@@ -1,18 +1,18 @@
 {
   "Stocks": {
-    "Low": { "avg": 0.008, "std": 0.04 },
-    "Average": { "avg": 0.0068, "std": 0.04 },
-    "High": { "avg": 0.0056, "std": 0.04 }
+    "Low": { "avg": 0.0035, "std": 0.035 },
+    "Average": { "avg": 0.0045, "std": 0.04 },
+    "High": { "avg": 0.0065, "std": 0.045 }
   },
-  "Bonds": {
-    "Low": { "avg": 0.002, "std": 0.001 },
-    "Average": { "avg": 0.0035, "std": 0.0015 },
-    "High": { "avg": 0.005, "std": 0.002 }
+  "Fixed-Income": {
+    "Low": { "avg": 0.0015, "std": 0.0001 },
+    "Average": { "avg": 0.0025, "std": 0.0002 },
+    "High": { "avg": 0.004, "std": 0.0003 }
   },
   "Property": {
-    "Low": { "avg": 0.001, "std": 0.0015 },
-    "Average": { "avg": 0.002, "std": 0.0015 },
-    "High": { "avg": 0.0025, "std": 0.0015 }
+    "Low": { "avg": 0.0005, "std": 0.0008 },
+    "Average": { "avg": 0.0025, "std": 0.0012 },
+    "High": { "avg": 0.0025, "std": 0.0012 }
   },
   "Vehicles": {
     "Low": { "avg": -0.01, "std": 0.0 },

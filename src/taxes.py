@@ -10,7 +10,7 @@ class TaxCalculator:
 
     TAXABLE_RATES: Dict[str, float] = {
         "Stocks": 0.50,  # assuming 50% of gains are taxable
-        "Bonds": 0.04,  # interest-like exposure
+        "Fixed-Income": 0.04,  # interest-like exposure
         "Penalty": 0.10,  # early-withdrawal fee
     }
 

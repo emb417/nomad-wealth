@@ -7,7 +7,7 @@
   },
   "CD Ladder": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.995 },
+      { "asset_class": "Fixed-Income", "weight": 0.995 },
       { "asset_class": "Cash", "weight": 0.005 }
     ],
     "can_go_negative": false,
@@ -16,7 +16,7 @@
   },
   "Brokerage": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.32 },
+      { "asset_class": "Fixed-Income", "weight": 0.32 },
       { "asset_class": "Stocks", "weight": 0.66 },
       { "asset_class": "Cash", "weight": 0.02 }
     ],
@@ -27,7 +27,7 @@
   "Tax-Deferred": {
     "holdings": [
       { "asset_class": "Stocks", "weight": 0.9 },
-      { "asset_class": "Bonds", "weight": 0.05 },
+      { "asset_class": "Fixed-Income", "weight": 0.05 },
       { "asset_class": "Cash", "weight": 0.05 }
     ],
     "can_go_negative": false,
@@ -37,7 +37,7 @@
   "Tax-Free": {
     "holdings": [
       { "asset_class": "Stocks", "weight": 0.45 },
-      { "asset_class": "Bonds", "weight": 0.45 },
+      { "asset_class": "Fixed-Income", "weight": 0.45 },
       { "asset_class": "Cash", "weight": 0.1 }
     ],
     "can_go_negative": false,
@@ -47,7 +47,7 @@
   "Health Savings Account": {
     "holdings": [
       { "asset_class": "Stocks", "weight": 0.1 },
-      { "asset_class": "Bonds", "weight": 0.85 },
+      { "asset_class": "Fixed-Income", "weight": 0.85 },
       { "asset_class": "Cash", "weight": 0.05 }
     ],
     "can_go_negative": false,
@@ -71,7 +71,7 @@
   "529K": {
     "holdings": [
       { "asset_class": "Stocks", "weight": 0.5 },
-      { "asset_class": "Bonds", "weight": 0.5 }
+      { "asset_class": "Fixed-Income", "weight": 0.5 }
     ],
     "can_go_negative": false,
     "allow_cash_fallback": true,
@@ -79,7 +79,7 @@
   },
   "SEPP IRA": {
     "holdings": [
-      { "asset_class": "Bonds", "weight": 0.4 },
+      { "asset_class": "Fixed-Income", "weight": 0.4 },
       { "asset_class": "Stocks", "weight": 0.6 }
     ],
     "can_go_negative": false,

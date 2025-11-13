@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from typing import Dict, List
+from typing import Dict, List, Tuple, Any
 
 # Internal Imports
 from buckets import Bucket
@@ -32,7 +32,7 @@ class MarketGains:
       1) looking up that asset’s low/high inflation thresholds
       2) comparing the year’s inflation rate to pick Low/Average/High
       3) sampling gain from gain_table[asset][scenario]
-      4) applying fixed income for bond holdings using same monthly_returns
+      4) applying fixed income for holdings using same monthly_returns
     """
 
     def __init__(
@@ -47,7 +47,7 @@ class MarketGains:
 
     def apply(
         self, buckets: Dict[str, Bucket], forecast_date: pd.Timestamp
-    ) -> List[MarketGainTransaction]:
+    ) -> Tuple[List[MarketGainTransaction], Dict[str, Any]]:
         transactions = []
         year = forecast_date.year
         inflation_rate = self.inflation[year]["rate"]
@@ -65,29 +65,29 @@ class MarketGains:
                 scenarios[cls_name] = "Average"
 
         # Sample monthly return per asset class
-        monthly_returns = {
-            cls_name: np.random.normal(
-                self.gain_table[cls_name][scenarios.get(cls_name, "Average")]["avg"],
-                self.gain_table[cls_name][scenarios.get(cls_name, "Average")]["std"],
+        monthly_returns = {}
+        for cls_name in self.gain_table:
+            scenario = scenarios.get(cls_name, "Average")
+            rate = np.random.normal(
+                self.gain_table[cls_name][scenario]["avg"],
+                self.gain_table[cls_name][scenario]["std"],
             )
-            for cls_name in self.gain_table
-        }
+            monthly_returns[cls_name] = {
+                "scenario": scenario,
+                "rate": rate,
+            }
 
         # Emit transactions based on holdings and sampled returns
         for bucket_name, bucket in buckets.items():
             bucket_type = getattr(bucket, "bucket_type", None)
             for h in bucket.holdings:
                 cls_name = h.asset_class.name
-                rate = monthly_returns.get(cls_name, 0)
-
-                if cls_name == "Bonds":
-                    rate = min(max(rate, 0.001), 0.004)
-
+                rate = monthly_returns.get(cls_name, {}).get("rate", 0)
                 delta = int(round(h.amount * rate))
                 if delta == 0:
                     continue
 
-                if cls_name == "Bonds" and bucket_type == "taxable":
+                if cls_name == "Fixed-Income" and bucket_type == "taxable":
                     flow_type = "deposit"
                 else:
                     flow_type = "gain" if delta > 0 else "loss"
@@ -101,4 +101,7 @@ class MarketGains:
                     )
                 )
 
-        return transactions
+        return transactions, {
+            "inflation_rate": inflation_rate,
+            "monthly_returns": monthly_returns,
+        }

@@ -54,7 +54,7 @@ class MarketGainTransaction(PolicyTransaction):
         bucket_name: str,
         asset_class: str,
         amount: int,
-        flow_type: str,  # "gain", "loss", or "deposit" for bonds
+        flow_type: str,  # "gain", "loss", or "deposit" for fixed income
     ):
         super().__init__()
         self.bucket_name = bucket_name
@@ -72,7 +72,7 @@ class MarketGainTransaction(PolicyTransaction):
 
         label = (
             "Fixed Income Interest"
-            if self.asset_class == "Bonds" and self.flow_type == "deposit"
+            if self.asset_class == "Fixed-Income" and self.flow_type == "deposit"
             else (
                 f"Market Gains {self.asset_class}"
                 if self.amount > 0
@@ -88,7 +88,7 @@ class MarketGainTransaction(PolicyTransaction):
         )
 
     def get_fixed_income_interest(self, tx_month: pd.Period) -> int:
-        if self.asset_class == "Bonds" and self.flow_type == "deposit":
+        if self.asset_class == "Fixed-Income" and self.flow_type == "deposit":
             return self.amount
         return 0
 
@@ -233,8 +233,8 @@ class RefillTransaction(PolicyTransaction):
                 weight = getattr(h, "weight", 0.0)
                 if not isinstance(asset, str) or weight <= 0:
                     continue
-                if asset == "Bonds":
-                    continue  # skip bond interest attribution
+                if asset == "Fixed-Income":
+                    continue  # skip fixed income interest attribution
                 rate = tax_calc.TAXABLE_RATES.get(asset, 0.0)
                 slice_amount = applied * weight
                 capital_gain += slice_amount * rate
@@ -256,7 +256,8 @@ class RefillTransaction(PolicyTransaction):
 
     def _is_fixed_income_only(self, bucket: Bucket) -> bool:
         return all(
-            getattr(getattr(h, "asset_class", None), "name", None) in {"Bonds", "Cash"}
+            getattr(getattr(h, "asset_class", None), "name", None)
+            in {"Fixed-Income", "Cash"}
             for h in bucket.holdings
         )
 
