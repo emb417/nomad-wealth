@@ -170,8 +170,14 @@ class ThresholdRefillPolicy:
                 and bt in {"tax_deferred", "tax_free"}
             )
 
-            # Distribute 'take' across targets based on percentages
-            for tgt_name, pct in self.liquidation_targets.items():
+            # Determine target routing
+            if bucket_name == "Property":
+                targets = self.liquidation_targets
+            else:
+                targets = {"Cash": 1.0}
+
+            # Distribute 'take' across targets
+            for tgt_name, pct in targets.items():
                 if pct <= 0:
                     continue
                 tgt_bucket = buckets.get(tgt_name)

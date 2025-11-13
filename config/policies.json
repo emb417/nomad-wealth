@@ -10,6 +10,14 @@
       "Cash": ["Brokerage", "SEPP IRA", "Tax-Deferred", "Tax-Free"]
     }
   },
+  "Liquidation": {
+    "Threshold": -15000,
+    "Sources": ["CD Ladder", "Vehicles", "Property"],
+    "Targets": {
+      "Cash": 0.2,
+      "Brokerage": 0.8
+    }
+  },
   "Salary": {
     "Targets": {
       "Cash": 0.9,
@@ -75,21 +83,6 @@
     "Interest Rate": 0.05,
     "Source": "SEPP IRA",
     "Target": "Cash"
-  },
-  "Liquidation": {
-    "Threshold": -20000,
-    "Sources": [
-      "Brokerage",
-      "SEPP IRA",
-      "Tax-Deferred",
-      "CD Ladder",
-      "Tax-Free",
-      "Vehicles",
-      "Property"
-    ],
-    "Targets": {
-      "Cash": 1.0
-    }
   },
   "Property": {
     "Market Value": 550000,
