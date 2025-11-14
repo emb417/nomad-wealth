@@ -419,6 +419,7 @@ def plot_example_transactions(
                 method="update",
                 args=[
                     {"visible": visibility},
+                    {"title": {"text": f"Trial {trial+1:04d} | {year} Transactions"}},
                 ],
                 label=str(year),
             )
@@ -600,7 +601,7 @@ def plot_example_transactions_in_context(
         )
 
     sliders = [
-        dict(active=0, currentvalue={"prefix": "Period: "}, pad={"t": 50}, steps=steps)
+        dict(active=0, currentvalue={"visible": False}, pad={"t": 50}, steps=steps)
     ]
     fig.update_layout(
         title={
