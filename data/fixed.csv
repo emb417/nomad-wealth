@@ -1,10 +1,10 @@
 Month,Bucket,Amount,Type,Description
 2026-09,529K,-25000,Education,College Tuition #1
 2027-09,529K,-25000,Education,College Tuition #2
-2028-09,529K,-40000,Education,College Tuition #3
-2029-09,529K,-40000,Education,College Tuition #4
-2026-07,Cash,-20000,Travel,Travel to Japan
-2027-07,Cash,-10000,Travel,Travel to Alaska
-2030-10,Cash,-20000,Travel,Travel to Europe
-2035-10,Cash,-20000,Travel,Travel to SE Asia 
-2040-07,Cash,-25000,Travel,Travel to Aus/NZ
+2028-09,529K,-35000,Education,College Tuition #3
+2029-09,529K,-35000,Education,College Tuition #4
+2026-07,CD Ladder,-10000,Travel,Travel to Japan
+2027-07,CD Ladder,-10000,Travel,Travel to Alaska
+2030-10,CD Ladder,-10000,Travel,Travel to Europe
+2035-10,CD Ladder,-10000,Travel,Travel to SE Asia 
+2040-07,CD Ladder,-10000,Travel,Travel to Aus/NZ

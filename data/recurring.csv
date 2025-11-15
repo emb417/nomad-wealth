@@ -1,26 +1,27 @@
 Start Month,End Month,Bucket,Amount,Type,Description
-2025-09,2030-09,Cash,-290,Vehicle Insurance,Vehicle Insurance
-2030-10,2075-04,Cash,-290,Vehicle Insurance,Vehicle Insurance
-2025-09,2030-09,Cash,-400,Vehicle Maintenance,Vehicle Maintenance
-2030-10,2075-04,Cash,-300,Vehicle Maintenance,Vehicle Maintenance
-2025-09,2030-09,Cash,-140,Entertainment,Entertainment Parks and Rec
-2030-10,2075-04,Cash,-140,Entertainment,Entertainment Parks and Rec
-2025-09,2030-09,Cash,-95,Subscriptions,Entertainment Subscriptions
-2030-10,2075-04,Cash,-95,Subscriptions,Entertainment Subscriptions
-2025-09,2030-09,Cash,-1250,Food,Food Groceries
-2030-10,2075-04,Cash,-1000,Food,Food Groceries
-2030-10,2075-04,Cash,-200,Restaurants,Food Restaurants
-2025-09,2030-09,Cash,-200,Restaurants,Food Restaurants
-2025-09,2030-09,Cash,-1250,Goods,Goods
-2030-10,2075-04,Cash,-1000,Goods,Goods
-2025-08,2030-09,Cash,-500,Health,Health Medical Insurance
-2025-08,2030-09,Cash,-15,Health,Health Dental Insurance
-2025-08,2030-09,Cash,-5,Health,Health Vision Insurance
+2025-09,2029-09,Cash,-290,Vehicle Insurance,Vehicle Insurance
+2029-10,2075-12,Cash,-190,Vehicle Insurance,Vehicle Insurance
+2025-09,2029-09,Cash,-400,Vehicle Maintenance,Vehicle Maintenance
+2029-10,2075-12,Cash,-300,Vehicle Maintenance,Vehicle Maintenance
+2025-09,2029-09,Cash,-140,Entertainment,Entertainment Parks and Rec
+2029-10,2075-12,Cash,-140,Entertainment,Entertainment Parks and Rec
+2025-09,2029-09,Cash,-95,Subscriptions,Entertainment Subscriptions
+2029-10,2075-12,Cash,-95,Subscriptions,Entertainment Subscriptions
+2025-09,2029-09,Cash,-800,Food,Food Groceries
+2029-10,2075-12,Cash,-600,Food,Food Groceries
+2029-10,2075-12,Cash,-200,Restaurants,Food Restaurants
+2025-09,2029-09,Cash,-200,Restaurants,Food Restaurants
+2025-09,2029-09,Cash,-800,Goods,Goods
+2029-10,2075-12,Cash,-600,Goods,Goods
+2025-08,2029-09,Cash,-500,Health,Health Medical Insurance
+2025-08,2029-09,Cash,-15,Health,Health Dental Insurance
+2025-08,2029-09,Cash,-5,Health,Health Vision Insurance
 2025-09,2030-04,Cash,-325,Health,Health Prescriptions etc
-2030-10,2075-04,Cash,-425,Health,Health Prescriptions etc
-2025-09,2030-09,Cash,-400,Travel,Travel in US
-2030-10,2075-04,Cash,-600,Travel,Travel in US
-2025-09,2075-04,Cash,-345,Utilities,Utils Elec and Gas
-2025-09,2075-04,Cash,-300,Utilities,Utils Waste and Water
+2029-10,2050-04,Health Savings Account,-425,Health,Health Prescriptions etc
+2050-04,2075-12,Health Savings Account,-725,Health,Health Prescriptions etc
+2025-09,2029-09,Cash,-400,Travel,Travel in US
+2029-10,2075-12,Cash,-600,Travel,Travel in US
+2025-09,2075-12,Cash,-345,Utilities,Utils Elec and Gas
+2025-09,2075-12,Cash,-300,Utilities,Utils Waste and Water
 2025-08,2026-12,Cash,-345,Voice and Data,Utils Voice and Data
-2027-01,2075-04,Cash,-250,Voice and Data,Utils Voice and Data
+2027-01,2075-12,Cash,-250,Voice and Data,Utils Voice and Data

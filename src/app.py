@@ -57,7 +57,7 @@ SIM_EXAMPLE_SIZE = 1
 SHOW_HISTORICAL = True
 SHOW_MONTE_CARLO = True
 SHOW_EXAMPLES = True
-DEBUG = False
+DETAILED_MODE = False
 
 # Visualization settings (overrides)
 SHOW_HISTORICAL_BALANCE_CHART = False
@@ -537,7 +537,11 @@ def main():
                         flow_df=flow_df,
                         trial=trial,
                         ts=ts,
-                        show=(SHOW_MONTHLY_EXPENSES_CHART if not DEBUG else DEBUG),
+                        show=(
+                            SHOW_MONTHLY_EXPENSES_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                         save=SAVE_MONTHLY_EXPENSES_CHART,
                     )
                     plot_example_transactions(
@@ -558,8 +562,8 @@ def main():
                         ts=ts,
                         show=(
                             SHOW_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART
-                            if not DEBUG
-                            else DEBUG
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
                         ),
                         save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
                     )
@@ -604,7 +608,7 @@ def main():
             mc_monthly_returns_df=mc_monthly_returns_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=(SHOW_MONTHLY_RETURNS_CHART if not DEBUG else DEBUG),
+            show=(SHOW_MONTHLY_RETURNS_CHART if not DETAILED_MODE else DETAILED_MODE),
             save=SAVE_MONTHLY_RETURNS_CHART,
         )
 

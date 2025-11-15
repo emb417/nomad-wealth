@@ -538,33 +538,42 @@ class SalaryTransaction(PolicyTransaction):
         if tx_month > self.retirement_period:
             return
 
+        # Base salary (with remainder in December)
         total = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
         for bucket_name, pct in self.bucket_pcts.items():
             bucket = buckets.get(bucket_name)
             if bucket is None:
                 continue
-
             amount = int(round(total * pct))
             bucket.deposit(amount, "Salary", tx_month)
 
+        # Bonus distributed like salary
         if tx_month.month == self.bonus_period.month:
-            bucket = buckets.get(list(self.bucket_pcts.keys())[0])
-            if bucket is None:
-                return
-            bucket.deposit(self.annual_bonus, "Salary Bonus", tx_month)
+            for bucket_name, pct in self.bucket_pcts.items():
+                bucket = buckets.get(bucket_name)
+                if bucket is None:
+                    continue
+                amount = int(round(self.annual_bonus * pct))
+                bucket.deposit(amount, "Salary Bonus", tx_month)
 
     def get_salary(self, tx_month: pd.Period) -> int:
         if tx_month > self.retirement_period:
             return 0
 
+        # Salary (excluding tax-deferred buckets)
         total = sum(
             int(round(self.monthly_base * pct))
             for bucket_name, pct in self.bucket_pcts.items()
             if bucket_name.lower() != "tax-deferred"
         )
 
-        if tx_month == self.bonus_period:
-            total += self.annual_bonus
+        # Bonus distributed like salary
+        if tx_month.month == self.bonus_period.month:
+            total += sum(
+                int(round(self.annual_bonus * pct))
+                for bucket_name, pct in self.bucket_pcts.items()
+                if bucket_name.lower() != "tax-deferred"
+            )
 
         return total
 

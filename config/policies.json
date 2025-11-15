@@ -12,7 +12,7 @@
   },
   "Liquidation": {
     "Threshold": -15000,
-    "Sources": ["CD Ladder", "Vehicles", "Property"],
+    "Sources": ["CD Ladder", "Tax-Free", "Vehicles", "Property"],
     "Targets": {
       "Cash": 0.2,
       "Brokerage": 0.8
@@ -23,10 +23,10 @@
       "Cash": 0.9,
       "Tax-Deferred": 0.1
     },
-    "Annual Gross Income": 200000,
+    "Annual Gross Income": 180000,
     "Annual Bonus Month": "2027-04",
-    "Annual Bonus Amount": 40000,
-    "Retirement Month": "2029-12"
+    "Annual Bonus Amount": 15000,
+    "Retirement Month": "2029-09"
   },
   "Social Security": [
     {
@@ -36,7 +36,7 @@
       "Full Age": "67",
       "Full Benefit": 4058,
       "Start Age": "67",
-      "Percentage Payout": 1.0
+      "Percentage Payout": 0.8
     },
     {
       "Profile": "p2",
@@ -45,41 +45,46 @@
       "Full Age": "67",
       "Full Benefit": 1569,
       "Start Age": "67",
-      "Percentage Payout": 1.0
+      "Percentage Payout": 0.8
     }
   ],
   "RMD": {
     "Targets": {
       "Cash": 0.2,
-      "CD Ladder": 0.8
+      "CD Ladder": 0.4,
+      "Brokerage": 0.4
     }
   },
   "Roth Conversions": {
     "early": {
-      "Max Tax Rate": 0.1,
-      "Max Conversion Amount": 1000000,
-      "Tax Source Threshold": 50000,
+      "Max Tax Rate": 0.15,
+      "Max Conversion Amount": 50000,
+      "Tax Source Threshold": 500000,
       "Tax Source Name": "Brokerage",
-      "Allow Conversion": false,
+      "Allow Conversion": true,
       "Cutoff Age": 60
     },
     "prime": {
-      "Max Tax Rate": 0.12,
-      "Max Conversion Amount": 100000,
+      "Max Tax Rate": 0.15,
+      "Max Conversion Amount": 1000000,
+      "Tax Source Threshold": 1250000,
+      "Tax Source Name": "Tax-Deferred",
       "Allow Conversion": true,
       "Cutoff Age": 70
     },
     "late": {
-      "Max Tax Rate": 0.24,
-      "Max Conversion Amount": 1000,
-      "Allow Conversion": false,
-      "Cutoff Age": 75
+      "Max Tax Rate": 0.2,
+      "Max Conversion Amount": 1000000,
+      "Tax Source Threshold": 1000000,
+      "Tax Source Name": "Tax-Deferred",
+      "Allow Conversion": true,
+      "Cutoff Age": 85
     }
   },
   "SEPP": {
     "Enabled": true,
-    "Start Month": "2030-01",
-    "End Month": "2034-12",
+    "Start Month": "2029-10",
+    "End Month": "2034-09",
     "Interest Rate": 0.05,
     "Source": "SEPP IRA",
     "Target": "Cash"
@@ -95,9 +100,9 @@
     "Monthly Rent": 2500
   },
   "Unemployment": {
-    "Start Month": "2025-09",
-    "End Month": "2026-02",
-    "Monthly Amount": "3618",
+    "Start Month": "2030-01",
+    "End Month": "2030-07",
+    "Monthly Amount": "4000",
     "Target": "Cash"
   }
 }
