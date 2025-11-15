@@ -5,7 +5,8 @@ from typing import List, Dict, Any
 class TaxCalculator:
     """
     Calculates federal tax on combined income (married‐filing‐jointly
-    brackets + SS rules), including standard deduction and early withdrawal penalties.
+    brackets + SS rules), including standard deduction, payroll taxes,
+    capital gains, IRMAA surcharges, and early withdrawal penalties.
     """
 
     TAXABLE_RATES: Dict[str, float] = {
@@ -38,6 +39,9 @@ class TaxCalculator:
         self.irmaa_brackets_by_year = self._inflate_irmaa_brackets(
             base_brackets.get("IRMAA 2025", [])
         )
+        self.base_premiums_by_year = self._inflate_base_premiums(
+            base_brackets.get("Medicare Base Premiums 2025", {})
+        )
 
     def _inflate_irmaa_brackets(
         self, base_brackets: List[Dict[str, Any]]
@@ -59,6 +63,21 @@ class TaxCalculator:
                 }
                 for b in base_brackets
             ]
+        return inflated
+
+    def _inflate_base_premiums(
+        self, base_premiums: Dict[str, float]
+    ) -> Dict[int, Dict[str, float]]:
+        """
+        Inflate Medicare base premiums (Part B and Part D) by year.
+        """
+        inflated = {}
+        for year, inflation in self.base_inflation.items():
+            modifier = inflation.get("modifier", 1.0)
+            inflated[year] = {
+                "part_b": round(base_premiums.get("part_b", 0.0) * modifier, 2),
+                "part_d": round(base_premiums.get("part_d", 0.0) * modifier, 2),
+            }
         return inflated
 
     def _inflate_social_security_brackets(self, base_brackets):

@@ -47,5 +47,9 @@
     { "max_magi": 386000, "part_b": 404.2, "part_d": 53.8 },
     { "max_magi": 750000, "part_b": 476.7, "part_d": 74.2 },
     { "max_magi": 999999999, "part_b": 549.3, "part_d": 81.0 }
-  ]
+  ],
+  "Medicare Base Premiums 2025": {
+    "part_b": 174.7,
+    "part_d": 30.0
+  }
 }

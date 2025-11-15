@@ -31,7 +31,6 @@ class ForecastEngine:
         retirement_period: str,
         sepp_policies: Optional[Dict[str, Any]],
         roth_policies: Dict[str, Dict[str, Union[int, float, bool]]],
-        irmaa_brackets: List[Dict[str, float]],
         marketplace_premiums: Dict[str, Dict[str, float]],
     ):
         self.buckets = buckets
@@ -46,7 +45,10 @@ class ForecastEngine:
         self.retirement_period = pd.to_datetime(retirement_period).to_period("M")
         self.sepp_policies = sepp_policies or {}
         self.roth_policies = roth_policies
-        self.irmaa_brackets = irmaa_brackets
+
+        self.irmaa_brackets_by_year = tax_calc.irmaa_brackets_by_year
+        self.base_premiums_by_year = tax_calc.base_premiums_by_year
+
         self.marketplace_premiums = marketplace_premiums
 
         self.annual_tax_estimate = 0
@@ -54,13 +56,11 @@ class ForecastEngine:
         self.records: List[Dict[str, Any]] = []
         self.tax_records: List[Dict[str, Any]] = []
         self.yearly_tax_log: Dict[int, Dict[str, int]] = {}
-        self.quarterly_tax_log: Dict[Tuple[int, int], Dict[str, int]] = {}
 
     def run(
         self, ledger_df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         self._initialize_results()
-        self.monthly_return_records = []
 
         for _, row in ledger_df.iterrows():
             forecast_month = row["Month"]
@@ -109,7 +109,7 @@ class ForecastEngine:
         self.records = []
         self.tax_records = []
         self.yearly_tax_log = {}
-        self.quarterly_tax_log = {}
+        self.monthly_return_records = []
 
     def _get_age_in_years(self, period: pd.Period) -> float:
         """
@@ -223,27 +223,56 @@ class ForecastEngine:
         if age < 65:
             return
 
+        # Use prior MAGI (two years back)
         record = self._get_minus_2_tax_record(tx_month)
         prior_magi = (
             record["Adjusted Gross Income (AGI)"] + record["Tax-Exempt Interest"]
         )
 
-        for bracket in self.irmaa_brackets:
+        year = tx_month.year
+
+        # Get base premiums for this year (per person)
+        base_premiums = self.base_premiums_by_year.get(
+            year, {"part_b": 0.0, "part_d": 0.0}
+        )
+
+        # Find IRMAA surcharge bracket for this year
+        surcharge_b = 0.0
+        surcharge_d = 0.0
+        bracket_info = "No IRMAA brackets found"
+
+        for bracket in self.irmaa_brackets_by_year.get(year, []):
             if prior_magi <= float(bracket["max_magi"]):
-                monthly_cost = int(bracket["part_b"] + bracket["part_d"])
+                surcharge_b = bracket["part_b"]
+                surcharge_d = bracket["part_d"]
                 bracket_info = (
                     f"MAGI ${prior_magi:.0f}, bracket ≤ ${bracket['max_magi']}"
                 )
                 break
         else:
-            monthly_cost = int(
-                self.irmaa_brackets[-1]["part_b"] + self.irmaa_brackets[-1]["part_d"]
-            )
-            bracket_info = f"MAGI ${prior_magi:.0f}, bracket > all thresholds"
+            if self.irmaa_brackets_by_year.get(year, []):
+                top = self.irmaa_brackets_by_year[year][-1]
+                surcharge_b = top["part_b"]
+                surcharge_d = top["part_d"]
+                bracket_info = f"MAGI ${prior_magi:.0f}, bracket > all thresholds"
 
-        self.buckets["Cash"].withdraw(monthly_cost, "IRMAA", tx_month)
+        # Total monthly premium per person
+        monthly_cost_per_person = (
+            base_premiums["part_b"]
+            + base_premiums["part_d"]
+            + surcharge_b
+            + surcharge_d
+        )
+
+        # Married filing jointly → two beneficiaries
+        monthly_cost_total = int(round(2 * monthly_cost_per_person))
+
+        self.buckets["Cash"].withdraw(monthly_cost_total, "Medicare Premiums", tx_month)
         logging.debug(
-            f"[IRMAA] Deducted ${monthly_cost:.0f} in {tx_month} ({bracket_info})"
+            f"[IRMAA] Deducted ${monthly_cost_total:.0f} in {tx_month} "
+            f"(Base B ${base_premiums['part_b']}, Base D ${base_premiums['part_d']}, "
+            f"Surcharge B ${surcharge_b}, Surcharge D ${surcharge_d}, {bracket_info}, "
+            f"MFJ → doubled)"
         )
 
     def _get_minus_2_tax_record(self, tx_month: pd.Period) -> Dict[str, int]:

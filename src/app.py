@@ -399,7 +399,6 @@ def run_one_trial(
         retirement_period=json_data["policies"]["Salary"]["Retirement Month"],
         sepp_policies=json_data["policies"]["SEPP"],
         roth_policies=json_data["policies"]["Roth Conversions"],
-        irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025"],
         marketplace_premiums=json_data["marketplace_premiums"],
     )
     forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
