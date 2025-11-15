@@ -16,6 +16,9 @@
       { "min_salary": 21501, "tax_rate": 0.0875 },
       { "min_salary": 250000, "tax_rate": 0.099 }
     ],
+    "Portland Metro SHS 2025": [{ "min_salary": 200000, "tax_rate": 0.01 }]
+  },
+  "Payroll Specific": {
     "Social Security 2025": [
       { "min_salary": 0, "tax_rate": 0.062 },
       { "min_salary": 176100, "tax_rate": 0.0 }
@@ -23,8 +26,7 @@
     "Medicare 2025": [
       { "min_salary": 0, "tax_rate": 0.0145 },
       { "min_salary": 200000, "tax_rate": 0.0235 }
-    ],
-    "Portland Metro SHS 2025": [{ "min_salary": 200000, "tax_rate": 0.01 }]
+    ]
   },
   "Capital Gains": {
     "long_term": [
@@ -38,7 +40,7 @@
     { "min_provisional": 32000, "rate": 0.5 },
     { "min_provisional": 44000, "rate": 0.85 }
   ],
-  "IRMAA 2025 MFJ": [
+  "IRMAA 2025": [
     { "max_magi": 206000, "part_b": 185.0, "part_d": 0.0 },
     { "max_magi": 258000, "part_b": 259.2, "part_d": 12.9 },
     { "max_magi": 322000, "part_b": 331.7, "part_d": 33.3 },

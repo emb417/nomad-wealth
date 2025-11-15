@@ -399,7 +399,7 @@ def run_one_trial(
         retirement_period=json_data["policies"]["Salary"]["Retirement Month"],
         sepp_policies=json_data["policies"]["SEPP"],
         roth_policies=json_data["policies"]["Roth Conversions"],
-        irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025 MFJ"],
+        irmaa_brackets=json_data["tax_brackets"]["IRMAA 2025"],
         marketplace_premiums=json_data["marketplace_premiums"],
     )
     forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
@@ -525,7 +525,9 @@ def main():
                 # Aggregate trial data
                 monthly_nw_series = forecast_df.set_index("Month")["Net Worth"]
                 mc_networth_by_trial[trial] = monthly_nw_series
-                tax_series = taxes_df.set_index("Year")["Total Tax"]
+                tax_series = taxes_df.set_index("Year")[
+                    ["Total Tax", "Effective Tax Rate"]
+                ]
                 mc_tax_by_trial[trial] = tax_series
                 mc_monthly_returns_by_trial[trial] = monthly_returns_df.assign(
                     Trial=trial
@@ -593,9 +595,8 @@ def main():
         mc_networth_df = (
             pd.DataFrame.from_dict(mc_networth_by_trial, orient="index").sort_index().T
         )
-        mc_tax_df = (
-            pd.DataFrame.from_dict(mc_tax_by_trial, orient="index").sort_index().T
-        )
+        mc_tax_df = pd.concat(mc_tax_by_trial, axis=1)
+        mc_tax_df = mc_tax_df.swaplevel(axis=1).sort_index(axis=1)
         mc_monthly_returns_df = pd.concat(
             mc_monthly_returns_by_trial.values(), ignore_index=True
         )
@@ -620,7 +621,7 @@ def main():
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=SHOW_TAXES_CHART if not DEBUG else DEBUG,
+            show=SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
             save=SAVE_TAXES_CHART,
         )
 

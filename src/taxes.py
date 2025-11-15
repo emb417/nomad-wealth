@@ -23,8 +23,11 @@ class TaxCalculator:
         self.standard_deduction_by_year = self._inflate_deductions(
             base_brackets["Standard Deduction"]
         )
-        self.ordinary_tax_brackets_by_year = self._inflate_brackets_by_year(
-            base_brackets["Ordinary"]
+        self.ordinary_brackets_by_year = self._inflate_brackets_by_year(
+            base_brackets.get("Ordinary", {})
+        )
+        self.payroll_brackets_by_year = self._inflate_brackets_by_year(
+            base_brackets.get("Payroll Specific", {})
         )
         self.capital_gains_tax_brackets_by_year = self._inflate_cap_gains_brackets(
             base_brackets["Capital Gains"]
@@ -125,21 +128,16 @@ class TaxCalculator:
         gains: int = 0,
         roth: int = 0,
         penalty_basis: int = 0,
-    ) -> Dict[str, int]:
+    ) -> Dict[str, Any]:
         year_str = str(year)
         deduction = self.standard_deduction_by_year.get(year_str, 0)
-        ordinary_brackets = self.ordinary_tax_brackets_by_year.get(
-            f"Federal {year}", []
-        )
-        capital_gains_brackets = self.capital_gains_tax_brackets_by_year.get(
-            f"long_term {year}", []
-        )
 
         # Unemployment is taxable, but not part of provisional income for SS
         provisional_income = salary + withdrawals + roth + gains
         taxable_ss = self._taxable_social_security(
             year, ss_benefits, provisional_income
         )
+
         agi = (
             salary
             + unemployment
@@ -150,6 +148,7 @@ class TaxCalculator:
             + fixed_income_interest
         )
 
+        # Compute ordinary income after deduction
         ordinary_income = max(
             0,
             salary
@@ -160,22 +159,53 @@ class TaxCalculator:
             + fixed_income_interest
             - deduction,
         )
-        ordinary_tax = self._calculate_ordinary_tax(ordinary_brackets, ordinary_income)
+
+        # Apply Payroll Specific brackets to salary
+        payroll_specific_tax = sum(
+            self._calculate_ordinary_tax(brackets, salary)
+            for label, brackets in self.payroll_brackets_by_year.items()
+            if label.endswith(str(year))
+        )
+
+        # Apply Ordinary brackets to ordinary_income
+        ordinary_tax = sum(
+            self._calculate_ordinary_tax(brackets, ordinary_income)
+            for label, brackets in self.ordinary_brackets_by_year.items()
+            if label.endswith(str(year))
+        )
+
+        capital_gains_brackets = self.capital_gains_tax_brackets_by_year.get(
+            f"long_term {year}", []
+        )
         gains_tax = self._calculate_capital_gains_tax(
             ordinary_income, gains, capital_gains_brackets
         )
+
         penalty_tax = int(round(self.TAXABLE_RATES["Penalty"] * penalty_basis))
-        total_tax = int(ordinary_tax + gains_tax + penalty_tax)
+
+        total_tax = ordinary_tax + payroll_specific_tax + gains_tax + penalty_tax
+        total_income = (
+            salary
+            + unemployment
+            + withdrawals
+            + roth
+            + gains
+            + ss_benefits
+            + fixed_income_interest
+        )
+        effective_tax_rate = total_tax / total_income if total_income > 0 else 0
 
         return {
             "agi": agi,
-            "capital_gains_tax": gains_tax,
             "ordinary_income": ordinary_income,
-            "ordinary_tax": ordinary_tax,
-            "penalty_tax": penalty_tax,
-            "roth_conversions": roth,
             "taxable_ss": taxable_ss,
+            "roth_conversions": roth,
+            "ordinary_tax": ordinary_tax,
+            "payroll_specific_tax": payroll_specific_tax,
+            "capital_gains_tax": gains_tax,
+            "penalty_tax": penalty_tax,
             "total_tax": total_tax,
+            "effective_tax_rate": effective_tax_rate,
         }
 
     def _calculate_ordinary_tax(

@@ -95,10 +95,10 @@ def plot_example_income_taxes(
     ts: str = "",
 ):
     """
-    Renders and optionally saves the income and taxes chart for one trial.
+    Renders and optionally saves the income and taxes charts for one trial.
     """
-
-    title = f"Trial {trial+1:04d} | Income & Taxes"
+    title_income = f"Trial {trial+1:04d} | Income"
+    title_taxes = f"Trial {trial+1:04d} | Taxes"
     years = taxes_df["Year"]
 
     # Color palettes
@@ -114,36 +114,38 @@ def plot_example_income_taxes(
         "Tax-Free Withdrawals": "#1b9e77",
     }
     tax_colors = {
-        "Ordinary Tax": "#f39c12",
-        "Capital Gains Tax": "#ff7f0e",
-        "Penalty Tax": "#e74c3c",
+        "Ordinary Tax": "#eeba65",
+        "Payroll Specific Tax": "#f39c12",
+        "Capital Gains Tax": "#f57404",
+        "Penalty Tax": "#e53926",
     }
     marker_config = {
         "Adjusted Gross Income (AGI)": {
             "symbol": "triangle-up",
-            "size": 8,
+            "size": 12,
             "color": "black",
         },
-        "Ordinary Income": {"symbol": "bowtie", "size": 10, "color": "black"},
-        "Taxable Gains": {"symbol": "cross", "size": 8, "color": "black"},
+        "Ordinary Income": {"symbol": "bowtie", "size": 14, "color": "black"},
+        "Taxable Gains": {"symbol": "cross", "size": 12, "color": "black"},
         "Taxable Social Security": {
             "symbol": "triangle-down",
-            "size": 8,
+            "size": 12,
             "color": "black",
         },
-        "Total Tax": {"symbol": "line-ew-open", "size": 10, "color": "red"},
+        "Total Tax": {"symbol": "line-ew-open", "size": 24, "color": "red"},
+        "Effective Tax Rate": {
+            "symbol": "circle-open-dot",
+            "size": 14,
+            "color": "red",
+        },
     }
 
-    # Create subplots
-    fig = make_subplots(
-        rows=1,
-        cols=2,
-        subplot_titles=("Income", "Taxes"),
-    )
+    # ---------------- Income Figure ----------------
+    fig_income = go.Figure()
 
     # Income bars
     for col in income_colors:
-        fig.add_trace(
+        fig_income.add_trace(
             go.Bar(
                 x=years,
                 y=taxes_df[col],
@@ -151,34 +153,63 @@ def plot_example_income_taxes(
                 marker_color=income_colors[col],
                 opacity=0.5,
                 hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
-            ),
-            row=1,
-            col=1,
+            )
         )
 
-    # Income markers
+    # Income + tax markers
     for col in [
         "Adjusted Gross Income (AGI)",
         "Ordinary Income",
         "Taxable Gains",
         "Taxable Social Security",
+        "Effective Tax Rate",
     ]:
-        fig.add_trace(
+        y_vals = taxes_df[col] * 100 if col == "Effective Tax Rate" else taxes_df[col]
+        hover_fmt = (
+            f"{col}: %{{y:.2f}}%<extra></extra>"
+            if col == "Effective Tax Rate"
+            else f"{col}: %{{y:$,.0f}}<extra></extra>"
+        )
+
+        fig_income.add_trace(
             go.Scatter(
                 x=years,
-                y=taxes_df[col],
+                y=y_vals,
                 name=col,
-                mode="markers",
+                mode="markers" if col == "Effective Tax Rate" else "markers",
                 marker=marker_config[col],
-                hovertemplate=f"{col}: %{{y:$,.0f}}<extra></extra>",
-            ),
-            row=1,
-            col=1,
+                hovertemplate=hover_fmt,
+                yaxis="y2" if col == "Effective Tax Rate" else "y",
+            )
         )
+
+    fig_income.update_layout(
+        title=title_income,
+        barmode="stack",
+        template="plotly_white",
+        hovermode="x unified",
+        showlegend=True,
+        yaxis=dict(
+            title="Income",
+            tickformat="$,.0f",
+        ),
+        yaxis2=dict(
+            title="Effective Tax Rate",
+            overlaying="y",
+            side="right",
+            tickformat=".0f",
+            ticksuffix="%",
+            showgrid=False,
+        ),
+        legend=dict(orientation="h", x=0.5, y=-0.05, xanchor="center", yanchor="top"),
+    )
+
+    # ---------------- Taxes Figure ----------------
+    fig_taxes = go.Figure()
 
     # Tax bars
     for col in tax_colors:
-        fig.add_trace(
+        fig_taxes.add_trace(
             go.Bar(
                 x=years,
                 y=taxes_df[col],
@@ -186,53 +217,66 @@ def plot_example_income_taxes(
                 marker_color=tax_colors[col],
                 opacity=0.5,
                 hovertemplate=f"{col} %{{y:$,.0f}}<extra></extra>",
-            ),
-            row=1,
-            col=2,
+            )
         )
 
-    # Total tax marker
-    fig.add_trace(
-        go.Scatter(
-            x=years,
-            y=taxes_df["Total Tax"],
-            name="Total Tax",
-            mode="markers",
-            marker=marker_config["Total Tax"],
-            hovertemplate="Total Tax: %{y:$,.0f}<extra></extra>",
-        ),
-        row=1,
-        col=2,
-    )
+    # Tax markers
+    for col in ["Total Tax", "Effective Tax Rate"]:
+        y_vals = taxes_df[col] * 100 if col == "Effective Tax Rate" else taxes_df[col]
+        hover_fmt = (
+            f"{col}: %{{y:.2f}}%<extra></extra>"
+            if col == "Effective Tax Rate"
+            else f"{col}: %{{y:$,.0f}}<extra></extra>"
+        )
 
-    # Layout
-    fig.update_layout(
-        title=title,
+        fig_taxes.add_trace(
+            go.Scatter(
+                x=years,
+                y=y_vals,
+                name=col,
+                mode="markers" if col == "Effective Tax Rate" else "markers",
+                marker=marker_config[col],
+                hovertemplate=hover_fmt,
+                yaxis="y2" if col == "Effective Tax Rate" else "y",
+            )
+        )
+
+    fig_taxes.update_layout(
+        title=title_taxes,
         barmode="stack",
         template="plotly_white",
         hovermode="x unified",
         showlegend=True,
-        yaxis_tickformat="$,.0f",
+        yaxis=dict(
+            title="Taxes",
+            tickformat="$,.0f",
+            showgrid=True,
+        ),
+        yaxis2=dict(
+            title="Effective Tax Rate",
+            overlaying="y",
+            side="right",
+            tickformat=".0f",
+            ticksuffix="%",
+            showgrid=False,
+        ),
         legend=dict(orientation="h", x=0.5, y=-0.05, xanchor="center", yanchor="top"),
     )
 
-    # Sync y-axis range
-    max_y = max(
-        taxes_df["Adjusted Gross Income (AGI)"].max(), taxes_df["Total Tax"].max()
-    )
-    fig.update_yaxes(tickformat="$,.0f", row=1, col=1)
-    fig.update_yaxes(tickformat="$,.0f", row=1, col=2)
-
+    # ---------------- Show/Save ----------------
     if show:
-        fig.show()
+        fig_income.show()
+        fig_taxes.show()
     if save:
         prefix = f"{export_path}{trial+1:04d}_"
         taxes_csv = f"{prefix}income_taxes_{ts}.csv"
-        html = f"{prefix}income_taxes_{ts}.html"
-
+        html_income = f"{prefix}income_{ts}.html"
+        html_taxes = f"{prefix}taxes_{ts}.html"
         taxes_df.to_csv(taxes_csv, index=False)
-        fig.write_html(html)
-        logging.debug(f"Trial {trial+1:04d} | Saved sample forecast to {html}")
+        fig_income.write_html(html_income)
+        fig_taxes.write_html(html_taxes)
+        logging.debug(f"Trial {trial+1:04d} | Saved income chart to {html_income}")
+        logging.debug(f"Trial {trial+1:04d} | Saved taxes chart to {html_taxes}")
 
 
 def plot_example_monthly_expenses(
@@ -707,7 +751,7 @@ def plot_example_forecast(
         yaxis_tickformat="$,.0f",
         template="plotly_white",
         hovermode="x unified",
-        legend=dict(orientation="h", x=0.5, y=1.05, xanchor="center"),
+        legend=dict(orientation="h", x=0.5, y=-0.05, xanchor="center"),
     )
 
     if show:
@@ -1239,20 +1283,34 @@ def plot_mc_tax_totals(
     export_path: str = "export/",
 ):
     """
-    Renders and optionally saves a bar chart of total taxes per trial.
+    Renders and optionally saves a bar chart of total taxes per trial,
+    with Effective Tax Rate overlay on a secondary y-axis.
     """
-    sim_size = len(mc_tax_df.columns)
     mc_tax_df = mc_tax_df.copy()
     mc_tax_df.index = pd.Index(mc_tax_df.index).astype(int)
-    total_taxes = mc_tax_df.sum()
+    sim_size = mc_tax_df.columns.get_level_values(1).nunique()
 
+    # Total taxes across years per trial
+    total_taxes = mc_tax_df.xs("Total Tax", level=0, axis=1).sum(axis=0)
+
+    # Effective tax rates per year per trial
+    eff_rate_df = mc_tax_df.xs("Effective Tax Rate", level=0, axis=1) * 100
+    eff_rate_values = eff_rate_df.to_numpy().ravel()
+
+    # Percentiles across all trials and all years
+    eff_p15 = np.percentile(eff_rate_values, 15)
+    eff_median = np.percentile(eff_rate_values, 50)
+    eff_p85 = np.percentile(eff_rate_values, 85)
+
+    # Percentiles of total taxes
     p15 = total_taxes.quantile(0.15)
     median = total_taxes.median()
     p85 = total_taxes.quantile(0.85)
 
-    # Exclude the top 10% of total taxes from the chart
+    # Exclude the top 5% of total taxes from the chart
     threshold = total_taxes.quantile(0.95)
     total_taxes = total_taxes[total_taxes <= threshold]
+
     trial_labels = [f"Trial {int(trial)+1:04d}" for trial in total_taxes.index]
     bar_colors = [
         "purple" if trial in sim_examples else "lightgray"
@@ -1260,7 +1318,10 @@ def plot_mc_tax_totals(
     ]
     hover_texts = [f"Total Taxes: ${total:,.0f}" for total in total_taxes.values]
 
-    fig = go.Figure(
+    fig = go.Figure()
+
+    # Bar trace for total taxes
+    fig.add_trace(
         go.Bar(
             x=trial_labels,
             y=total_taxes.values,
@@ -1268,51 +1329,65 @@ def plot_mc_tax_totals(
             opacity=0.5,
             hovertext=hover_texts,
             hovertemplate="%{hovertext}<extra></extra>",
+            name="Total Taxes",
+            yaxis="y",
         )
     )
 
-    # Reference lines using same x labels
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[p85] * sim_size,
-            mode="lines",
-            name="85th Percentile",
-            line=dict(color="blue", dash="dash"),
-            hovertemplate="85th Percentile: %{y:$,.0f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[median] * sim_size,
-            mode="lines",
-            name="Median",
-            line=dict(color="green", width=2),
-            hovertemplate="Median: %{y:$,.0f}<extra></extra>",
-        )
-    )
-    fig.add_trace(
-        go.Scatter(
-            x=trial_labels,
-            y=[p15] * sim_size,
-            mode="lines",
-            name="15th Percentile",
-            line=dict(color="blue", dash="dash"),
-            hovertemplate="15th Percentile: %{y:$,.0f}<extra></extra>",
-        )
-    )
-
-    # Annotate reference lines
     for y, label, color in [
-        (p15, "15th Percentile", "blue"),
-        (median, "Median", "green"),
-        (p85, "85th Percentile", "blue"),
+        (p15, "Total Taxes p15", "blue"),
+        (median, "Total Taxes Median", "green"),
+        (p85, "Total Taxes p85", "blue"),
     ]:
+        fig.add_trace(
+            go.Scatter(
+                x=trial_labels,
+                y=[y] * len(trial_labels),
+                mode="lines",
+                name=label,
+                line=dict(color=color, dash="dash"),
+                hoverinfo="skip",
+                yaxis="y",
+            )
+        )
         fig.add_annotation(
-            x=trial_labels[-1],
+            x=0,
+            xref="paper",
+            xanchor="left",
             y=y,
-            text=f" {label}: ${y:,.0f} ",
+            yref="y",
+            text=f"{label}: ${y:,.0f}",
+            showarrow=False,
+            font=dict(color=color),
+            bgcolor="rgba(255,255,255,0.9)",
+            bordercolor=color,
+            borderwidth=1,
+        )
+
+    # Reference lines for effective tax rates
+    for y, label, color in [
+        (eff_p15, "Eff. Tax Rate p15", "blue"),
+        (eff_median, "Eff. Tax Rate Median", "green"),
+        (eff_p85, "Eff. Tax Rate p85", "blue"),
+    ]:
+        fig.add_trace(
+            go.Scatter(
+                x=trial_labels,
+                y=[y] * len(trial_labels),
+                yaxis="y2",
+                mode="lines",
+                name=label,
+                line=dict(color=color, dash="dot"),
+                hoverinfo="skip",
+            )
+        )
+        fig.add_annotation(
+            x=1,
+            xref="paper",
+            xanchor="right",
+            y=y,
+            yref="y2",
+            text=f"{label}: {y:.2f}%",
             showarrow=False,
             font=dict(color=color),
             bgcolor="rgba(255,255,255,0.9)",
@@ -1323,7 +1398,6 @@ def plot_mc_tax_totals(
     confidence_color = (
         "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
     )
-
     title = (
         f"Total Tax Burden per Trial"
         f" | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
@@ -1332,11 +1406,21 @@ def plot_mc_tax_totals(
     fig.update_layout(
         title=title,
         title_x=0.5,
-        yaxis=dict(tickformat="$,.0f"),
         template="plotly_white",
         hoverlabel=dict(align="left"),
         hovermode="x unified",
         showlegend=False,
+        barmode="overlay",
+        yaxis=dict(title="Total Taxes", tickformat="$,.0f", range=[0, None]),
+        yaxis2=dict(
+            title="Effective Tax Rate",
+            overlaying="y",
+            side="right",
+            tickformat=".0f",
+            ticksuffix="%",
+            range=[0, None],
+            showgrid=False,
+        ),
     )
 
     if show:
@@ -1419,11 +1503,13 @@ def plot_mc_taxable_balances(
                 line=dict(
                     color=color, dash="dash" if "Percentile" in label else "solid"
                 ),
-                hovertemplate=f"{label}: %{{y:$,.0f}}<extra></extra>",
+                hoverinfo="skip",
             )
         )
         fig.add_annotation(
-            x=trial_labels[-1],
+            x=0,
+            xref="paper",
+            xanchor="left",
             y=y,
             text=f" {label}: ${y:,.0f} ",
             showarrow=False,

@@ -442,54 +442,64 @@ class ForecastEngine:
         ss_benefits: int,
         withdrawals: int,
         gains: int,
+        fixed_income_interest: int,
+        unemployment: int,
+        penalty_basis: int,
         max_rate: float,
+        max_conversion_amount: int,
         tx_month: Optional[pd.Period] = None,
+        step: int = 1000,
     ) -> int:
         if tx_month is None:
             raise ValueError("tx_month is required to estimate Roth headroom")
 
         year = tx_month.year
-        year_str = str(year)
 
-        # Get inflation-adjusted deduction and brackets
-        standard_deduction = self.tax_calc.standard_deduction_by_year.get(year_str, 0)
-        federal_brackets = self.tax_calc.ordinary_tax_brackets_by_year.get(
-            f"Federal {year}", []
+        base_tax = self.tax_calc.calculate_tax(
+            year=year,
+            salary=salary,
+            ss_benefits=ss_benefits,
+            withdrawals=withdrawals,
+            gains=gains,
+            fixed_income_interest=fixed_income_interest,
+            unemployment=unemployment,
+            roth=0,
+            penalty_basis=penalty_basis,
         )
 
-        # Prefer MAGI if available
-        if year in self.magi:
-            magi = self.magi[year]
-            ordinary_income = max(0, magi - standard_deduction)
-        else:
-            taxable_ss = self.tax_calc._taxable_social_security(
-                year, ss_benefits, salary + withdrawals + gains
+        base_income = (
+            salary
+            + unemployment
+            + withdrawals
+            + gains
+            + ss_benefits
+            + fixed_income_interest
+        )
+
+        headroom = 0
+        for roth_amount in range(step, max_conversion_amount + step, step):
+            test_tax = self.tax_calc.calculate_tax(
+                year=year,
+                salary=salary,
+                ss_benefits=ss_benefits,
+                withdrawals=withdrawals,
+                gains=gains,
+                fixed_income_interest=fixed_income_interest,
+                unemployment=unemployment,
+                roth=roth_amount,
+                penalty_basis=penalty_basis,
             )
-            ordinary_income = max(
-                0, salary + withdrawals + taxable_ss - standard_deduction
+            total_income = base_income + roth_amount
+            effective_rate = (
+                test_tax["total_tax"] / total_income if total_income > 0 else 0.0
             )
 
-        # Estimate Roth headroom before exceeding max_rate
-        headroom = 0
-        for i, bracket in enumerate(federal_brackets):
-            rate = bracket["tax_rate"]
-            if rate > max_rate:
+            if effective_rate > max_rate:
                 break
 
-            lower = bracket["min_salary"]
-            upper = (
-                federal_brackets[i + 1]["min_salary"]
-                if i + 1 < len(federal_brackets)
-                else float("inf")
-            )
+            headroom = roth_amount
 
-            if ordinary_income >= upper:
-                continue
-
-            bracket_headroom = upper - max(ordinary_income, lower)
-            headroom += bracket_headroom
-
-        return int(headroom)
+        return headroom
 
     def _apply_roth_conversion_if_eligible(
         self,
@@ -526,19 +536,19 @@ class ForecastEngine:
                 return 0
 
         max_rate = phase_config.get("Max Tax Rate", 0.0)
-
+        max_amt = phase_config.get("Max Conversion Amount", 0)
         headroom = self._estimate_roth_headroom(
-            salary=ylog["Salary"],
-            ss_benefits=ylog["Social Security"],
-            withdrawals=ylog["Tax-Deferred Withdrawals"],
-            gains=ylog["Taxable Gains"],
+            salary=ylog.get("Salary", 0),
+            ss_benefits=ylog.get("Social Security", 0),
+            withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
+            gains=ylog.get("Taxable Gains", 0),
+            fixed_income_interest=ylog.get("Fixed Income Interest", 0),
+            unemployment=ylog.get("Unemployment", 0),
+            penalty_basis=ylog.get("Penalty Tax", 0),
             max_rate=max_rate,
+            max_conversion_amount=int(max_amt),
             tx_month=forecast_month,
         )
-
-        max_amt = phase_config.get("Max Conversion Amount")
-        if max_amt is not None:
-            headroom = int(min(headroom, max_amt))
 
         if headroom <= 0:
             return 0
@@ -587,6 +597,7 @@ class ForecastEngine:
             roth=converted,
             penalty_basis=penalty_basis,
         )
+
         # Pay from Tax Collection, then Cash if needed
         if final_tax["total_tax"] > 0:
             paid_from_tc = buckets["Tax Collection"].withdraw(
@@ -627,6 +638,8 @@ class ForecastEngine:
                 "Social Security": ylog.get("Social Security", 0),
                 "Taxable Social Security": final_tax.get("taxable_ss"),
                 "Ordinary Tax": final_tax["ordinary_tax"],
+                "Payroll Specific Tax": final_tax["payroll_specific_tax"],
+                "Effective Tax Rate": final_tax["effective_tax_rate"],
             }
         )
 
