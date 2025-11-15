@@ -35,6 +35,31 @@ class TaxCalculator:
         self.social_security_brackets_by_year = self._inflate_social_security_brackets(
             base_brackets["Social Security Taxability"]
         )
+        self.irmaa_brackets_by_year = self._inflate_irmaa_brackets(
+            base_brackets.get("IRMAA 2025", [])
+        )
+
+    def _inflate_irmaa_brackets(
+        self, base_brackets: List[Dict[str, Any]]
+    ) -> Dict[int, List[Dict[str, Any]]]:
+        """
+        Inflate IRMAA thresholds and surcharges by year.
+        - max_magi is scaled by inflation modifier
+        - part_b and part_d surcharges are scaled by inflation modifier
+        """
+        inflated = {}
+        for year, inflation in self.base_inflation.items():
+            modifier = inflation.get("modifier", 1.0)
+            inflated[year] = [
+                {
+                    **b,
+                    "max_magi": int(round(b["max_magi"] * modifier)),
+                    "part_b": round(b["part_b"] * modifier, 2),
+                    "part_d": round(b["part_d"] * modifier, 2),
+                }
+                for b in base_brackets
+            ]
+        return inflated
 
     def _inflate_social_security_brackets(self, base_brackets):
         inflated = {}
