@@ -54,8 +54,8 @@ To ensure audit clarity and strategic integrity, the simulation logic conforms t
 - **Capital Gains Tax**: Applied above ordinary income using correct marginal layering and bracket thresholds
 - **Social Security Taxability**: Based on provisional income and inflation-adjusted `min_provisional` thresholds, capped at 85%
 - **Penalty Tax**: Applied only when flagged in transaction metadata, respecting early withdrawal rules
-- **Adjusted Gross Income (AGI)**: Includes salary, withdrawals, Roth conversions, gains, and taxable Social Security
-- **Ordinary Income**: Deduction subtracted before bracket application, ensuring correct taxable base
+- **AGI**: Includes salary, withdrawals, Roth conversions, gains, and taxable Social Security
+- **Taxable Income**: Deduction subtracted before bracket application, ensuring correct taxable base
 - **Inflation Modeling**: Stochastic, cumulative, and anchored to a base year for realistic long-term forecasting
 - **Bracket Application Logic**: Marginal, layered, and capped per IRS methodology
 

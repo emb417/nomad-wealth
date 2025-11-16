@@ -206,9 +206,7 @@ class ForecastEngine:
         benchmark_premium = self.marketplace_premiums[household_type]["monthly_premium"]
 
         record = self._get_minus_2_tax_record(tx_month)
-        prior_magi = (
-            record["Adjusted Gross Income (AGI)"] + record["Tax-Exempt Interest"]
-        )
+        prior_magi = record["AGI"] + record["Tax-Exempt Interest"]
         capped_monthly = (prior_magi * 0.085) / 12
         monthly_premium = int(min(benchmark_premium, capped_monthly))
 
@@ -225,9 +223,7 @@ class ForecastEngine:
 
         # Use prior MAGI (two years back)
         record = self._get_minus_2_tax_record(tx_month)
-        prior_magi = (
-            record["Adjusted Gross Income (AGI)"] + record["Tax-Exempt Interest"]
-        )
+        prior_magi = record["AGI"] + record["Tax-Exempt Interest"]
 
         year = tx_month.year
 
@@ -280,16 +276,14 @@ class ForecastEngine:
 
         if year in self.magi:
             return {
-                "Adjusted Gross Income (AGI)": self.magi[year],
+                "AGI": self.magi[year],
                 "Tax-Exempt Interest": 0,
             }
 
         record = next((r for r in self.tax_records if r.get("Year") == year), None)
         if record:
             return {
-                "Adjusted Gross Income (AGI)": int(
-                    record.get("Adjusted Gross Income (AGI)", 0)
-                ),
+                "AGI": int(record.get("AGI", 0)),
                 "Tax-Exempt Interest": int(record.get("Tax-Exempt Interest", 0)),
             }
 
@@ -646,12 +640,27 @@ class ForecastEngine:
                 leftover, buckets["Cash"], forecast_month
             )
 
+        # Compute total withdrawals for the year
+        total_withdrawals = (
+            ylog.get("Fixed Income Withdrawals", 0)
+            + ylog.get("Tax-Free Withdrawals", 0)
+            + ylog.get("Tax-Deferred Withdrawals", 0)
+        )
+
+        # Portfolio value at year-end (sum of all buckets)
+        portfolio_value = sum(bucket.balance() for bucket in buckets.values())
+
+        # Safe guard against division by zero
+        withdrawal_rate = (
+            total_withdrawals / portfolio_value if portfolio_value > 0 else 0.0
+        )
+
         # Log tax record
         tax_records.append(
             {
                 "Year": year,
-                "Adjusted Gross Income (AGI)": final_tax.get("agi"),
-                "Ordinary Income": final_tax.get("ordinary_income"),
+                "AGI": final_tax.get("agi"),
+                "Taxable Income": final_tax.get("ordinary_income"),
                 "Total Tax": final_tax["total_tax"],
                 "Fixed Income Withdrawals": ylog.get("Fixed Income Withdrawals", 0),
                 "Tax-Free Withdrawals": ylog.get("Tax-Free Withdrawals", 0),
@@ -669,6 +678,8 @@ class ForecastEngine:
                 "Ordinary Tax": final_tax["ordinary_tax"],
                 "Payroll Specific Tax": final_tax["payroll_specific_tax"],
                 "Effective Tax Rate": final_tax["effective_tax_rate"],
+                "Total Withdrawals": total_withdrawals,
+                "Withdrawal Rate": withdrawal_rate,
             }
         )
 

@@ -3,8 +3,8 @@ import numpy as np
 import pandas as pd
 import plotly.graph_objects as go
 
-from plotly.subplots import make_subplots
 from datetime import datetime
+from typing import Tuple, List
 
 
 COLOR_PALETTE = [
@@ -45,6 +45,60 @@ COLOR_PALETTE = [
 label_color_map = {}
 
 
+def add_percentile_lines(
+    fig, trial_labels, percentiles, axis, labels, colors, dash="dash"
+):
+    """
+    Add percentile reference lines and annotations to a figure.
+    - percentiles: list of values [p15, median, p85]
+    - labels: list of label strings
+    - colors: list of colors
+    - axis: "y" or "y2"
+    """
+    for y, label, color in zip(percentiles, labels, colors):
+        if axis == "y":
+            # Add line + annotation for primary axis
+            fig.add_trace(
+                go.Scatter(
+                    x=trial_labels,
+                    y=[y] * len(trial_labels),
+                    mode="lines",
+                    name=label,
+                    line=dict(color=color, dash=dash),
+                    hoverinfo="skip",
+                    yaxis="y",
+                )
+            )
+            fig.add_annotation(
+                x=0,
+                xref="paper",
+                xanchor="left",
+                y=y,
+                yref="y",
+                text=f"{label}: ${y:,.0f}",
+                showarrow=False,
+                font=dict(color=color),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor=color,
+                borderwidth=1,
+            )
+        else:
+            # Only annotation for secondary axis
+            fig.add_annotation(
+                x=1,
+                xref="paper",
+                xanchor="right",
+                y=y,
+                yref="y2",
+                text=f"{label}: {y:.2f}%",
+                showarrow=False,
+                font=dict(color=color),
+                bgcolor="rgba(255,255,255,0.9)",
+                bordercolor=color,
+                borderwidth=1,
+            )
+
+
 def base_label(label):
     base = label.split("(")[0]
     if "Gains" in base:
@@ -53,6 +107,52 @@ def base_label(label):
         return base.replace(" Losses", "")
     base = base.strip()
     return base
+
+
+def build_chart(
+    title,
+    trial_labels,
+    bar_values,
+    bar_colors,
+    bar_hovertext,
+    yaxis_title,
+    yaxis2_title,
+):
+    """
+    Create a base chart with bars and layout.
+    """
+    fig = go.Figure()
+    fig.add_trace(
+        go.Bar(
+            x=trial_labels,
+            y=bar_values,
+            marker_color=bar_colors,
+            opacity=0.5,
+            hovertext=bar_hovertext,
+            hovertemplate="%{hovertext}<extra></extra>",
+            name=yaxis_title,
+            yaxis="y",
+        )
+    )
+    fig.update_layout(
+        title=dict(text=title, x=0.5, xanchor="center"),
+        template="plotly_white",
+        hoverlabel=dict(align="left"),
+        hovermode="x unified",
+        showlegend=False,
+        barmode="overlay",
+        yaxis=dict(title=yaxis_title, tickformat="$,.0f", range=[0, None]),
+        yaxis2=dict(
+            title=yaxis2_title,
+            overlaying="y",
+            side="right",
+            tickformat=".0f",
+            ticksuffix="%",
+            range=[0, None],
+            showgrid=False,
+        ),
+    )
+    return fig
 
 
 def normalize_source(label):
@@ -120,23 +220,28 @@ def plot_example_income_taxes(
         "Penalty Tax": "#e53926",
     }
     marker_config = {
-        "Adjusted Gross Income (AGI)": {
+        "AGI": {
             "symbol": "triangle-up",
             "size": 12,
             "color": "black",
         },
-        "Ordinary Income": {"symbol": "bowtie", "size": 14, "color": "black"},
-        "Taxable Gains": {"symbol": "cross", "size": 12, "color": "black"},
+        "Taxable Income": {"symbol": "circle-open-dot", "size": 12, "color": "black"},
+        "Taxable Gains": {"symbol": "cross-open", "size": 8, "color": "black"},
         "Taxable Social Security": {
             "symbol": "triangle-down",
             "size": 12,
             "color": "black",
         },
         "Total Tax": {"symbol": "line-ew-open", "size": 24, "color": "red"},
+        "Withdrawal Rate": {
+            "symbol": "triangle-down-open-dot",
+            "size": 12,
+            "color": "black",
+        },
         "Effective Tax Rate": {
-            "symbol": "circle-open-dot",
-            "size": 14,
-            "color": "red",
+            "symbol": "diamond-cross-open",
+            "size": 8,
+            "color": "#e53926",
         },
     }
 
@@ -158,16 +263,27 @@ def plot_example_income_taxes(
 
     # Income + tax markers
     for col in [
-        "Adjusted Gross Income (AGI)",
-        "Ordinary Income",
         "Taxable Gains",
         "Taxable Social Security",
+        "AGI",
+        "Withdrawal Rate",
+        "Taxable Income",
         "Effective Tax Rate",
     ]:
-        y_vals = taxes_df[col] * 100 if col == "Effective Tax Rate" else taxes_df[col]
+        default_hidden = [
+            "AGI",
+            "Taxable Gains",
+            "Taxable Social Security",
+        ]
+        visibility = "legendonly" if col in default_hidden else True
+        y_vals = (
+            taxes_df[col] * 100
+            if col in ["Effective Tax Rate", "Withdrawal Rate"]
+            else taxes_df[col]
+        )
         hover_fmt = (
             f"{col}: %{{y:.2f}}%<extra></extra>"
-            if col == "Effective Tax Rate"
+            if col in ["Effective Tax Rate", "Withdrawal Rate"]
             else f"{col}: %{{y:$,.0f}}<extra></extra>"
         )
 
@@ -176,10 +292,11 @@ def plot_example_income_taxes(
                 x=years,
                 y=y_vals,
                 name=col,
-                mode="markers" if col == "Effective Tax Rate" else "markers",
+                mode="markers",
                 marker=marker_config[col],
                 hovertemplate=hover_fmt,
-                yaxis="y2" if col == "Effective Tax Rate" else "y",
+                yaxis="y2" if col in ["Effective Tax Rate", "Withdrawal Rate"] else "y",
+                visible=visibility,
             )
         )
 
@@ -194,7 +311,7 @@ def plot_example_income_taxes(
             tickformat="$,.0f",
         ),
         yaxis2=dict(
-            title="Effective Tax Rate",
+            title="Rate",
             overlaying="y",
             side="right",
             tickformat=".0f",
@@ -961,7 +1078,6 @@ def plot_historical_bucket_gains(
 
 def plot_mc_monthly_returns(
     mc_monthly_returns_df: pd.DataFrame,
-    sim_examples: np.ndarray,
     ts: str,
     show: bool,
     save: bool,
@@ -1274,7 +1390,7 @@ def plot_mc_networth(
         logging.debug(f"Monte Carlo files saved to {html}")
 
 
-def plot_mc_tax_totals(
+def plot_mc_totals_and_rates(
     mc_tax_df: pd.DataFrame,
     sim_examples: np.ndarray,
     ts: str,
@@ -1282,154 +1398,124 @@ def plot_mc_tax_totals(
     save: bool,
     export_path: str = "export/",
 ):
-    """
-    Renders and optionally saves a bar chart of total taxes per trial,
-    with Effective Tax Rate overlay on a secondary y-axis.
-    """
     mc_tax_df = mc_tax_df.copy()
     mc_tax_df.index = pd.Index(mc_tax_df.index).astype(int)
     sim_size = mc_tax_df.columns.get_level_values(1).nunique()
-
-    # Total taxes across years per trial
-    total_taxes = mc_tax_df.xs("Total Tax", level=0, axis=1).sum(axis=0)
-
-    # Effective tax rates per year per trial
-    eff_rate_df = mc_tax_df.xs("Effective Tax Rate", level=0, axis=1) * 100
-    eff_rate_values = eff_rate_df.to_numpy().ravel()
-
-    # Percentiles across all trials and all years
-    eff_p15 = np.percentile(eff_rate_values, 15)
-    eff_median = np.percentile(eff_rate_values, 50)
-    eff_p85 = np.percentile(eff_rate_values, 85)
-
-    # Percentiles of total taxes
-    p15 = total_taxes.quantile(0.15)
-    median = total_taxes.median()
-    p85 = total_taxes.quantile(0.85)
-
-    # Exclude the top 5% of total taxes from the chart
-    threshold = total_taxes.quantile(0.95)
-    total_taxes = total_taxes[total_taxes <= threshold]
-
-    trial_labels = [f"Trial {int(trial)+1:04d}" for trial in total_taxes.index]
-    bar_colors = [
-        "purple" if trial in sim_examples else "lightgray"
-        for trial in total_taxes.index
-    ]
-    hover_texts = [f"Total Taxes: ${total:,.0f}" for total in total_taxes.values]
-
-    fig = go.Figure()
-
-    # Bar trace for total taxes
-    fig.add_trace(
-        go.Bar(
-            x=trial_labels,
-            y=total_taxes.values,
-            marker_color=bar_colors,
-            opacity=0.5,
-            hovertext=hover_texts,
-            hovertemplate="%{hovertext}<extra></extra>",
-            name="Total Taxes",
-            yaxis="y",
-        )
-    )
-
-    for y, label, color in [
-        (p15, "Total Taxes p15", "blue"),
-        (median, "Total Taxes Median", "green"),
-        (p85, "Total Taxes p85", "blue"),
-    ]:
-        fig.add_trace(
-            go.Scatter(
-                x=trial_labels,
-                y=[y] * len(trial_labels),
-                mode="lines",
-                name=label,
-                line=dict(color=color, dash="dash"),
-                hoverinfo="skip",
-                yaxis="y",
-            )
-        )
-        fig.add_annotation(
-            x=0,
-            xref="paper",
-            xanchor="left",
-            y=y,
-            yref="y",
-            text=f"{label}: ${y:,.0f}",
-            showarrow=False,
-            font=dict(color=color),
-            bgcolor="rgba(255,255,255,0.9)",
-            bordercolor=color,
-            borderwidth=1,
-        )
-
-    # Reference lines for effective tax rates
-    for y, label, color in [
-        (eff_p15, "Eff. Tax Rate p15", "blue"),
-        (eff_median, "Eff. Tax Rate Median", "green"),
-        (eff_p85, "Eff. Tax Rate p85", "blue"),
-    ]:
-        fig.add_trace(
-            go.Scatter(
-                x=trial_labels,
-                y=[y] * len(trial_labels),
-                yaxis="y2",
-                mode="lines",
-                name=label,
-                line=dict(color=color, dash="dot"),
-                hoverinfo="skip",
-            )
-        )
-        fig.add_annotation(
-            x=1,
-            xref="paper",
-            xanchor="right",
-            y=y,
-            yref="y2",
-            text=f"{label}: {y:.2f}%",
-            showarrow=False,
-            font=dict(color=color),
-            bgcolor="rgba(255,255,255,0.9)",
-            bordercolor=color,
-            borderwidth=1,
-        )
-
     confidence_color = (
         "green" if sim_size >= 1000 else "blue" if sim_size >= 100 else "red"
     )
-    title = (
-        f"Total Tax Burden per Trial"
-        f" | <span style='color: {confidence_color}'>{sim_size} Trials</span>"
+
+    # --- Taxes ---
+    total_taxes = mc_tax_df.xs("Total Tax", level=0, axis=1).sum(axis=0)
+    eff_rate_df = mc_tax_df.xs("Effective Tax Rate", level=0, axis=1) * 100
+    eff_rate_values = eff_rate_df.to_numpy().ravel()
+    eff_percentiles = np.percentile(eff_rate_values, [15, 50, 85, 100])
+    tax_percentiles = [
+        total_taxes.quantile(0.15),
+        total_taxes.median(),
+        total_taxes.quantile(0.85),
+    ]
+    threshold = total_taxes.quantile(0.95)
+    total_taxes = total_taxes[total_taxes <= threshold]
+    trial_labels = [f"Trial {int(t)+1:04d}" for t in total_taxes.index]
+    bar_colors = [
+        "purple" if t in sim_examples else "lightgray" for t in total_taxes.index
+    ]
+
+    fig_taxes = build_chart(
+        title=f"Total Tax Burden per Trial | <span style='color:{confidence_color}'>{sim_size} Trials</span>",
+        trial_labels=trial_labels,
+        bar_values=total_taxes.values,
+        bar_colors=bar_colors,
+        bar_hovertext=[f"Total Taxes: ${val:,.0f}" for val in total_taxes.values],
+        yaxis_title="Total Taxes",
+        yaxis2_title="Effective Tax Rate",
+    )
+    add_percentile_lines(
+        fig_taxes,
+        trial_labels,
+        tax_percentiles,
+        axis="y",
+        labels=["p15", "Median", "p85"],
+        colors=["blue", "green", "blue"],
+        dash="dash",
+    )
+    add_percentile_lines(
+        fig_taxes,
+        trial_labels,
+        eff_percentiles,
+        axis="y2",
+        labels=["p15", "Median", "p85", "Max"],
+        colors=["blue", "green", "blue", "red"],
+        dash="dot",
     )
 
-    fig.update_layout(
-        title=title,
-        title_x=0.5,
-        template="plotly_white",
-        hoverlabel=dict(align="left"),
-        hovermode="x unified",
-        showlegend=False,
-        barmode="overlay",
-        yaxis=dict(title="Total Taxes", tickformat="$,.0f", range=[0, None]),
-        yaxis2=dict(
-            title="Effective Tax Rate",
-            overlaying="y",
-            side="right",
-            tickformat=".0f",
-            ticksuffix="%",
-            range=[0, None],
-            showgrid=False,
-        ),
+    # --- Withdrawals ---
+    total_withdrawals = mc_tax_df.xs("Total Withdrawals", level=0, axis=1).sum(axis=0)
+    withdraw_rate_df = mc_tax_df.xs("Withdrawal Rate", level=0, axis=1) * 100
+    withdraw_rate_values = withdraw_rate_df.to_numpy().ravel()
+
+    wr_percentiles = np.percentile(withdraw_rate_values, [15, 50, 85, 100])
+    w_percentiles = [
+        total_withdrawals.quantile(0.15),
+        total_withdrawals.median(),
+        total_withdrawals.quantile(0.85),
+    ]
+
+    withdraw_trial_labels = [f"Trial {int(t)+1:04d}" for t in total_withdrawals.index]
+    withdraw_bar_colors = [
+        "purple" if t in sim_examples else "lightgray" for t in total_withdrawals.index
+    ]
+
+    fig_withdrawals = build_chart(
+        title=f"Total Withdrawals per Trial | <span style='color:{confidence_color}'>{sim_size} Trials</span>",
+        trial_labels=withdraw_trial_labels,
+        bar_values=total_withdrawals.values,
+        bar_colors=withdraw_bar_colors,
+        bar_hovertext=[
+            f"Total Withdrawals: ${val:,.0f}" for val in total_withdrawals.values
+        ],
+        yaxis_title="Total Withdrawals",
+        yaxis2_title="Withdrawal Rate",
     )
 
+    # Percentile lines: Total Withdrawals (primary axis)
+    add_percentile_lines(
+        fig_withdrawals,
+        withdraw_trial_labels,
+        w_percentiles,
+        axis="y",
+        labels=[
+            "p15",
+            "Median",
+            "p85",
+        ],
+        colors=["blue", "green", "blue"],
+        dash="dash",
+    )
+
+    # Percentile lines: Withdrawal Rate (secondary axis)
+    add_percentile_lines(
+        fig_withdrawals,
+        withdraw_trial_labels,
+        wr_percentiles,
+        axis="y2",
+        labels=["p15", "Median", "p85", "Max"],
+        colors=["blue", "green", "blue", "red"],
+        dash="dot",
+    )
+
+    # --- Render / Save ---
     if show:
-        fig.show()
+        fig_taxes.show()
+        fig_withdrawals.show()
     if save:
         total_taxes.to_csv(f"{export_path}mc_tax_totals_{ts}.csv", index_label="Trial")
-        html = f"{export_path}mc_tax_totals_{ts}.html"
-        fig.write_html(html)
-        logging.debug(f"Monte Carlo tax totals saved to {html}")
+        total_withdrawals.to_csv(
+            f"{export_path}mc_withdrawals_totals_{ts}.csv", index_label="Trial"
+        )
+        fig_taxes.write_html(f"{export_path}mc_tax_totals_{ts}.html")
+        fig_withdrawals.write_html(f"{export_path}mc_withdrawals_totals_{ts}.html")
 
 
 def plot_mc_taxable_balances(
@@ -1490,9 +1576,9 @@ def plot_mc_taxable_balances(
 
     # Reference lines from full dataset
     for y, label, color in [
-        (p15, "15th Percentile", "blue"),
+        (p15, "p15", "blue"),
         (median, "Median", "green"),
-        (p85, "85th Percentile", "blue"),
+        (p85, "p85", "blue"),
     ]:
         fig.add_trace(
             go.Scatter(
@@ -1500,9 +1586,7 @@ def plot_mc_taxable_balances(
                 y=[y] * len(trial_labels),
                 mode="lines",
                 name=label,
-                line=dict(
-                    color=color, dash="dash" if "Percentile" in label else "solid"
-                ),
+                line=dict(color=color, dash="dash"),
                 hoverinfo="skip",
             )
         )

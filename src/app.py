@@ -41,7 +41,7 @@ from visualization import (
     plot_historical_bucket_gains,
     plot_mc_monthly_returns,
     plot_mc_networth,
-    plot_mc_tax_totals,
+    plot_mc_totals_and_rates,
     plot_mc_taxable_balances,
 )
 
@@ -531,7 +531,12 @@ def main():
                 monthly_nw_series = forecast_df.set_index("Month")["Net Worth"]
                 mc_networth_by_trial[trial] = monthly_nw_series
                 tax_series = taxes_df.set_index("Year")[
-                    ["Total Tax", "Effective Tax Rate"]
+                    [
+                        "Total Tax",
+                        "Effective Tax Rate",
+                        "Total Withdrawals",
+                        "Withdrawal Rate",
+                    ]
                 ]
                 mc_tax_by_trial[trial] = tax_series
                 mc_monthly_returns_by_trial[trial] = monthly_returns_df.assign(
@@ -545,8 +550,8 @@ def main():
                         ts=ts,
                         show=(
                             SHOW_MONTHLY_EXPENSES_CHART
-                            if not DETAILED_MODE
-                            else DETAILED_MODE
+                            if not SHOW_EXAMPLES
+                            else SHOW_EXAMPLES
                         ),
                         save=(
                             SAVE_MONTHLY_EXPENSES_CHART
@@ -632,7 +637,6 @@ def main():
 
         plot_mc_monthly_returns(
             mc_monthly_returns_df=mc_monthly_returns_df,
-            sim_examples=sim_examples,
             ts=ts,
             show=(SHOW_MONTHLY_RETURNS_CHART if not DETAILED_MODE else DETAILED_MODE),
             save=(SAVE_MONTHLY_RETURNS_CHART if not DETAILED_MODE else DETAILED_MODE),
@@ -646,7 +650,7 @@ def main():
             show=(SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO),
             save=(SAVE_TAXABLE_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
-        plot_mc_tax_totals(
+        plot_mc_totals_and_rates(
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
