@@ -456,13 +456,17 @@ def main():
                 if not SHOW_HISTORICAL
                 else SHOW_HISTORICAL
             ),
-            SAVE_HISTORICAL_BUCKET_GAINS_CHART,
+            (
+                SAVE_HISTORICAL_BUCKET_GAINS_CHART
+                if not DETAILED_MODE
+                else DETAILED_MODE
+            ),
         )
         plot_historical_balance(
             dfs["balance"],
             ts,
-            SHOW_HISTORICAL_BALANCE_CHART if not SHOW_HISTORICAL else SHOW_HISTORICAL,
-            SAVE_HISTORICAL_BALANCE_CHART,
+            (SHOW_HISTORICAL_BALANCE_CHART if not SHOW_HISTORICAL else SHOW_HISTORICAL),
+            (SAVE_HISTORICAL_BALANCE_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
 
         hist_df, future_df = stage_prepare_timeframes(dfs["balance"], eol)
@@ -542,7 +546,11 @@ def main():
                             if not DETAILED_MODE
                             else DETAILED_MODE
                         ),
-                        save=SAVE_MONTHLY_EXPENSES_CHART,
+                        save=(
+                            SAVE_MONTHLY_EXPENSES_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                     )
                     plot_example_transactions(
                         flow_df=flow_df,
@@ -553,7 +561,11 @@ def main():
                             if not SHOW_EXAMPLES
                             else SHOW_EXAMPLES
                         ),
-                        save=SAVE_EXAMPLE_TRANSACTIONS_CHART,
+                        save=(
+                            SAVE_EXAMPLE_TRANSACTIONS_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                     )
                     plot_example_transactions_in_context(
                         trial=trial,
@@ -565,7 +577,11 @@ def main():
                             if not DETAILED_MODE
                             else DETAILED_MODE
                         ),
-                        save=SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART,
+                        save=(
+                            SAVE_EXAMPLE_TRANSACTIONS_IN_CONTEXT_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                     )
                     plot_example_income_taxes(
                         taxes_df=taxes_df,
@@ -576,7 +592,11 @@ def main():
                             if not SHOW_EXAMPLES
                             else SHOW_EXAMPLES
                         ),
-                        save=SAVE_EXAMPLE_INCOME_TAXES_CHART,
+                        save=(
+                            SAVE_EXAMPLE_INCOME_TAXES_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                     )
                     plot_example_forecast(
                         trial=trial,
@@ -589,7 +609,11 @@ def main():
                             if not SHOW_EXAMPLES
                             else SHOW_EXAMPLES
                         ),
-                        save=SAVE_EXAMPLE_FORECAST_CHART,
+                        save=(
+                            SAVE_EXAMPLE_FORECAST_CHART
+                            if not DETAILED_MODE
+                            else DETAILED_MODE
+                        ),
                     )
 
         # Build DataFrame: rows = simulations, columns = years
@@ -609,7 +633,7 @@ def main():
             sim_examples=sim_examples,
             ts=ts,
             show=(SHOW_MONTHLY_RETURNS_CHART if not DETAILED_MODE else DETAILED_MODE),
-            save=SAVE_MONTHLY_RETURNS_CHART,
+            save=(SAVE_MONTHLY_RETURNS_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
 
         plot_mc_taxable_balances(
@@ -617,15 +641,15 @@ def main():
             sim_examples=sim_examples,
             sepp_end_month=json_data["policies"]["SEPP"]["End Month"],
             ts=ts,
-            show=SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
-            save=SAVE_TAXABLE_CHART,
+            show=(SHOW_TAXABLE_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO),
+            save=(SAVE_TAXABLE_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
         plot_mc_tax_totals(
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
-            save=SAVE_TAXES_CHART,
+            show=(SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO),
+            save=(SAVE_TAXES_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
 
         plot_mc_networth(
@@ -635,8 +659,8 @@ def main():
             eol=eol,
             summary=summary,
             ts=ts,
-            show=SHOW_NETWORTH_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO,
-            save=SAVE_NETWORTH_CHART,
+            show=(SHOW_NETWORTH_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO),
+            save=(SAVE_NETWORTH_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
 
 

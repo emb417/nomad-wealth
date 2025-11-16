@@ -132,8 +132,8 @@ class PropertyTransaction(PolicyTransaction):
 
         # Inflation multipliers
         tax_infl = self._inflated("Property Taxes", tx_month)
-        insurance_infl = self._inflated("Home Insurance", tx_month)
-        maintenance_infl = self._inflated("Home Maintenance", tx_month)
+        insurance_infl = self._inflated("Property Insurance", tx_month)
+        maintenance_infl = self._inflated("Property Maintenance", tx_month)
 
         # Maintenance
         home_value = float(self.config.get("Market Value", 0))
