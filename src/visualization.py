@@ -382,8 +382,8 @@ def plot_example_income_taxes(
 
     # ---------------- Show/Save ----------------
     if show:
-        fig_income.show()
         fig_taxes.show()
+        fig_income.show()
     if save:
         prefix = f"{export_path}{trial+1:04d}_"
         taxes_csv = f"{prefix}income_taxes_{ts}.csv"
