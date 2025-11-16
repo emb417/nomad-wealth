@@ -523,23 +523,62 @@ class SalaryTransaction(PolicyTransaction):
         self,
         annual_gross: int,
         annual_bonus: int,
-        bonus_date: str,
+        merit_increase_rate: float,
+        merit_increase_month: str,
+        bonus_month: str,
         salary_buckets: Dict[str, float],
         retirement_date: str,
     ):
+        self.initial_annual_gross = annual_gross
         self.monthly_base = annual_gross // 12
         self.remainder = annual_gross - (self.monthly_base * 12)
         self.annual_bonus = annual_bonus
-        self.bonus_period = pd.to_datetime(bonus_date).to_period("M")
+        self.bonus_period = pd.to_datetime(bonus_month).to_period("M")
         self.retirement_period = pd.to_datetime(retirement_date).to_period("M")
         self.bucket_pcts = salary_buckets
+
+        # Merit increase properties
+        self.merit_rate = merit_increase_rate
+        self.merit_period = (
+            pd.to_datetime(merit_increase_month).to_period("M")
+            if merit_increase_month
+            else None
+        )
+
+    def _adjusted_monthly_base(self, tx_month: pd.Period) -> int:
+        """
+        Compute monthly base salary adjusted for merit increases.
+        Merit increases compound annually starting at merit_period,
+        applied once per year at the configured month.
+        """
+        # Before merit start → no adjustment
+        if not self.merit_period or tx_month < self.merit_period:
+            return self.monthly_base
+
+        # Count how many merit increases have occurred by this month
+        years_since_start = tx_month.year - self.merit_period.year
+        # If we haven't yet reached the merit month in the current year, subtract one
+        if tx_month.month < self.merit_period.month:
+            years_since_start -= 1
+
+        # Apply compounded merit increases
+        adjusted_annual = int(
+            round(
+                self.initial_annual_gross
+                * ((1 + self.merit_rate) ** max(0, years_since_start))
+            )
+        )
+        return adjusted_annual // 12
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         if tx_month > self.retirement_period:
             return
 
-        # Base salary (with remainder in December)
-        total = self.monthly_base + (self.remainder if tx_month.month == 12 else 0)
+        # Adjusted salary for this month
+        monthly_base = self._adjusted_monthly_base(tx_month)
+        remainder = self.initial_annual_gross - (monthly_base * 12)
+        total = monthly_base + (remainder if tx_month.month == 12 else 0)
+
         for bucket_name, pct in self.bucket_pcts.items():
             bucket = buckets.get(bucket_name)
             if bucket is None:
@@ -560,14 +599,14 @@ class SalaryTransaction(PolicyTransaction):
         if tx_month > self.retirement_period:
             return 0
 
-        # Salary (excluding tax-deferred buckets)
+        monthly_base = self._adjusted_monthly_base(tx_month)
+
         total = sum(
-            int(round(self.monthly_base * pct))
+            int(round(monthly_base * pct))
             for bucket_name, pct in self.bucket_pcts.items()
             if bucket_name.lower() != "tax-deferred"
         )
 
-        # Bonus distributed like salary
         if tx_month.month == self.bonus_period.month:
             total += sum(
                 int(round(self.annual_bonus * pct))

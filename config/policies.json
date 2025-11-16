@@ -24,9 +24,11 @@
       "Tax-Deferred": 0.1
     },
     "Annual Gross Income": 180000,
-    "Annual Bonus Month": "2027-04",
+    "Annual Bonus Month": "2026-04",
     "Annual Bonus Amount": 15000,
-    "Retirement Month": "2029-09"
+    "Annual Merit Increase Rate": 0.025,
+    "Annual Merit Increase Month": "2026-03",
+    "Retirement Month": "2025-09"
   },
   "Social Security": [
     {
@@ -65,16 +67,16 @@
       "Cutoff Age": 60
     },
     "prime": {
-      "Max Tax Rate": 0.15,
-      "Max Conversion Amount": 1000000,
+      "Max Tax Rate": 0.2,
+      "Max Conversion Amount": 80000,
       "Tax Source Threshold": 1250000,
       "Tax Source Name": "Tax-Deferred",
       "Allow Conversion": true,
       "Cutoff Age": 70
     },
     "late": {
-      "Max Tax Rate": 0.2,
-      "Max Conversion Amount": 1000000,
+      "Max Tax Rate": 0.25,
+      "Max Conversion Amount": 80000,
       "Tax Source Threshold": 1000000,
       "Tax Source Name": "Tax-Deferred",
       "Allow Conversion": true,

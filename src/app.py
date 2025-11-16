@@ -331,7 +331,9 @@ def stage_init_components(
     salary_tx = SalaryTransaction(
         annual_gross=policies_config["Salary"]["Annual Gross Income"],
         annual_bonus=policies_config["Salary"]["Annual Bonus Amount"],
-        bonus_date=policies_config["Salary"]["Annual Bonus Month"],
+        merit_increase_rate=policies_config["Salary"]["Annual Merit Increase Rate"],
+        merit_increase_month=policies_config["Salary"]["Annual Merit Increase Month"],
+        bonus_month=policies_config["Salary"]["Annual Bonus Month"],
         salary_buckets=policies_config["Salary"]["Targets"],
         retirement_date=policies_config["Salary"]["Retirement Month"],
     )
