@@ -1,0 +1,2181 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../usage/">
+      
+      
+        <link rel="next" href="../architecture/">
+      
+      
+        
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.6.1, mkdocs-material-9.7.0">
+    
+    
+      
+        <title>Configuration Reference - Nomad Wealth Forecasting</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.618322db.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+    <script>__md_scope=new URL("..",location),__md_hash=e=>[...e].reduce(((e,_)=>(e<<5)-e+_.charCodeAt(0)),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    <body dir="ltr">
+  
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#configuration-reference" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="Nomad Wealth Forecasting" class="md-header__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3zm0 5h18v2H3zm0 5h18v2H3z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            Nomad Wealth Forecasting
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Configuration Reference
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+      <script>var palette=__md_get("__palette");if(palette&&palette.color){if("(prefers-color-scheme)"===palette.color.media){var media=matchMedia("(prefers-color-scheme: light)"),input=document.querySelector(media.matches?"[data-md-color-media='(prefers-color-scheme: light)']":"[data-md-color-media='(prefers-color-scheme: dark)']");palette.color.media=input.getAttribute("data-md-color-media"),palette.color.scheme=input.getAttribute("data-md-color-scheme"),palette.color.primary=input.getAttribute("data-md-color-primary"),palette.color.accent=input.getAttribute("data-md-color-accent")}for(var[key,value]of Object.entries(palette.color))document.body.setAttribute("data-md-color-"+key,value)}</script>
+    
+    
+    
+      
+      
+        <label class="md-header__button md-icon" for="__search">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        </label>
+        <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.52 6.52 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" tabindex="0" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+      
+    
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="Nomad Wealth Forecasting" class="md-nav__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
+
+    </a>
+    Nomad Wealth Forecasting
+  </label>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Home
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../overview/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Framework Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Usage Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Reference
+  
+
+    
+  </span>
+  
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Configuration Reference
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-basic-vs-recommended-vs-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Getting Started: Basic vs. Recommended vs. Advanced
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔑 Getting Started: Basic vs. Recommended vs. Advanced">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BASIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RECOMMENDED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADVANCED
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 JSON Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📂 JSON Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Profiles Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Profiles Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buckets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Buckets Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Buckets Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Policies Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Policies Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 Tax Brackets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Tax Brackets Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Tax Brackets Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inflation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Inflation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-inflation_ratesjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (inflation_rates.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-inflation_thresholdsjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (inflation_thresholds.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-gain_tablejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (gain_table.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Inflation Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Inflation Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Marketplace Premiums
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Marketplace Premiums Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Marketplace Premiums Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csv-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 CSV Inputs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📂 CSV Inputs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#balances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balances
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balances-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Balances Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balances-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Balances Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Transactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Fixed Transactions Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Fixed Transactions Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurring Transactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Recurring Transactions Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Recurring Transactions Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../architecture/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Architecture Overview
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../simulation_logic/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Simulation Logic
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../visualization/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+    Visualization Guide
+  
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#getting-started-basic-vs-recommended-vs-advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Getting Started: Basic vs. Recommended vs. Advanced
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="🔑 Getting Started: Basic vs. Recommended vs. Advanced">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#basic" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        BASIC
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recommended" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        RECOMMENDED
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#advanced" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        ADVANCED
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#json-configuration" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 JSON Configuration
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📂 JSON Configuration">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#profiles" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Profiles
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Profiles Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#profiles-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Profiles Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Buckets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Buckets Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#buckets-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Buckets Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Policies
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Policies Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#policies-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Policies Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 Tax Brackets
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Tax Brackets Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#tax-brackets-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Tax Brackets Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Inflation
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="Inflation">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#example-inflation_ratesjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (inflation_rates.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-inflation_thresholdsjson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (inflation_thresholds.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#example-gain_tablejson" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Example (gain_table.json)
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Inflation Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#inflation-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Inflation Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Marketplace Premiums
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Marketplace Premiums Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#marketplace-premiums-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Marketplace Premiums Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#csv-inputs" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📂 CSV Inputs
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📂 CSV Inputs">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#balances" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Balances
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balances-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Balances Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#balances-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Balances Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Fixed Transactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Fixed Transactions Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#fixed-transactions-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Fixed Transactions Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        Recurring Transactions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions-field-definitions" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🔑 Recurring Transactions Field Definitions
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#recurring-transactions-audit-notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Recurring Transactions Audit Notes
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#notes" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        🧾 Notes
+      
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#related-pages" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📚 Related Pages
+      
+    </span>
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+
+
+<h1 id="configuration-reference">⚙️ Configuration Reference</h1>
+<p>Nomad Wealth is <strong>policy‑first</strong>: all simulation behavior is driven by declarative configuration files. This page documents the JSON and CSV schemas that define buckets, policies, tax brackets, seed balances, and transactions.</p>
+<hr />
+<h2 id="getting-started-basic-vs-recommended-vs-advanced">🔑 Getting Started: Basic vs. Recommended vs. Advanced</h2>
+<h3 id="basic">BASIC</h3>
+<p>To run a personalized simulation, you should revise these files:</p>
+<ul>
+<li><strong><code>profile.json</code></strong> → defines birth month, MAGI, and simulation horizon (end month).</li>
+<li><strong><code>balance.csv</code></strong> → seed buckets and their balances. These need to align to buckets defined in <code>buckets.json</code>. Forecasting starts in the month after the last month in <code>balance.csv</code>.</li>
+<li><strong><code>recurring.csv</code></strong> → ongoing monthly expenses (e.g., insurance, food, utilities). Use today dollar amounts. Types need to align to category profiles in <code>inflation_rates.json</code> for proper inflation over the years.</li>
+<li><strong><code>fixed.csv</code></strong> → one‑time events (e.g., tuition, travel). File is required, but may be empty. Use today dollar amounts. Types need to align to category profiles in <code>inflation_rates.json</code> for proper inflation over the years.</li>
+</ul>
+<h3 id="recommended">RECOMMENDED</h3>
+<p>For meaningful results, you should also review and revise:</p>
+<ul>
+<li><strong><code>buckets.json</code></strong> → defines portfolio buckets and sub‑holdings. <strong>Note</strong>: Align with <code>balance.csv</code>.</li>
+<li><strong><code>policies.json</code></strong> → defines salary, social security, property details for mortgage payments, and unemployment. <strong>Note</strong>: Update salary, social security, property details and unemployment values as needed.</li>
+<li><strong><code>tax_brackets.json</code></strong> → defaulting to Married‑Filing‑Jointly, defines federal and Oregon state tax brackets. <strong>Note</strong>: Code changes are needed for other filing types or states; contact me if interested.</li>
+<li><strong><code>marketplace_premiums.json</code></strong> → healthcare premiums for marketplace plans. <strong>Note</strong>: update premium amounts as needed.</li>
+</ul>
+<h3 id="advanced">ADVANCED</h3>
+<p>For deeper scenario analysis and IRS‑aligned modeling, configure:</p>
+<ul>
+<li><strong><code>buckets.json</code></strong> → defines portfolio buckets and sub‑holdings. <strong>Note</strong>: Modify sub-holdings per bucket to drive forecasted gains based on your investment strategy.</li>
+<li><strong><code>policies.json</code></strong> → defines refill rules, liquidation hierarchy, RMD, 3-phase roth conversion model, sepp withdrawals. <strong>Note</strong>: Update policies to tailor to your goals.</li>
+<li><strong><code>inflation_rates.json</code></strong> → baseline inflation + category profiles. <strong>Note</strong>: currently based on 2000-2025 data. Update as needed.</li>
+<li><strong><code>inflation_thresholds.json</code></strong> + <strong><code>gain_table.json</code></strong> → asset class return regimes for Monte Carlo sampling. <strong>Note</strong>: currently based on 2000-2025 data. Update as needed.</li>
+</ul>
+<hr />
+<h2 id="json-configuration">📂 JSON Configuration</h2>
+<h3 id="profiles">Profiles</h3>
+<p>Defines the simulation timeframe and baseline income assumptions. This file is consumed during staging (<code>stage_init_components</code>) to determine retirement eligibility, SEPP gating, and IRMAA premium thresholds.</p>
+<p>Example (<code>profile.json</code>):</p>
+<pre><code class="language-json">{
+  &quot;Birth Month&quot;: &quot;1975-04&quot;,
+  &quot;End Month&quot;: &quot;2065-12&quot;,
+  &quot;MAGI&quot;: {
+    &quot;2023&quot;: 200000,
+    &quot;2024&quot;: 204000,
+    &quot;2025&quot;: 208000
+  }
+}
+</code></pre>
+<hr />
+<h3 id="profiles-field-definitions">🔑 Profiles Field Definitions</h3>
+<ul>
+<li><strong>Birth Month</strong> → start of simulation, expressed as <code>YYYY-MM</code>.</li>
+<li><strong>End Month</strong> → end of simulation horizon, expressed as <code>YYYY-MM</code>.</li>
+<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.</li>
+<li>Keys are years (<code>2023</code>, <code>2024</code>, <code>2025</code>).</li>
+<li>Values are annual MAGI amounts.</li>
+<li>Used for IRMAA premium calculations and tax logic.</li>
+</ul>
+<hr />
+<h3 id="profiles-audit-notes">🧾 Profiles Audit Notes</h3>
+<ul>
+<li>Birth Month is used to calculate retirement eligibility (e.g., age 59.5 for penalty‑free withdrawals).</li>
+<li>End Month defines the final forecast period.</li>
+<li>MAGI values feed into IRMAA thresholds and Medicare premium adjustments.</li>
+<li>All dates are parsed into <code>pandas.Period("M")</code> for monthly granularity.</li>
+<li>Audit clarity: profiles must be updated annually to reflect current MAGI values.</li>
+</ul>
+<hr />
+<h3 id="buckets">Buckets</h3>
+<p>Defines accounts and their attributes. Each bucket must have a corresponding entry in <code>buckets.json</code>.</p>
+<p>Example (<code>buckets.json</code>):</p>
+<pre><code class="language-json">{
+  &quot;Cash&quot;: {
+    &quot;holdings&quot;: [{ &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 1.0 }],
+    &quot;can_go_negative&quot;: true,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;cash&quot;
+  },
+  &quot;CD Ladder&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.995 },
+      { &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 0.005 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;taxable&quot;
+  },
+  &quot;Brokerage&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.32 },
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.66 },
+      { &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 0.02 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;taxable&quot;
+  },
+  &quot;Tax-Deferred&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.9 },
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.05 },
+      { &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 0.05 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;tax_deferred&quot;
+  },
+  &quot;Tax-Free&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.45 },
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.45 },
+      { &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 0.1 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;tax_free&quot;
+  },
+  &quot;Health Savings Account&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.1 },
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.85 },
+      { &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 0.05 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: true,
+    &quot;bucket_type&quot;: &quot;other&quot;
+  },
+  &quot;Vehicles&quot;: {
+    &quot;holdings&quot;: [{ &quot;asset_class&quot;: &quot;Vehicles&quot;, &quot;weight&quot;: 1.0 }],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;other&quot;
+  },
+  &quot;Property&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Property&quot;, &quot;weight&quot;: 1.0, &quot;cost_basis&quot;: 388000 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;property&quot;
+  },
+  &quot;529K&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.5 },
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.5 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: true,
+    &quot;bucket_type&quot;: &quot;other&quot;
+  },
+  &quot;SEPP IRA&quot;: {
+    &quot;holdings&quot;: [
+      { &quot;asset_class&quot;: &quot;Fixed-Income&quot;, &quot;weight&quot;: 0.4 },
+      { &quot;asset_class&quot;: &quot;Stocks&quot;, &quot;weight&quot;: 0.6 }
+    ],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: false,
+    &quot;bucket_type&quot;: &quot;tax_deferred&quot;
+  },
+  &quot;Tax Collection&quot;: {
+    &quot;holdings&quot;: [{ &quot;asset_class&quot;: &quot;Cash&quot;, &quot;weight&quot;: 1.0 }],
+    &quot;can_go_negative&quot;: false,
+    &quot;allow_cash_fallback&quot;: true,
+    &quot;bucket_type&quot;: &quot;other&quot;
+  }
+}
+</code></pre>
+<hr />
+<h3 id="buckets-field-definitions">🔑 Buckets Field Definitions</h3>
+<ul>
+<li><strong><code>holdings</code></strong> → list of asset allocations with weights (must sum to ~1.0).</li>
+<li>Optional: <code>cost_basis</code> for property or other assets.</li>
+<li><strong><code>can_go_negative</code></strong> → allows overdrafts (e.g., Cash bucket).</li>
+<li><strong><code>allow_cash_fallback</code></strong> → allows automatic fallback to Cash if bucket is insufficient.</li>
+<li><strong><code>bucket_type</code></strong> → classification:</li>
+<li><code>cash</code> → liquid cash bucket.</li>
+<li><code>taxable</code> → brokerage or CD ladder accounts.</li>
+<li><code>tax_deferred</code> → retirement accounts (401k, IRA, SEPP IRA).</li>
+<li><code>tax_free</code> → Roth or other tax‑free accounts.</li>
+<li><code>property</code> → real estate holdings with explicit cost basis.</li>
+<li><code>other</code> → vehicles, HSAs, 529K, or miscellaneous accounts.</li>
+</ul>
+<hr />
+<h3 id="buckets-audit-notes">🧾 Buckets Audit Notes</h3>
+<ul>
+<li>Buckets are seeded from the last row of <code>balance.csv</code> via <code>seed_buckets_from_config</code>.</li>
+<li><code>create_bucket</code> ensures rounding drift is corrected when allocating holdings.</li>
+<li>A <strong>Tax Collection bucket</strong> is always present for withholding and settlement.</li>
+<li>Property buckets should include <code>cost_basis</code> for IRS compliance.</li>
+<li>Cash bucket may allow negative balances to model overdrafts.</li>
+</ul>
+<hr />
+<h3 id="policies">Policies</h3>
+<p>Defines refill, liquidation, salary, retirement, and special rules. These policies drive how transactions, withdrawals, and conversions are applied in the simulation.</p>
+<p>Example (<code>policies.json</code>):</p>
+<pre><code class="language-json">{
+  &quot;Refill&quot;: {
+    &quot;Thresholds&quot;: { &quot;Cash&quot;: 30000 },
+    &quot;Amounts&quot;: { &quot;Cash&quot;: 20000 },
+    &quot;Sources&quot;: { &quot;Cash&quot;: [&quot;SEPP IRA&quot;, &quot;Tax-Deferred&quot;, &quot;Brokerage&quot;, &quot;Tax-Free&quot;] }
+  },
+  &quot;Liquidation&quot;: {
+    &quot;Threshold&quot;: -15000,
+    &quot;Sources&quot;: [&quot;CD Ladder&quot;, &quot;Tax-Free&quot;, &quot;Vehicles&quot;, &quot;Property&quot;],
+    &quot;Targets&quot;: { &quot;Cash&quot;: 0.2, &quot;Brokerage&quot;: 0.8 }
+  },
+  &quot;Salary&quot;: {
+    &quot;Targets&quot;: { &quot;Cash&quot;: 0.9, &quot;Tax-Deferred&quot;: 0.1 },
+    &quot;Annual Gross Income&quot;: 180000,
+    &quot;Annual Bonus Month&quot;: &quot;2026-04&quot;,
+    &quot;Annual Bonus Amount&quot;: 15000,
+    &quot;Annual Merit Increase Rate&quot;: 0.025,
+    &quot;Annual Merit Increase Month&quot;: &quot;2026-03&quot;,
+    &quot;Retirement Month&quot;: &quot;2033-12&quot;
+  },
+  &quot;Social Security&quot;: [
+    {
+      &quot;Profile&quot;: &quot;p1&quot;,
+      &quot;DOB&quot;: &quot;1975-04&quot;,
+      &quot;Target&quot;: &quot;Cash&quot;,
+      &quot;Full Age&quot;: &quot;67&quot;,
+      &quot;Full Benefit&quot;: 4058,
+      &quot;Start Age&quot;: &quot;67&quot;,
+      &quot;Percentage Payout&quot;: 0.8
+    },
+    {
+      &quot;Profile&quot;: &quot;p2&quot;,
+      &quot;DOB&quot;: &quot;1978-07&quot;,
+      &quot;Target&quot;: &quot;Cash&quot;,
+      &quot;Full Age&quot;: &quot;67&quot;,
+      &quot;Full Benefit&quot;: 1569,
+      &quot;Start Age&quot;: &quot;67&quot;,
+      &quot;Percentage Payout&quot;: 0.8
+    }
+  ],
+  &quot;RMD&quot;: {
+    &quot;Targets&quot;: { &quot;Cash&quot;: 0.2, &quot;CD Ladder&quot;: 0.4, &quot;Brokerage&quot;: 0.4 }
+  },
+  &quot;Roth Conversions&quot;: {
+    &quot;early&quot;: {
+      &quot;Max Tax Rate&quot;: 0.15,
+      &quot;Max Conversion Amount&quot;: 50000,
+      &quot;Tax Source Threshold&quot;: 500000,
+      &quot;Tax Source Name&quot;: &quot;Brokerage&quot;,
+      &quot;Allow Conversion&quot;: true,
+      &quot;Cutoff Age&quot;: 60
+    },
+    &quot;prime&quot;: {
+      &quot;Max Tax Rate&quot;: 0.2,
+      &quot;Max Conversion Amount&quot;: 80000,
+      &quot;Tax Source Threshold&quot;: 1200000,
+      &quot;Tax Source Name&quot;: &quot;Tax-Deferred&quot;,
+      &quot;Allow Conversion&quot;: true,
+      &quot;Cutoff Age&quot;: 80
+    },
+    &quot;late&quot;: {
+      &quot;Max Tax Rate&quot;: 0.2,
+      &quot;Max Conversion Amount&quot;: 100000,
+      &quot;Tax Source Threshold&quot;: 800000,
+      &quot;Tax Source Name&quot;: &quot;Tax-Deferred&quot;,
+      &quot;Allow Conversion&quot;: true,
+      &quot;Cutoff Age&quot;: 100
+    }
+  },
+  &quot;SEPP&quot;: {
+    &quot;Enabled&quot;: false,
+    &quot;Start Month&quot;: &quot;2029-10&quot;,
+    &quot;End Month&quot;: &quot;2034-09&quot;,
+    &quot;Interest Rate&quot;: 0.05,
+    &quot;Source&quot;: &quot;SEPP IRA&quot;,
+    &quot;Target&quot;: &quot;Cash&quot;
+  },
+  &quot;Property&quot;: {
+    &quot;Market Value&quot;: 550000,
+    &quot;Annual Maintenance&quot;: 0.0075,
+    &quot;Remaining Principal&quot;: 247102.54,
+    &quot;Mortgage APR&quot;: 0.05375,
+    &quot;Monthly Principal and Interest&quot;: 2666.43,
+    &quot;Monthly Taxes&quot;: 724.0,
+    &quot;Monthly Insurance&quot;: 169.4,
+    &quot;Monthly Rent&quot;: 2500
+  },
+  &quot;Unemployment&quot;: {
+    &quot;Start Month&quot;: &quot;2034-01&quot;,
+    &quot;End Month&quot;: &quot;2034-07&quot;,
+    &quot;Monthly Amount&quot;: &quot;4000&quot;,
+    &quot;Target&quot;: &quot;Cash&quot;
+  }
+}
+</code></pre>
+<hr />
+<h3 id="policies-field-definitions">🔑 Policies Field Definitions</h3>
+<ul>
+<li>
+<p><strong>Refill</strong></p>
+</li>
+<li>
+<p><code>Thresholds</code> → minimum balances to maintain (e.g., Cash ≥ 30,000).</p>
+</li>
+<li><code>Amounts</code> → refill increments when thresholds are breached.</li>
+<li>
+<p><code>Sources</code> → buckets tapped to refill targets.</p>
+</li>
+<li>
+<p><strong>Liquidation</strong></p>
+</li>
+<li>
+<p><code>Threshold</code> → minimum balance before liquidation triggers.</p>
+</li>
+<li><code>Sources</code> → buckets liquidated in order.</li>
+<li>
+<p><code>Targets</code> → distribution of liquidation proceeds across buckets.</p>
+</li>
+<li>
+<p><strong>Salary</strong></p>
+</li>
+<li>
+<p><code>Targets</code> → allocation of salary into buckets (e.g., 90% Cash, 10% Tax‑Deferred).</p>
+</li>
+<li><code>Annual Gross Income</code> → base salary.</li>
+<li><code>Annual Bonus Month</code> / <code>Annual Bonus Amount</code> → bonus timing and value.</li>
+<li><code>Annual Merit Increase Rate</code> / <code>Month</code> → annual raise percentage and timing.</li>
+<li>
+<p><code>Retirement Month</code> → month salary stops.</p>
+</li>
+<li>
+<p><strong>Social Security</strong></p>
+</li>
+<li>
+<p>Array of profiles (one per person).</p>
+</li>
+<li><code>DOB</code> → date of birth.</li>
+<li><code>Target</code> → bucket receiving benefits.</li>
+<li><code>Full Age</code> / <code>Full Benefit</code> → baseline entitlement.</li>
+<li><code>Start Age</code> → age benefits begin.</li>
+<li>
+<p><code>Percentage Payout</code> → fraction of full benefit taken.</p>
+</li>
+<li>
+<p><strong>RMD (Required Minimum Distribution)</strong></p>
+</li>
+<li>
+<p><code>Targets</code> → distribution of mandatory withdrawals across buckets.</p>
+</li>
+<li>
+<p><strong>Roth Conversions</strong></p>
+</li>
+<li>
+<p>Multiple phases (<code>early</code>, <code>prime</code>, <code>late</code>).</p>
+</li>
+<li>Each defines max tax rate, conversion amount, source thresholds, and cutoff age.</li>
+<li>
+<p><code>Allow Conversion</code> → enables/disables conversions.</p>
+</li>
+<li>
+<p><strong>SEPP (Substantially Equal Periodic Payments)</strong></p>
+</li>
+<li>
+<p><code>Enabled</code> → toggle for IRS 72(t) withdrawals.</p>
+</li>
+<li><code>Start Month</code> / <code>End Month</code> → duration of SEPP plan.</li>
+<li><code>Interest Rate</code> → used in SEPP calculation.</li>
+<li>
+<p><code>Source</code> / <code>Target</code> → buckets for SEPP transfers.</p>
+</li>
+<li>
+<p><strong>Property</strong></p>
+</li>
+<li>
+<p><code>Market Value</code> → current property valuation.</p>
+</li>
+<li><code>Annual Maintenance</code> → fraction of value spent annually.</li>
+<li><code>Remaining Principal</code> → outstanding mortgage balance.</li>
+<li><code>Mortgage APR</code> → loan interest rate.</li>
+<li><code>Monthly Principal and Interest</code> → scheduled mortgage payment.</li>
+<li><code>Monthly Taxes</code> / <code>Insurance</code> → fixed monthly costs.</li>
+<li>
+<p><code>Monthly Rent</code> → rental income if applicable.</p>
+</li>
+<li>
+<p><strong>Unemployment</strong></p>
+</li>
+<li><code>Start Month</code> / <code>End Month</code> → duration of unemployment benefits.</li>
+<li><code>Monthly Amount</code> → benefit amount.</li>
+<li><code>Target</code> → bucket receiving benefits.</li>
+</ul>
+<hr />
+<h3 id="policies-audit-notes">🧾 Policies Audit Notes</h3>
+<ul>
+<li>Policies are consumed by <code>stage_init_components</code> and wired into the <code>ForecastEngine</code>.</li>
+<li>Refill and liquidation rules enforce liquidity thresholds.</li>
+<li>Salary and Social Security profiles model income streams.</li>
+<li>RMD and SEPP enforce IRS withdrawal rules.</li>
+<li>Roth conversions model tax‑optimized transfers across phases.</li>
+<li>Property policy integrates mortgage, maintenance, and rental flows.</li>
+<li>Unemployment policy allows temporary income replacement.</li>
+</ul>
+<hr />
+<h3 id="tax-brackets">📂 Tax Brackets</h3>
+<p>Defines IRS‑aligned brackets, payroll taxes, capital gains, Social Security taxability, and Medicare premiums. These rules are consumed by the <code>TaxCalculator</code> and applied in the monthly forecast loop.</p>
+<p>Example (<code>tax_brackets.json</code>):</p>
+<pre><code class="language-json">{
+  &quot;Standard Deduction&quot;: 31500,
+  &quot;Ordinary&quot;: {
+    &quot;Federal 2025&quot;: [
+      { &quot;min_salary&quot;: 0, &quot;tax_rate&quot;: 0.1 },
+      { &quot;min_salary&quot;: 22000, &quot;tax_rate&quot;: 0.12 },
+      { &quot;min_salary&quot;: 89450, &quot;tax_rate&quot;: 0.22 },
+      { &quot;min_salary&quot;: 190750, &quot;tax_rate&quot;: 0.24 },
+      { &quot;min_salary&quot;: 364200, &quot;tax_rate&quot;: 0.32 },
+      { &quot;min_salary&quot;: 462500, &quot;tax_rate&quot;: 0.35 },
+      { &quot;min_salary&quot;: 751600, &quot;tax_rate&quot;: 0.37 }
+    ],
+    &quot;Oregon State 2025&quot;: [
+      { &quot;min_salary&quot;: 0, &quot;tax_rate&quot;: 0.0475 },
+      { &quot;min_salary&quot;: 8601, &quot;tax_rate&quot;: 0.0675 },
+      { &quot;min_salary&quot;: 21501, &quot;tax_rate&quot;: 0.0875 },
+      { &quot;min_salary&quot;: 250000, &quot;tax_rate&quot;: 0.099 }
+    ],
+    &quot;Portland Metro SHS 2025&quot;: [{ &quot;min_salary&quot;: 200000, &quot;tax_rate&quot;: 0.01 }]
+  },
+  &quot;Payroll Specific&quot;: {
+    &quot;Social Security 2025&quot;: [
+      { &quot;min_salary&quot;: 0, &quot;tax_rate&quot;: 0.062 },
+      { &quot;min_salary&quot;: 176100, &quot;tax_rate&quot;: 0.0 }
+    ],
+    &quot;Medicare 2025&quot;: [
+      { &quot;min_salary&quot;: 0, &quot;tax_rate&quot;: 0.0145 },
+      { &quot;min_salary&quot;: 200000, &quot;tax_rate&quot;: 0.0235 }
+    ]
+  },
+  &quot;Capital Gains&quot;: {
+    &quot;long_term&quot;: [
+      { &quot;min_salary&quot;: 0, &quot;tax_rate&quot;: 0.0 },
+      { &quot;min_salary&quot;: 89250, &quot;tax_rate&quot;: 0.15 },
+      { &quot;min_salary&quot;: 553850, &quot;tax_rate&quot;: 0.2 }
+    ]
+  },
+  &quot;Social Security Taxability&quot;: [
+    { &quot;min_provisional&quot;: 0, &quot;rate&quot;: 0.0 },
+    { &quot;min_provisional&quot;: 32000, &quot;rate&quot;: 0.5 },
+    { &quot;min_provisional&quot;: 44000, &quot;rate&quot;: 0.85 }
+  ],
+  &quot;IRMAA 2025&quot;: [
+    { &quot;max_magi&quot;: 206000, &quot;part_b&quot;: 185.0, &quot;part_d&quot;: 0.0 },
+    { &quot;max_magi&quot;: 258000, &quot;part_b&quot;: 259.2, &quot;part_d&quot;: 12.9 },
+    { &quot;max_magi&quot;: 322000, &quot;part_b&quot;: 331.7, &quot;part_d&quot;: 33.3 },
+    { &quot;max_magi&quot;: 386000, &quot;part_b&quot;: 404.2, &quot;part_d&quot;: 53.8 },
+    { &quot;max_magi&quot;: 750000, &quot;part_b&quot;: 476.7, &quot;part_d&quot;: 74.2 },
+    { &quot;max_magi&quot;: 999999999, &quot;part_b&quot;: 549.3, &quot;part_d&quot;: 81.0 }
+  ],
+  &quot;Medicare Base Premiums 2025&quot;: {
+    &quot;part_b&quot;: 174.7,
+    &quot;part_d&quot;: 30.0
+  }
+}
+</code></pre>
+<hr />
+<h3 id="tax-brackets-field-definitions">🔑 Tax Brackets Field Definitions</h3>
+<ul>
+<li><strong>Tax Brackets: Standard Deduction</strong> → baseline deduction applied before taxable income calculation.</li>
+<li><strong>Tax Brackets: Ordinary</strong> → progressive brackets for federal, state, and local income taxes.</li>
+<li>Keys are jurisdiction + year (e.g., <code>Federal 2025</code>, <code>Oregon State 2025</code>).</li>
+<li>Each bracket defines <code>min_salary</code> and <code>tax_rate</code>.</li>
+<li><strong>Tax Brackets: Payroll Specific</strong> → Social Security and Medicare payroll taxes.</li>
+<li>Social Security capped at wage base (<code>176,100</code> in 2025).</li>
+<li>Medicare includes additional surtax above thresholds.</li>
+<li><strong>Tax Brackets: Capital Gains</strong> → long‑term capital gains brackets layered above ordinary income.</li>
+<li><strong>Tax Brackets: Social Security Taxability</strong> → provisional income thresholds (0%, 50%, 85%).</li>
+<li><strong>Tax Brackets: IRMAA 2025</strong> → income‑related Medicare premium adjustments (Part B and Part D).</li>
+<li><strong>Tax Brackets: Medicare Base Premiums 2025</strong> → baseline monthly premiums for Part B and Part D.</li>
+</ul>
+<hr />
+<h3 id="tax-brackets-audit-notes">🧾 Tax Brackets Audit Notes</h3>
+<ul>
+<li>Tax brackets are consumed by <code>TaxCalculator</code> during year‑end settlement.</li>
+<li>Federal, state, and local brackets are layered to compute total ordinary income tax.</li>
+<li>Payroll taxes (Social Security, Medicare) are applied monthly to salary flows.</li>
+<li>Capital gains brackets are applied after ordinary income.</li>
+<li>Social Security taxability capped at 85% of provisional income.</li>
+<li>IRMAA thresholds adjust Medicare premiums based on MAGI.</li>
+<li>Standard deduction reduces taxable income before bracket application.</li>
+<li>All values are year‑specific and must be updated annually for compliance.</li>
+</ul>
+<hr />
+<h3 id="inflation">Inflation</h3>
+<p>Defines baseline inflation assumptions, category‑specific profiles, and how inflation interacts with asset class returns. These values are consumed by <code>InflationGenerator</code> and adjusted via <code>build_description_inflation_modifiers</code> to produce year‑by‑year modifiers. The <code>MarketGains</code> component then uses <code>inflation_thresholds.json</code> and <code>gain_table.json</code> to determine asset class returns under Low, Average, or High regimes.</p>
+<hr />
+<h4 id="example-inflation_ratesjson">Example (<code>inflation_rates.json</code>)</h4>
+<pre><code class="language-json">{
+  &quot;default&quot;: { &quot;avg&quot;: 0.023, &quot;std&quot;: 0.02 },
+  &quot;profiles&quot;: {
+    &quot;Education&quot;: { &quot;avg&quot;: 0.045, &quot;std&quot;: 0.025 },
+    &quot;Entertainment&quot;: { &quot;avg&quot;: 0.028, &quot;std&quot;: 0.02 },
+    &quot;Food&quot;: { &quot;avg&quot;: 0.03, &quot;std&quot;: 0.02 },
+    &quot;Goods&quot;: { &quot;avg&quot;: 0.02, &quot;std&quot;: 0.015 },
+    &quot;Health&quot;: { &quot;avg&quot;: 0.035, &quot;std&quot;: 0.015 },
+    &quot;Property Insurance&quot;: { &quot;avg&quot;: 0.05, &quot;std&quot;: 0.03 },
+    &quot;Property Maintenance&quot;: { &quot;avg&quot;: 0.025, &quot;std&quot;: 0.012 },
+    &quot;Property Taxes&quot;: { &quot;avg&quot;: 0.03, &quot;std&quot;: 0.015 },
+    &quot;Rent&quot;: { &quot;avg&quot;: 0.025, &quot;std&quot;: 0.01 },
+    &quot;Restaurants&quot;: { &quot;avg&quot;: 0.033, &quot;std&quot;: 0.02 },
+    &quot;Subscriptions&quot;: { &quot;avg&quot;: 0.02, &quot;std&quot;: 0.01 },
+    &quot;Travel&quot;: { &quot;avg&quot;: 0.035, &quot;std&quot;: 0.03 },
+    &quot;Utilities&quot;: { &quot;avg&quot;: 0.02, &quot;std&quot;: 0.02 },
+    &quot;Vehicle Insurance&quot;: { &quot;avg&quot;: 0.025, &quot;std&quot;: 0.02 },
+    &quot;Vehicle Maintenance&quot;: { &quot;avg&quot;: 0.025, &quot;std&quot;: 0.015 },
+    &quot;Voice and Data&quot;: { &quot;avg&quot;: 0.0075, &quot;std&quot;: 0.01 }
+  }
+}
+</code></pre>
+<hr />
+<h4 id="example-inflation_thresholdsjson">Example (<code>inflation_thresholds.json</code>)</h4>
+<pre><code class="language-json">{
+  &quot;Stocks&quot;: { &quot;low&quot;: 0.015, &quot;high&quot;: 0.035 },
+  &quot;Fixed-Income&quot;: { &quot;low&quot;: 0.01, &quot;high&quot;: 0.03 },
+  &quot;Property&quot;: { &quot;low&quot;: 0.015, &quot;high&quot;: 0.04 },
+  &quot;Vehicles&quot;: { &quot;low&quot;: 0.0, &quot;high&quot;: 0.0 },
+  &quot;Cash&quot;: { &quot;low&quot;: 0.0, &quot;high&quot;: 0.0 }
+}
+</code></pre>
+<hr />
+<h4 id="example-gain_tablejson">Example (<code>gain_table.json</code>)</h4>
+<pre><code class="language-json">{
+  &quot;Stocks&quot;: {
+    &quot;Low&quot;: { &quot;avg&quot;: 0.004, &quot;std&quot;: 0.04 },
+    &quot;Average&quot;: { &quot;avg&quot;: 0.0065, &quot;std&quot;: 0.044 },
+    &quot;High&quot;: { &quot;avg&quot;: 0.008, &quot;std&quot;: 0.05 }
+  },
+  &quot;Fixed-Income&quot;: {
+    &quot;Low&quot;: { &quot;avg&quot;: 0.0015, &quot;std&quot;: 0.0002 },
+    &quot;Average&quot;: { &quot;avg&quot;: 0.0025, &quot;std&quot;: 0.0004 },
+    &quot;High&quot;: { &quot;avg&quot;: 0.004, &quot;std&quot;: 0.0004 }
+  },
+  &quot;Property&quot;: {
+    &quot;Low&quot;: { &quot;avg&quot;: 0.0005, &quot;std&quot;: 0.0008 },
+    &quot;Average&quot;: { &quot;avg&quot;: 0.0025, &quot;std&quot;: 0.0012 },
+    &quot;High&quot;: { &quot;avg&quot;: 0.0025, &quot;std&quot;: 0.0012 }
+  },
+  &quot;Vehicles&quot;: {
+    &quot;Low&quot;: { &quot;avg&quot;: -0.01, &quot;std&quot;: 0.0 },
+    &quot;Average&quot;: { &quot;avg&quot;: -0.01, &quot;std&quot;: 0.0 },
+    &quot;High&quot;: { &quot;avg&quot;: -0.01, &quot;std&quot;: 0.0 }
+  },
+  &quot;Cash&quot;: {
+    &quot;Low&quot;: { &quot;avg&quot;: 0.0, &quot;std&quot;: 0.0 },
+    &quot;Average&quot;: { &quot;avg&quot;: 0.0, &quot;std&quot;: 0.0 },
+    &quot;High&quot;: { &quot;avg&quot;: 0.0, &quot;std&quot;: 0.0 }
+  }
+}
+</code></pre>
+<hr />
+<h3 id="inflation-field-definitions">🔑 Inflation Field Definitions</h3>
+<ul>
+<li>
+<p><strong>default</strong></p>
+</li>
+<li>
+<p><code>avg</code> → baseline average annual inflation rate.</p>
+</li>
+<li>
+<p><code>std</code> → baseline standard deviation (volatility).</p>
+</li>
+<li>
+<p><strong>profiles</strong></p>
+</li>
+<li>
+<p>Each key represents a spending or asset category (e.g., Education, Food, Rent).</p>
+</li>
+<li><code>avg</code> → category‑specific average inflation rate.</li>
+<li><code>std</code> → category‑specific volatility.</li>
+<li>
+<p>Categories include property costs (insurance, maintenance, taxes), household expenses (utilities, food, subscriptions), and discretionary spending (travel, entertainment).</p>
+</li>
+<li>
+<p><strong>thresholds</strong> (<code>inflation_thresholds.json</code>)</p>
+</li>
+<li>
+<p>Defines inflation cutoffs for each asset class.</p>
+</li>
+<li>If inflation &lt; <code>low</code> → Low regime.</li>
+<li>If between <code>low</code> and <code>high</code> → Average regime.</li>
+<li>
+<p>If inflation &gt; <code>high</code> → High regime.</p>
+</li>
+<li>
+<p><strong>gain table</strong> (<code>gain_table.json</code>)</p>
+</li>
+<li>Defines return distributions for each asset class under Low, Average, and High regimes.</li>
+<li><code>avg</code> → mean monthly return.</li>
+<li><code>std</code> → volatility of monthly returns.</li>
+<li>Vehicles modeled as depreciating assets (negative returns).</li>
+<li>Cash modeled as stable with zero returns.</li>
+</ul>
+<hr />
+<h3 id="inflation-audit-notes">🧾 Inflation Audit Notes</h3>
+<ul>
+<li>Inflation defaults anchor the stochastic generator (<code>InflationGenerator</code>).</li>
+<li>Profiles are adjusted against defaults by <code>build_description_inflation_modifiers</code>.</li>
+<li>Thresholds determine which regime (Low, Average, High) applies to each asset class.</li>
+<li>Gain tables provide stochastic return distributions for the selected regime.</li>
+<li>Each profile produces year‑by‑year modifiers applied to transactions (e.g., rent, property maintenance, healthcare).</li>
+<li>Ensures category‑specific realism (e.g., healthcare inflates faster than goods, vehicles depreciate).</li>
+<li>Randomness seeded per trial for reproducibility.</li>
+<li>Audit clarity: modifiers, thresholds, and gain tables are logged and can be traced back to configuration definitions.</li>
+</ul>
+<hr />
+<h3 id="marketplace-premiums">Marketplace Premiums</h3>
+<p>Defines health insurance premiums for marketplace plans. These values are consumed by the simulation to model monthly healthcare costs and interact with MAGI thresholds (e.g., IRMAA adjustments).</p>
+<p>Example (<code>marketplace_premiums.json</code>):</p>
+<pre><code class="language-json">{
+  &quot;silver_family&quot;: {
+    &quot;monthly_premium&quot;: 1750
+  },
+  &quot;silver_couple&quot;: {
+    &quot;monthly_premium&quot;: 1250
+  }
+}
+</code></pre>
+<hr />
+<h3 id="marketplace-premiums-field-definitions">🔑 Marketplace Premiums Field Definitions</h3>
+<ul>
+<li><strong>Plan Key</strong> → identifier for the plan type (e.g., <code>silver_family</code>, <code>silver_couple</code>).</li>
+<li><strong>monthly_premium</strong> → monthly premium cost in dollars.</li>
+<li>Applied as a recurring monthly expense in the forecast loop.</li>
+<li>Can be extended to include additional tiers (e.g., <code>silver_individual</code>, <code>gold_family</code>).</li>
+</ul>
+<hr />
+<h3 id="marketplace-premiums-audit-notes">🧾 Marketplace Premiums Audit Notes</h3>
+<ul>
+<li>Premiums are modeled as fixed monthly expenses unless overridden by inflation profiles (e.g., Health).</li>
+<li>Values feed into expense transactions and reduce available cash balances.</li>
+<li>MAGI values from <code>profile.json</code> interact with IRMAA thresholds, but marketplace premiums are modeled separately.</li>
+<li>Audit clarity: premiums must be updated annually to reflect marketplace rates.</li>
+<li>Plan keys should match naming conventions used in transaction logic to avoid misalignment.</li>
+</ul>
+<hr />
+<h2 id="csv-inputs">📂 CSV Inputs</h2>
+<h3 id="balances">Balances</h3>
+<p>Defines historical monthly balances for each bucket. This file seeds the simulation with starting balances and is consumed by <code>stage_prepare_timeframes</code> and <code>seed_buckets_from_config</code>.</p>
+<p>Example (<code>balances.csv</code>):</p>
+<pre><code class="language-csv">Month,Cash,CD Ladder,Brokerage,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K,SEPP IRA
+2023-01,19678,31757,145633,478275,66656,12017,54580,661474,68434,0
+2023-02,20188,32347,154680,541963,71379,12652,55476,672413,64942,0
+...
+2025-12,23256,73685,182139,793123,136612,33079,81526,1068649,116233,0
+</code></pre>
+<hr />
+<h3 id="balances-field-definitions">🔑 Balances Field Definitions</h3>
+<ul>
+<li><strong>Month</strong> → simulation period in <code>YYYY-MM</code> format.</li>
+<li><strong>Cash</strong> → liquid cash balance.</li>
+<li><strong>CD Ladder</strong> → certificate of deposit ladder account.</li>
+<li><strong>Brokerage</strong> → taxable brokerage account.</li>
+<li><strong>Tax-Deferred</strong> → retirement accounts (e.g., 401k, IRA).</li>
+<li><strong>Tax-Free</strong> → Roth or other tax‑free accounts.</li>
+<li><strong>Health Savings Account</strong> → HSA balances.</li>
+<li><strong>Vehicles</strong> → depreciating vehicle assets.</li>
+<li><strong>Property</strong> → real estate holdings (linked to <code>Property</code> policy).</li>
+<li><strong>529K</strong> → education savings account.</li>
+<li><strong>SEPP IRA</strong> → IRA designated for Substantially Equal Periodic Payments.</li>
+</ul>
+<hr />
+<h3 id="balances-audit-notes">🧾 Balances Audit Notes</h3>
+<ul>
+<li>The last row of <code>balances.csv</code> is used by <code>seed_buckets_from_config</code> to initialize starting balances for each bucket.</li>
+<li>All bucket names must match those defined in <code>buckets.json</code>.</li>
+<li>Vehicles and Property balances are tracked as assets but modeled with depreciation or mortgage flows.</li>
+<li>SEPP IRA balance is critical for IRS 72(t) withdrawal modeling.</li>
+<li>FlowTracker records debits/credits against these balances for audit clarity.</li>
+<li>Audit reproducibility: balances must align with external statements for defensibility.</li>
+</ul>
+<hr />
+<h3 id="fixed-transactions">Fixed Transactions</h3>
+<p>Defines one‑time transactions that occur in a specific month. This file is consumed by <code>stage_init_components</code> and applied in the monthly forecast loop.</p>
+<p>Example (<code>fixed.csv</code>):</p>
+<pre><code class="language-csv">Month,Bucket,Amount,Type,Description
+2026-09,529K,-25000,Education,College Tuition #1
+2027-09,529K,-25000,Education,College Tuition #2
+2028-09,529K,-35000,Education,College Tuition #3
+2029-09,529K,-35000,Education,College Tuition #4
+2026-07,CD Ladder,-10000,Travel,Travel to Japan
+2027-07,CD Ladder,-10000,Travel,Travel to Alaska
+2030-10,CD Ladder,-10000,Travel,Travel to Europe
+2035-10,CD Ladder,-10000,Travel,Travel to SE Asia
+2040-07,CD Ladder,-10000,Travel,Travel to Aus/NZ
+</code></pre>
+<hr />
+<h3 id="fixed-transactions-field-definitions">🔑 Fixed Transactions Field Definitions</h3>
+<ul>
+<li><strong>Month</strong> → date of transaction (<code>YYYY-MM</code>).</li>
+<li><strong>Bucket</strong> → target bucket impacted by the transaction (e.g., <code>529K</code>, <code>CD Ladder</code>).</li>
+<li><strong>Amount</strong> → transaction value (negative for outflows, positive for inflows).</li>
+<li><strong>Type</strong> → category of transaction (e.g., Education, Travel).</li>
+<li><strong>Description</strong> → human‑readable label for audit clarity (e.g., “College Tuition #1”).</li>
+</ul>
+<hr />
+<h3 id="fixed-transactions-audit-notes">🧾 Fixed Transactions Audit Notes</h3>
+<ul>
+<li>Fixed transactions are applied once at the specified month.</li>
+<li>Amounts reduce or increase balances in the designated bucket.</li>
+<li>Categories (Education, Travel) can be linked to inflation profiles for realism (e.g., tuition inflates faster than goods).</li>
+<li>FlowTracker logs each transaction for reproducibility.</li>
+<li>Audit clarity: descriptions should match external records (e.g., tuition invoices, travel receipts).</li>
+</ul>
+<hr />
+<h3 id="recurring-transactions">Recurring Transactions</h3>
+<p>Defines ongoing monthly transactions that repeat between a start and end month. This file is consumed by <code>stage_init_components</code> and applied in the monthly forecast loop.</p>
+<p>Example (<code>recurring.csv</code>):</p>
+<pre><code class="language-csv">Start Month,End Month,Bucket,Amount,Type,Description
+2025-09,2029-09,Cash,-290,Vehicle Insurance,Vehicle Insurance
+2029-10,2075-12,Cash,-190,Vehicle Insurance,Vehicle Insurance
+2025-09,2029-09,Cash,-400,Vehicle Maintenance,Vehicle Maintenance
+2029-10,2075-12,Cash,-300,Vehicle Maintenance,Vehicle Maintenance
+2025-09,2029-09,Cash,-140,Entertainment,Entertainment Parks and Rec
+2029-10,2075-12,Cash,-140,Entertainment,Entertainment Parks and Rec
+2025-09,2029-09,Cash,-95,Subscriptions,Entertainment Subscriptions
+2029-10,2075-12,Cash,-95,Subscriptions,Entertainment Subscriptions
+2025-09,2029-09,Cash,-800,Food,Food Groceries
+2029-10,2075-12,Cash,-600,Food,Food Groceries
+2025-09,2029-09,Cash,-200,Restaurants,Food Restaurants
+2029-10,2075-12,Cash,-200,Restaurants,Food Restaurants
+2025-09,2029-09,Cash,-800,Goods,Goods
+2029-10,2075-12,Cash,-600,Goods,Goods
+2025-08,2029-09,Cash,-500,Health,Health Medical Insurance
+2025-08,2029-09,Cash,-15,Health,Health Dental Insurance
+2025-08,2029-09,Cash,-5,Health,Health Vision Insurance
+2025-09,2030-04,Cash,-325,Health,Health Prescriptions etc
+2029-10,2050-04,Health Savings Account,-425,Health,Health Prescriptions etc
+2050-04,2075-12,Health Savings Account,-725,Health,Health Prescriptions etc
+2025-09,2029-09,Cash,-400,Travel,Travel in US
+2029-10,2075-12,Cash,-600,Travel,Travel in US
+2025-09,2075-12,Cash,-345,Utilities,Utils Elec and Gas
+2025-09,2075-12,Cash,-300,Utilities,Utils Waste and Water
+2025-08,2026-12,Cash,-345,Voice and Data,Utils Voice and Data
+2027-01,2075-12,Cash,-250,Voice and Data,Utils Voice and Data
+</code></pre>
+<hr />
+<h3 id="recurring-transactions-field-definitions">🔑 Recurring Transactions Field Definitions</h3>
+<ul>
+<li><strong>Start Month</strong> → first month the transaction occurs (<code>YYYY-MM</code>).</li>
+<li><strong>End Month</strong> → last month the transaction occurs (<code>YYYY-MM</code>).</li>
+<li><strong>Bucket</strong> → target bucket impacted by the transaction (e.g., <code>Cash</code>, <code>Health Savings Account</code>).</li>
+<li><strong>Amount</strong> → monthly transaction value (negative for outflows, positive for inflows).</li>
+<li><strong>Type</strong> → category of transaction (e.g., Vehicle Insurance, Food, Health, Utilities).</li>
+<li><strong>Description</strong> → human‑readable label for audit clarity (e.g., “Health Prescriptions etc”).</li>
+</ul>
+<hr />
+<h3 id="recurring-transactions-audit-notes">🧾 Recurring Transactions Audit Notes</h3>
+<ul>
+<li>Recurring transactions are applied every month between <code>Start Month</code> and <code>End Month</code>.</li>
+<li>Amounts reduce or increase balances in the designated bucket.</li>
+<li>Categories (Food, Health, Utilities, Entertainment) can be linked to inflation profiles for realism.</li>
+<li>Health transactions may shift buckets (Cash → HSA) depending on policy and time horizon.</li>
+<li>FlowTracker logs each transaction for reproducibility.</li>
+<li>Audit clarity: descriptions should match external records (e.g., insurance policies, utility bills).</li>
+</ul>
+<hr />
+<h2 id="notes">🧾 Notes</h2>
+<ul>
+<li>All months stored as <code>YYYY-MM</code> and parsed into <code>pandas.Period("M")</code>.</li>
+<li>Buckets must be defined in both <code>balance.csv</code> and <code>buckets.json</code>.</li>
+<li>Inflation profiles ensure category‑specific realism (e.g., Rent inflates faster than Cash).</li>
+<li>FlowTracker records all debits/credits for audit clarity.</li>
+</ul>
+<hr />
+<h2 id="related-pages">📚 Related Pages</h2>
+<ul>
+<li><a href="../overview/">Framework Overview</a></li>
+<li><a href="../architecture/">Architecture Overview</a></li>
+<li><a href="../simulation_logic/">Simulation Logic</a></li>
+<li><a href="../visualization/">Visualization Guide</a></li>
+<li><a href="../usage/">Usage Guide</a></li>
+<li>See <code>../src/README.md</code> for source code details.</li>
+</ul>
+
+
+
+
+
+
+
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+<script>var target=document.getElementById(location.hash.slice(1));target&&target.name&&(target.checked=target.name.startsWith("__tabbed_"))</script>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    
+      
+      
+      <script id="__config" type="application/json">{"annotate": null, "base": "..", "features": [], "search": "../assets/javascripts/workers/search.7a47a382.min.js", "tags": null, "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}, "version": null}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e71a0d61.min.js"></script>
+      
+    
+  </body>
+</html>
