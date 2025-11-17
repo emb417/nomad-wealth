@@ -7,7 +7,7 @@
       "Cash": 20000
     },
     "Sources": {
-      "Cash": ["Brokerage", "SEPP IRA", "Tax-Deferred", "Tax-Free"]
+      "Cash": ["SEPP IRA", "Tax-Deferred", "Brokerage", "Tax-Free"]
     }
   },
   "Liquidation": {
@@ -28,7 +28,7 @@
     "Annual Bonus Amount": 15000,
     "Annual Merit Increase Rate": 0.025,
     "Annual Merit Increase Month": "2026-03",
-    "Retirement Month": "2025-09"
+    "Retirement Month": "2033-12"
   },
   "Social Security": [
     {
@@ -69,22 +69,22 @@
     "prime": {
       "Max Tax Rate": 0.2,
       "Max Conversion Amount": 80000,
-      "Tax Source Threshold": 1250000,
+      "Tax Source Threshold": 1200000,
       "Tax Source Name": "Tax-Deferred",
       "Allow Conversion": true,
-      "Cutoff Age": 70
+      "Cutoff Age": 80
     },
     "late": {
-      "Max Tax Rate": 0.25,
-      "Max Conversion Amount": 80000,
-      "Tax Source Threshold": 1000000,
+      "Max Tax Rate": 0.2,
+      "Max Conversion Amount": 100000,
+      "Tax Source Threshold": 800000,
       "Tax Source Name": "Tax-Deferred",
       "Allow Conversion": true,
-      "Cutoff Age": 85
+      "Cutoff Age": 100
     }
   },
   "SEPP": {
-    "Enabled": true,
+    "Enabled": false,
     "Start Month": "2029-10",
     "End Month": "2034-09",
     "Interest Rate": 0.05,
@@ -102,8 +102,8 @@
     "Monthly Rent": 2500
   },
   "Unemployment": {
-    "Start Month": "2030-01",
-    "End Month": "2030-07",
+    "Start Month": "2034-01",
+    "End Month": "2034-07",
     "Monthly Amount": "4000",
     "Target": "Cash"
   }
