@@ -4,7 +4,6 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from datetime import datetime
-from typing import Tuple, List
 
 
 COLOR_PALETTE = [
