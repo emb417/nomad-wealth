@@ -1,70 +1,50 @@
-# Data File Schemas
+# 📊 Data Directory
 
-You must create and place your historical balances and forecasted transaction CSVs under `data/`. They should be named `balance.csv`, `fixed.csv`, and `recurring.csv`, respectively. All are required, but `fixed.csv` and `recurring.csv` can be empty, but with the correct headers. Copy and paste the examples below for a quick start.
+This folder contains the CSV inputs required to seed and drive Nomad Wealth simulations.  
+These files act as **data configuration**, complementing the JSON files in `config/`.
 
 ---
 
-## balance.csv
+## 📌 Required Files
 
-Monthly seed balances. Adding historical balances will allow for visualizations to compare the past to future scenarios.
+- **`balances.csv`** → Historical monthly balances for each bucket.
+- **`fixed.csv`** → One‑time transactions (e.g., tuition, travel, large purchases).
+- **`recurring.csv`** → Ongoing monthly transactions (e.g., insurance, food, utilities, healthcare).
 
-Required header columns:
+> All three files must exist. `fixed.csv` and `recurring.csv` may be empty, but must include the correct headers.
 
-- `Date` (YYYY-MM-DD)
-- One column per bucket (exact bucket names as in `holdings.json`)
+---
 
-At least one row of data is required to seed the forecasting.
+## 🧾 Examples
 
-Example:
+Minimal examples are provided below. See the full documentation for schema details.
+
+- **balances.csv**
 
 ```csv
-Date,Cash,Fixed-Income,Taxable,Tax-Deferred,Tax-Free,Vehicles,Property
-2025-10-01,10000,10000,10000,10000,0,0,0
+Month,Cash,CD Ladder,Brokerage,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K,SEPP IRA
+2025-10,10000,15000,20000,30000,5000,2000,8000,250000,10000,0
+```
+
+- **fixed.csv**
+
+```csv
+Month,Bucket,Amount,Type,Description
+2028-09,529K,-25000,Education,College Tuition #1
+2029-07,CD Ladder,-10000,Travel,Travel to Europe
+```
+
+- **recurring.csv**
+
+```csv
+Start Month,End Month,Bucket,Amount,Type,Description
+2026-01,2030-12,Cash,-400,Food,Groceries
+2027-01,2075-12,Cash,-250,Voice and Data,Mobile + Internet
 ```
 
 ---
 
-## fixed.csv
+## 📚 Documentation
 
-One-off expected or pre-planned transactions like vacations, large purchases, etc. Only header columns are required.
-
-Required header columns:
-
-- `Date` (YYYY-MM--DD)
-- `Bucket` (exact match)
-- `Amount` (positive = inflow; negative = outflow)
-- `Description` (optional)
-
-Example:
-
-```csv
-Date,Bucket,Amount,Description
-2028-07-01,Cash,-2000,Summer Vacation
-2029-12-01,Cash,-2000,Winter Vacation
-2031-04-01,Cash,-4000,New Car Downpayment
-```
-
----
-
-## recurring.csv
-
-Monthly recurring expenses like food, rent, car payments, etc. You can include recurring deposits into buckets. Only header columns are required.
-
-Required header columns:
-
-- `Start Date` (YYYY-MM-DD)
-- `End Date` (YYYY-MM-DD or blank)
-- `Bucket`
-- `Amount` (positive inflow; negative withdrawal)
-- `Description`
-
-Example:
-
-```csv
-Start Date,End Date,Bucket,Amount,Description
-2026-01-01,2100-12-31,Cash,-2000,Monthly Living Expenses
-2029-01-01,2034-12-31,Cash,-500,Monthly Car Loan Payment
-2022-07-01,2032-07-01,Cash,-500,School Loan Payment
-```
-
----
+For complete schema definitions, configuration cross‑links, and audit notes, see the  
+👉 [Configuration Reference](../docs/configuration.md) in the documentation site.

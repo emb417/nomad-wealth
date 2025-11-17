@@ -1,0 +1,11 @@
+site_name: Nomad Wealth Forecasting
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Framework Overview: overview.md
+  - Usage Guide: usage.md
+  - Configuration Reference: configuration.md
+  - Architecture Overview: architecture.md
+  - Simulation Logic: simulation_logic.md
+  - Visualization Guide: visualization.md

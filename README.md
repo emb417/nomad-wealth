@@ -1,207 +1,54 @@
 # 🕊️ Nomad Wealth: Policy-Driven Financial Freedom
 
-Nomad Wealth is a policy-driven Python framework that acts as a complete engine for Monte Carlo simulation of your financial future. It starts with your historical data to seed an auditable, bucket-level model, then applies your explicit, configurable rules—covering everything from cash flow triggers to tax-optimized withdrawals—along with inflation-aware market returns. By projecting thousands of possible futures, it transforms complex simulations into clear, actionable insights for achieving and maintaining financial freedom.
-
----
-
-## 🔍 What Can Nomad Wealth Help Me Discover?
-
-This framework moves your financial outlook beyond simple spreadsheets and generic rules. By embracing the complexity of **real-world market volatility, inflation, and taxes**, Nomad Wealth provides clear, auditable answers to your most critical financial questions:
-
-### Resillience & Sufficiency
-
-- **How likely is my current plan to fail?** It quantifies the probability of running out of money under thousands of volatile market scenarios, giving you a scientific success rate, not just a hope.
-- **What is my true maximum sustainable spending limit?** It calculates the highest spending rate you can afford in retirement while maintaining a user-defined risk tolerance (e.g., less than a 5% chance of failure), adjusted for inflation.
-- **What specific policy changes are required to survive a major market downturn?** You can test aggressive bear markets to see exactly where and when your cash flow policies break down.
-
-### Strategy & Optimization
-
-- **How does my asset allocation impact my long-term security?** By comparing simulations, you can determine which portfolio mix provides the best risk-adjusted net worth over decades.
-- **What is the optimal withdrawal order for my accounts (Roth, Taxable, 401k)?** The sophisticated tax engine provides auditable insight into the tax drag of various withdrawal policies, guiding you to a strategy that maximizes purchasing power.
-- **When should I liquidate specific assets (like a home or business) to ensure financial stability?** You can model specific liquidation triggers to see the exact conditions and scenarios that necessitate the sale of a major asset.
-
-### Control & Transparency
-
-- **Where is every dollar going in every possible future?** The auditable bucket model provides unparalleled transparency, allowing you to trace simulated cash flow and account balances to verify and trust every projection.
-- **Are my stated financial _policies_ fully documented and understood?** It forces you to explicitly define every financial decision in declarative JSON, ensuring your strategy is transparent, repeatable, and easily shared with an advisor.
-
----
-
-## 🏛️ Framework Pillars (Technical Detail)
-
-### Move Beyond Simple Averages for True Financial Resilience
-
-Traditional forecasting relies on single-point estimates or historical averages that gloss over real-world volatility and uncertainty. This framework embraces the inherent stochastic nature of markets and cash flows through Monte Carlo simulation, providing you with a full distribution of possible outcomes. You gain confidence in your plan's ability to withstand worst-case scenarios, not just the best or average.
-
-### Financial Planning Driven by Your Rules, Not Only Assumptions
-
-Its policy-first architecture is a game-changer. Instead of hardcoding generic rules, you explicitly define all critical financial decisions—from monthly cash-flow triggers and bucket refill strategies to withdrawal order and liquidation thresholds—in declarative JSON. This makes your plan fully transparent, repeatable, and adaptable as your life circumstances or tax laws change.
-
-Absolutely, Eric. Here's a patched version of that section with the IRS Compliance Checklist integrated for clarity and audit confidence:
-
----
-
-### Accurate Projections through Inflation and Tax Reality
-
-By incorporating inflation-adjusted gain sampling and a sophisticated tax engine that models capital gains, income tax, and specific withdrawal penalties, the framework paints a far more realistic picture of future net worth and sustainable withdrawal rates. You get projections based on real purchasing power, avoiding the pitfalls of over-optimistic nominal returns.
-
-To ensure audit clarity and strategic integrity, the simulation logic conforms to IRS rules as publicly documented today:
-
-#### IRS Compliance Checklist
-
-- **Standard Deduction**: Inflation-adjusted annually using cumulative modifiers from a base year
-- **Ordinary Tax Brackets**: Marginal bracket floors inflated from their source year using compounded inflation
-- **Capital Gains Tax**: Applied above ordinary income using correct marginal layering and bracket thresholds
-- **Social Security Taxability**: Based on provisional income and inflation-adjusted `min_provisional` thresholds, capped at 85%
-- **Penalty Tax**: Applied only when flagged in transaction metadata, respecting early withdrawal rules
-- **AGI**: Includes salary, withdrawals, Roth conversions, gains, and taxable Social Security
-- **Taxable Income**: Deduction subtracted before bracket application, ensuring correct taxable base
-- **Inflation Modeling**: Stochastic, cumulative, and anchored to a base year for realistic long-term forecasting
-- **Bracket Application Logic**: Marginal, layered, and capped per IRS methodology
-
-This foundation enables confident scenario modeling, strategic tax planning, and transparent auditability across decades.
-
----
-
-### Gain Deep, Auditable Insight into Every Future Dollar
-
-The core auditable, bucket-level transaction engine provides unparalleled transparency. You can trace every simulated dollar in and out of specific accounts (e.g., Taxable, Roth, 401k), offering a clear, scientific basis for optimizing asset location and withdrawal strategies. This moves your planning from a black box to a fully verifiable, strategic model.
-
----
-
-## 🔧 Features
-
-- Fixed and recurring transaction ingestion from CSV
-- Inflation-aware market return simulation via user-defined gain tables
-- Inflation-sensitive recurring expenses with per-description modifiers
-- Indexed rental and Social Security income streams with category-specific inflation profiles
-- Required Minimum Distributions (RMDs) modeled as tax-deferred transfers with age-based triggers
-- Tax-aware withdrawals distinguishing ordinary income, capital gains, and penalties
-- Independent Roth conversion scheduling
-- Threshold-driven refill policies with retirement-age gating to avoid penalties
-- Configurable emergency liquidation hierarchy across buckets
-- Monte Carlo sampling with percentile bands and probability metrics
-- Interactive Plotly visualizations and CSV exports
-
-### Historical Net Worth and Annual/Monthly Gain %
-
-Chart your historical net worth and gain/loss % over time. Both annual and monthly gain/loss % are included to help identify the specific months where the net worth increased or decreased relative to the previous month and the previous year.
-
-![Historical Net Worth](assets/historical.png)
-
-### Simulation Transactions
-
-See the simulated transactions for a given year to better understand the details of your plan. In this example, $20K will need to be moved from Fixed-Income to Cash to help pay for the monthly expenses during 2026.
-
-![Sim Transactions](assets/transactions.png)
-
-### Simulation Transactions in Context
-
-See the simulated transactions for a given year in context to the bucket balances to determine the impact of annual transactions. In this example, $20K will need to be moved from Fixed-Income to Cash to help pay for the monthly expenses during 2026. The chart helps you see these types of transactions in context to the overall bucket balances, to determine if the transactions pose a risk to your plan.
-
-![Sim Transactions in Context](assets/transactions_in_context.png)
-
-### Simulation Forecast by Bucket
-
-See the simulated forecasted balances per bucket across all years to better understand the details of your plan. In this example the Property had to be liquidated in 2042 and the proceeds moved to the Taxable bucket.
-
-![Sim Forecast by Bucket](assets/forecast_by_bucket.png)
-
-### Monte Carlo Net Worth Forecast
-
-See the Monte Carlo simulation net worth trajectories. Included:
-
-- Probablity of positive net worth at 20 and 10 years to the end date, and the final end date
-- The end date net worth at the 15th, median, average, and 85th percentile
-- The probability of property liquidation and the minimum, average and maximum age of liquidation
-
-![Monte Carlo Net Worth Forecast](assets/mc_networth.png)
+Nomad Wealth is a Python framework for Monte Carlo simulation of financial futures.  
+It combines auditable bucket-level modeling, explicit policy definitions, and IRS-aligned tax logic to deliver transparent, actionable insights.
 
 ---
 
 ## 🚀 Quick Start
 
-1. Clone repo:
-
-   ```bash
-   git clone https://github.com/emb417/nomad-wealth
-   ```
-
-2. Install the dependencies:
-
-   - Use a virtual environment to install dependencies.
-   - Or install dependencies manually:
-
-   ```bash
-   cd nomad-wealth
-   pip install -r requirements.txt
-   ```
-
-3. Run the simulation:
-
-   ```bash
-   python src/app.py
-   ```
+```bash
+git clone https://github.com/emb417/nomad-wealth
+cd nomad-wealth
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
+python src/app.py
+```
 
 ---
 
-## 📁 Folder Structure
+## 📚 Documentation
 
-| Folder    | Description                                                            |
-| --------- | ---------------------------------------------------------------------- |
-| `config/` | JSON definitions for buckets, thresholds, gain tables, inflation rules |
-| `data/`   | CSVs for historical balances and transactions                          |
-| `src/`    | Application code (see [`src/README.md`](src/README.md))                |
-| `export/` | Outputs: Monte Carlo charts, sample forecasts, tax records             |
+Full documentation is available at:  
+👉 [Nomad Wealth Docs](https://emb417.github.io/nomad-wealth/)
 
 ---
 
-## 📈 Outputs
+## 🗺️ Roadmap
 
-- `mc_networth_<timestamp>.html`: Monte Carlo net worth chart with percentile lines and probability metrics
-- `####_buckets_forecast_<timestamp>.csv`: Bucket balance trajectories for sampled simulations
-- `####_taxes_forecast_<timestamp>.csv`: Year-end tax breakdowns
-- `####_buckets_forecast_<timestamp>.html`: Interactive bucket balance visualizations
-- `historical_nw_<timestamp>.html`: Historical net worth and gain/loss chart
-
-See [`export/README.md`](export/README.md) for details.
-
----
-
-## 🧠 Simulation Logic
-
-Each month the engine sequentially applies:
-
-1. Rule-driven transactions (fixed and inflation-aware recurring expenses)
-2. Policy-driven transactions (rental, RMDs, salary, SS, Roth Conversion)
-   - Rental income indexed to inflation
-   - Social Security income with inflation modifiers and cash routing
-   - Required Minimum Distributions (RMDs) from tax-deferred buckets with tax-aware treatment
-   - Salary and bonus income with retirement-aware gating
-   - Roth conversions with source-target routing and tax tracking
-3. Refill policy (age-gated for tax-deferred sources)
-4. Market returns via inflation-aware gain sampling
-5. Monthly tax drip and tax collection
-6. Emergency liquidation when cash falls below threshold, bypassing age-gating if needed (i.e. tax-penalized)
-7. Quarterly and Annual Balance snapshots, tax estimates and tax aggregation
-8. January year-end tax payment and penalty integration
+- ✅ Current
+  - Monte Carlo engine, IRS-compliant tax logic, visualization suite
+- 🔜 Next
+  - Configurable scenario overlays and multi-profile support
+  - Enhanced audit exports and interactive forecast comparisons
+  - Expanded account types (HSA, IRA contributions, vesting schedules)
+  - Policy-driven UI for balances, transactions, and income sources
+- 🎯 Future
+  - Advisor collaboration tools and policy comparison dashboards
+  - Advanced expense modeling (e.g., “smile” curve for retirement spending)
+  - Equity-specific forecasting with market value integration
+  - Self-employment and unemployment income/tax handling
 
 ---
 
-## 🛣️ Roadmap
+## 🤝 Contributing
 
-- UI to enter balances and manage individual accounts and assign them to buckets
-- UI for tuning configurations: profile, holdings, gains, inflation, policies
-- UI for managing future transactions: fixed and recurring
-- UI for managing income sources: unemployement, salary, bonuses, social security
-- Handle Health Savings Account spending programatically, instead of using date-based recurring transactions
-- Handle unemployment and delayed salary expectations
-- Handle self-employment taxes
-- Handle self and spousal IRA contributions
-- Handle specified equities with current market values and forecasted gains
-- Support various vesting schedules and maturity dates
-- Scenario tagging and multi-profile support
-- Interactive forecast comparison across scenarios
-- Support "smile" expenses curve
+Pull requests welcome. Please see `CONTRIBUTING.md` for guidelines.
+
+---
+
+## 📄 License
+
+Nomad Wealth is proprietary software. Contact for licensing. See `LICENSE` for details.
 
 ---
