@@ -3,6 +3,9 @@ export/*.html
 export/*.csv
 utils/
 
+# Ignore MkDocs build output
+/site/
+
 # Ignore log file
 app.log
 
