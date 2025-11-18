@@ -31,14 +31,14 @@ Nomad Wealth is organized into modular layers:
 ## 📂 Workflow
 
 1. **Configure**  
-   - Set up accounts, balances, and tax rules.  
+    - Set up accounts, balances, and tax rules.  
 2. **Simulate**  
-   - Run Monte Carlo trials that apply monthly transactions, policies, market returns, and taxes.  
-   - Results are aggregated into net worth, taxes, balances, and flow logs.  
-   - Every debit and credit is tracked for reproducibility.  
+    - Run Monte Carlo trials that apply monthly transactions, policies, market returns, and taxes.  
+    - Results are aggregated into net worth, taxes, balances, and flow logs.  
+    - Every debit and credit is tracked for reproducibility.  
 3. **Visualize**  
-   - Generate charts and reports that show whether you’re on track.  
-   - Export HTML and CSV outputs with consistent color palettes, percentile overlays, and hover text for clarity.  
+    - Generate charts and reports that show whether you’re on track.  
+    - Export HTML and CSV outputs with consistent color palettes, percentile overlays, and hover text for clarity.  
 
 ---
 

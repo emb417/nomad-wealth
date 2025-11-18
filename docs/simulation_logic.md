@@ -1,14 +1,12 @@
 # 🔄 Simulation Logic  
 
-Nomad Wealth’s simulation engine models financial flows month by month, applying transactions, policies, market returns, and taxes.  
-This page explains the **step‑by‑step logic** of the forecast loop — how trials are prepared, executed, and turned into charts you can use to understand your retirement outlook.  
+Nomad Wealth’s simulation engine models financial flows month by month, applying transactions, policies, market returns, and taxes. This page explains the **step‑by‑step logic** of the forecast loop — how trials are prepared, executed, and turned into charts you can use to understand your retirement outlook.  
 
 ---
 
 ## 🧩 Relationship to Architecture  
 
-The simulation logic is the **operational core** of the system described in [Architecture Overview](architecture.md).  
-Where architecture explains the design and components, this page focuses on the **execution flow** inside the `ForecastEngine` and `app.py`.  
+The simulation logic is the **operational core** of the system described in [Architecture Overview](architecture.md). Where architecture explains the design and components, this page focuses on the **execution flow** inside the `ForecastEngine` and `app.py`.  
 
 ---
 

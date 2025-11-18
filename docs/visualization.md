@@ -1,106 +1,119 @@
 # 📊 Visualization Guide  
 
-Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports.  
-These charts turn complex simulations into **clear, intuitive visuals** that help you understand your retirement outlook, spot risks, and build confidence in your plan.  
+Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports. These charts turn complex simulations into **clear, intuitive visuals** that help you understand your retirement outlook, spot risks, and build confidence in your plan.  
 
 ---
 
 ## 🎲 Monte Carlo Charts  
 
-Monte Carlo charts summarize results across all trials, showing probabilities and ranges:  
+Monte Carlo charts summarize results across all trials, showing probabilities and ranges. They help you see the “big picture” of how your plan performs under uncertainty.  
 
-### `plot_mc_networth()`  
+### Net Worth Over Time  
 
 ![Monte Carlo Net Worth Chart](images/mc_networth.png)  
 
-- **Purpose:** Net worth distribution with median trajectory and 15th/85th percentile bands.  
-- **Why it matters:** Shows whether your plan is likely to be sufficient, and highlights risk bounds.  
+- **Method:** `plot_mc_networth()`  
+- **Purpose:** Shows the distribution of net worth outcomes with median trajectory and 15th/85th percentile bands.  
+- **How to use it:** Look at the median line to see your most likely trajectory. The shaded bands show optimistic and pessimistic scenarios. If the lower band dips below zero, that’s a warning sign for sufficiency risk.  
 
-### `plot_mc_totals_and_rates()`  
+### Taxes and Withdrawal Rates  
 
-![Monte Carlo Tax Chart](images/mc_tax.png)  
 ![Monte Carlo Withdrawals Chart](images/mc_withdrawals.png)  
+![Monte Carlo Tax Chart](images/mc_tax.png)  
 
-- **Purpose:** Total taxes and withdrawal rates across trials.  
-- **Why it matters:** Helps you see the tax burden and whether withdrawals remain sustainable.  
+- **Method:** `plot_mc_totals_and_rates()`  
+- **Purpose:** Displays total taxes and withdrawal rates across trials.  
+- **How to use it:** The withdrawal chart shows whether your spending levels are sustainable — focus on modeling for lower median withdrawal rates. Use the tax chart to understand how much of your income is lost to taxes over time - focus on modeling for lower median tax rates.
+- **Note:** This chart is only available in Detailed Mode.
 
-### `plot_mc_taxable_balances()`  
+### Taxable Balances at SEPP Milestones  
 
 ![Monte Carlo Taxable Chart](images/mc_taxable.png)  
 
-- **Purpose:** Taxable balances at SEPP end month.  
-- **Why it matters:** Highlights liquidity available in taxable accounts at critical milestones.  
+- **Method:** `plot_mc_taxable_balances()`  
+- **Purpose:** Highlights taxable account balances at the SEPP end month.  
+- **How to use it:** Check whether you have enough liquidity in taxable accounts when you turn 59.5 yeas old to avoid early withdrawal penalties - focus on modeling for a higher positive taxable balance according to your risk tolerance.  
 
-### `plot_mc_monthly_returns()`  
+### Monthly Market Returns  
 
 ![Monte Carlo Property Chart](images/mc_property_returns.png)  
 ![Monte Carlo Fixed Income Chart](images/mc_fixed_income_returns.png)  
 ![Monte Carlo Stocks Chart](images/mc_stocks_returns.png)  
 
-- **Purpose:** Distribution of monthly returns for property, fixed income, and stocks.  
-- **Why it matters:** Shows volatility and variability, helping you understand how markets affect your plan.  
+- **Method:** `plot_mc_monthly_returns()`  
+- **Purpose:** Shows distributions of monthly returns for property, fixed income, and stocks.  
+- **How to use it:** Used for transparency to validate the gains and losses of your portfolio, this chart shows the annual inflation rate and scenario per asset type, plus the monthly gains/losses percent and the trial number.
+- **Note:** This chart is only available in Detailed Mode.
 
 ---
 
 ## 🧾 Example Trial Charts  
 
-Example trial charts show what a single simulation looks like in detail:  
+Example trial charts zoom into a single simulation, showing how one possible future unfolds.  
 
-### `plot_example_forecast()`  
+### Account Balances Forecast  
 
 ![Example Forecast Chart](images/ex_forecast.png)  
 
-- **Purpose:** Forecasted account balances over time.  
-- **Why it matters:** Shows how your assets evolve and whether they last through retirement.  
+- **Method:** `plot_example_forecast()`  
+- **Purpose:** Forecasted balances over time for each bucket.  
+- **How to use it:** See how your assets evolve in one trial. This helps you visualize how your model affects different buckets over time and what thresholds you can set to optimize your plan.  
 
-### `plot_example_income_taxes()`  
+### Income and Taxes Breakdown  
 
 ![Example Income Chart](images/ex_income.png)  
 ![Example Taxes Chart](images/ex_taxes.png)  
 
+- **Method:** `plot_example_income_taxes()`  
 - **Purpose:** Annual income and tax breakdowns.  
-- **Why it matters:** Clarifies how income sources and withdrawals translate into taxes.  
+- **How to use it:** Identify which income sources drive your tax liability. This helps you spot opportunities for tax optimization, like Roth conversions or timing withdrawals.
 
-### `plot_example_transactions_in_context()`  
+### Transactions in Context  
 
 ![Example Transactions In Context Chart](images/dm_transactions.png)  
 
-- **Purpose:** Transactions shown alongside account balances.  
-- **Why it matters:** Provides context for how spending and inflows affect your overall plan.  
+- **Method:** `plot_example_transactions_in_context()`  
+- **Purpose:** Shows transactions alongside account balances.  
+- **How to use it:** Connect spending and inflows directly to changes in balances. This helps you understand the impact of big expenses or income events.
+- **Note:** This chart is only available in Detailed Mode.
 
-### `plot_example_transactions()`  
+### Annual Transactions  
 
 ![Example Transactions Chart](images/ex_transactions.png)  
 
-- **Purpose:** Transactions for a given year.  
-- **Why it matters:** Useful for tracing specific flows and verifying assumptions.  
+- **Method:** `plot_example_transactions()`  
+- **Purpose:** Displays transactions for a given year.  
+- **How to use it:** Use this chart to better understand income flows to investments and expenses in future years to help you understand your plan.
 
-### `plot_example_monthly_expenses()`  
+### Monthly Expenses  
 
 ![Example Expenses Chart](images/ex_monthly_expenses.png)  
 
-- **Purpose:** Monthly expenses over time.  
-- **Why it matters:** Helps identify spending patterns and see how healthcare costs (Medicare, IRMAA) affect your budget.  
+- **Method:** `plot_example_monthly_expenses()`  
+- **Purpose:** Visualizes monthly expenses over time.  
+- **How to use it:** Spot spending patterns and see how inflation or healthcare costs (Medicare, IRMAA) affect your monthly budget.  
 
 ---
 
 ## 📜 Historical Charts  
 
-Historical charts provide context by showing past performance:  
+Historical charts provide context by showing past performance, grounding your forecasts in reality.  
 
-### `plot_historical_bucket_gains()`  
+### Monthly Gains by Account  
 
 ![Historical Gains Chart](images/hist_monthly_gains.png)  
 
-- **Purpose:** Monthly gain/loss trends for each account.  
-- **Why it matters:** Highlights which assets contributed most to changes in net worth.  
+- **Method:** `plot_historical_bucket_gains()`  
+- **Purpose:** Shows monthly gain/loss trends for each account.  
+- **How to use it:** Identify which accounts contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.  
 
-### `plot_historical_balance()`  
+### Net Worth Trajectory  
 
 ![Historical Balance Chart](images/hist_networth.png)  
 
-- **Purpose:** Net worth trajectory with gains/losses.  
-- **Why it matters:** Provides a clear view of overall financial progress over time.  
+- **Method:** `plot_historical_balance()`  
+- **Purpose:** Net worth line chart with gain/loss bars.  
+- **How to use it:** See your overall financial trajectory and spot periods of growth or decline. This provides a baseline for comparing future simulations.  
 
 ---
 

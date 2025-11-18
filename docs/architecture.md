@@ -1,7 +1,6 @@
 # 🏛️ Architecture Overview  
 
-Nomad Wealth is a **policy‑driven Monte Carlo simulation framework** for financial planning.  
-Its architecture is designed for **clarity, transparency, and extensibility**, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  
+Nomad Wealth is a **policy‑driven Monte Carlo simulation framework** for financial planning. Its architecture is designed for **clarity, transparency, and extensibility**, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  
 
 ---
 
@@ -26,27 +25,27 @@ Nomad Wealth is built from modular components that work together to run forecast
 Here’s how information moves through the system:  
 
 1. **Configuration Loading**  
-   - JSON files define your accounts, policies, tax brackets, and simulation settings.  
-   - CSV files provide starting balances and transactions.  
+    - JSON files define your accounts, policies, tax brackets, and simulation settings.  
+    - CSV files provide starting balances and transactions.  
 
 2. **Staging**  
-   - Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  
-   - Prepares historical and future timeframes.  
-   - Seeds accounts, policies, inflation, tax logic, and transactions.  
-   - Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  
+    - Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  
+    - Prepares historical and future timeframes.  
+    - Seeds accounts, policies, inflation, tax logic, and transactions.  
+    - Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  
 
 3. **Parallel Simulation Loop (Forecast Engine)**  
-   - Runs Monte Carlo trials in parallel for efficiency.  
-   - Each trial applies monthly transactions, policies, market returns, and taxes.  
-   - FlowTracker records every debit and credit for transparency.  
+    - Runs Monte Carlo trials in parallel for efficiency.  
+    - Each trial applies monthly transactions, policies, market returns, and taxes.  
+    - FlowTracker records every debit and credit for transparency.  
 
 4. **Aggregation & Summary**  
-   - Results are combined into net worth, taxes, balances, and returns.  
-   - Property events and compliance checks are tracked.  
+    - Results are combined into net worth, taxes, balances, and returns.  
+    - Property events and compliance checks are tracked.  
 
 5. **Visualization Layer**  
-   - Produces charts showing monthly details, aggregate distributions, and historical trends.  
-   - All charts can be exported to HTML and CSV for easy sharing and reproducibility.  
+    - Produces charts showing monthly details, aggregate distributions, and historical trends.  
+    - All charts can be exported to HTML and CSV for easy sharing and reproducibility.  
 
 ---
 
