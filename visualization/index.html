@@ -416,17 +416,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#historical-charts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📜 Historical Charts
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#monte-carlo-charts" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -548,6 +537,45 @@
     <span class="md-ellipsis">
       
         plot_example_monthly_expenses()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#historical-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📜 Historical Charts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📜 Historical Charts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plot_historical_bucket_gains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_historical_bucket_gains()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plot_historical_balance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_historical_balance()
       
     </span>
   </a>
@@ -627,17 +655,6 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#historical-charts" class="md-nav__link">
-    <span class="md-ellipsis">
-      
-        📜 Historical Charts
-      
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
   <a href="#monte-carlo-charts" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -771,6 +788,45 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#historical-charts" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        📜 Historical Charts
+      
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="📜 Historical Charts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#plot_historical_bucket_gains" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_historical_bucket_gains()
+      
+    </span>
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#plot_historical_balance" class="md-nav__link">
+    <span class="md-ellipsis">
+      
+        plot_historical_balance()
+      
+    </span>
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#flags-modes" class="md-nav__link">
     <span class="md-ellipsis">
       
@@ -823,8 +879,6 @@
 <h1 id="visualization-guide">📊 Visualization Guide</h1>
 <p>Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports.<br />
 These charts provide transparency, audit clarity, and intuitive insight into both historical data and Monte Carlo simulations.</p>
-<hr />
-<h2 id="historical-charts">📜 Historical Charts</h2>
 <hr />
 <h2 id="monte-carlo-charts">🎲 Monte Carlo Charts</h2>
 <p>Generated across all trials.</p>
@@ -908,6 +962,20 @@ These charts provide transparency, audit clarity, and intuitive insight into bot
 <ul>
 <li><strong>Purpose:</strong> Visualizes monthly expenses for an example trial.</li>
 <li><strong>Why it matters:</strong> Helps identify shifting spending patterns using inflated costs, especially useful to predict how Medicare premiums and IRMAA penalties affects the monthly budget.</li>
+</ul>
+<hr />
+<h2 id="historical-charts">📜 Historical Charts</h2>
+<h3 id="plot_historical_bucket_gains"><code>plot_historical_bucket_gains()</code></h3>
+<p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" /></p>
+<ul>
+<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each bucket.</li>
+<li><strong>Why it matters:</strong> Highlights which asset classes contributed to net worth changes over time.</li>
+</ul>
+<h3 id="plot_historical_balance"><code>plot_historical_balance()</code></h3>
+<p><img alt="Historical Balance Chart" src="../images/hist_networth.png" /></p>
+<ul>
+<li><strong>Purpose:</strong> Net worth line chart + gain/loss bar chart.</li>
+<li><strong>Why it matters:</strong> Provides a clear view of overall net worth trajectory and periods of increase/decrease.</li>
 </ul>
 <hr />
 <h2 id="flags-modes">⚙️ Flags &amp; Modes</h2>
