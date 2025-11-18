@@ -47,6 +47,6 @@ Pull requests welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guide
 
 ## 📄 License
 
-Nomad Wealth is proprietary software. Contact for licensing. See `LICENSE` for details.
+Nomad Wealth is proprietary software. Contact for licensing. See [`LICENSE`](LICENSE) for details.
 
 ---
