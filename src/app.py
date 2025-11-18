@@ -54,7 +54,7 @@ logging.basicConfig(
 # Simulation settings
 SIM_SIZE = 100
 SIM_EXAMPLE_SIZE = 1
-SHOW_HISTORICAL = True
+SHOW_HISTORICAL = False
 SHOW_MONTE_CARLO = True
 SHOW_EXAMPLES = True
 DETAILED_MODE = False

@@ -14,6 +14,12 @@ pip install -r requirements.txt
 python src/app.py
 ```
 
+The script runs 100 Monte Carlo trials in approximately 15 seconds and automatically opens your web browser to display 5 charts from a randomly selected trial, along with 4 aggregate charts summarizing all simulations. For best interpretability, we recommend reviewing the charts from right to left — starting with high‑level outcomes and progressively diving into detailed breakdowns.
+
+The chart below visualizes the distribution of net worth outcomes across all trials, month by month. It highlights the median and 15th/85th percentile bounds in green and blue, with individual example trials shown in purple. The chart title includes key summary statistics: total number of trials, the percentage of simulations maintaining positive net worth at various age milestones, and the rate of property liquidations and when (forced sale of the primary residence).
+
+![Monte Carlo Net Worth Chart](/docs/images/mc_networth.png)
+
 ---
 
 ## 📚 Documentation

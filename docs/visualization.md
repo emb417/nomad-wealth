@@ -7,72 +7,110 @@ These charts provide transparency, audit clarity, and intuitive insight into bot
 
 ## 📜 Historical Charts
 
-### `plot_historical_bucket_gains()`
-
-- **Purpose:** Shows monthly gain/loss trends for each bucket.
-- **Why it matters:** Highlights which asset classes contributed to net worth changes over time.
-
-### `plot_historical_balance()`
-
-- **Purpose:** Net worth line chart + gain/loss bar chart.
-- **Why it matters:** Provides a clear view of overall net worth trajectory and periods of increase/decrease.
-
----
-
-## 🧾 Example Trial Charts
-
-Generated only for trials listed in `sim_examples`.
-
-### `plot_example_monthly_expenses()`
-
-- **Purpose:** Visualizes monthly expense flows for a sample simulation.
-- **Why it matters:** Helps identify spending patterns and stress points.
-
-### `plot_example_transactions()`
-
-- **Purpose:** Shows transactions for a given year in a sample simulation.
-- **Why it matters:** Useful for tracing specific flows and verifying transaction logic.
-
-### `plot_example_transactions_in_context()`
-
-- **Purpose:** Displays transactions alongside bucket balances.
-- **Why it matters:** Provides context for how transactions affect overall balances.
-
-### `plot_example_income_taxes()`
-
-- **Purpose:** Annual tax breakdown for a sample simulation.
-- **Why it matters:** Clarifies how income, withdrawals, and gains translate into tax liabilities.
-
-### `plot_example_forecast()`
-
-- **Purpose:** Forecasted bucket balances over time for a sample simulation.
-- **Why it matters:** Shows long‑term sustainability of asset allocations.
-
 ---
 
 ## 🎲 Monte Carlo Charts
 
 Generated across all trials.
 
-### `plot_mc_monthly_returns()`
+### `plot_mc_networth()`
 
-- **Purpose:** Distribution of monthly returns across simulations.
-- **Why it matters:** Quantifies volatility and return variability.
+![Monte Carlo Net Worth Chart](/docs/images/mc_networth.png)
+
+- **Purpose:** Net worth distribution with median trajectory and 15th/85th percentile bands.
+- **Why it matters:** Summarizes overall financial sufficiency and risk bounds.
+
+### `plot_mc_totals_and_rates()`
+
+Two charts are generated:
+
+![Monte Carlo Tax Chart](/docs/images/mc_tax.png)
+
+- **Purpose:** Total taxes and effective tax rates.
+- **Why it matters:** Provides audit clarity on tax burden.
+
+![Monte Carlo Withdrawals Chart](/docs/images/mc_withdrawals.png)
+
+- **Purpose:** Total withdrawals and withdrawal rates across trials.
+- **Why it matters:** Provides audit clarity on withdrawal sustainability.
 
 ### `plot_mc_taxable_balances()`
+
+![Monte Carlo Taxable Chart](/docs/images/mc_taxable.png)
 
 - **Purpose:** Taxable balances at SEPP end month.
 - **Why it matters:** Surfaces liquidity available in taxable accounts at critical milestones.
 
-### `plot_mc_totals_and_rates()`
+### `plot_mc_monthly_returns()`
 
-- **Purpose:** Total taxes, effective tax rates, and withdrawal rates across simulations.
-- **Why it matters:** Provides audit clarity on tax burden and withdrawal sustainability.
+**Note:** Three charts are generated with DETAIL_MODE enabled:
 
-### `plot_mc_networth()`
+![Monte Carlo Property Chart](/docs/images/mc_property_returns.png)
 
-- **Purpose:** Net worth distribution with median trajectory and 15th/85th percentile bands.
-- **Why it matters:** Summarizes overall financial sufficiency and risk bounds.
+- **Purpose:** Distribution of monthly returns for property across trials.
+- **Why it matters:** Quantifies volatility and return variability according to inflation scenarios.
+
+![Monte Carlo Fixed Income Chart](/docs/images/mc_fixed_income_returns.png)
+
+- **Purpose:** Distribution of monthly returns for fixed income across trials.
+- **Why it matters:** Quantifies volatility and return variability according to inflation scenarios.
+
+![Monte Carlo Stocks Chart](/docs/images/mc_stocks_returns.png)
+
+- **Purpose:** Distribution of monthly returns for stocks across trials.
+- **Why it matters:** Quantifies volatility and return variability according to inflation scenarios.
+
+
+
+---
+
+## 🧾 Example Trial Charts
+
+**Note:** Generated only for random example trials.
+
+### `plot_example_forecast()`
+
+![Example Forecast Chart](/docs/images/ex_forecast.png)
+
+- **Purpose:** Forecasted bucket balances over time for a sample simulation.
+- **Why it matters:** Shows long‑term sustainability of asset allocations.
+
+### `plot_example_income_taxes()`
+
+Two charts are generated:
+
+![Example Income Chart](/docs/images/ex_income.png)
+
+- **Purpose:** Annual income breakdown for an example trial.
+- **Why it matters:** Clarifies how income, withdrawals, and gains translate into tax liabilities.
+
+![Example Taxes Chart](/docs/images/ex_taxes.png)
+
+- **Purpose:** Annual tax breakdown for an example trial.
+- **Why it matters:** Shows where you can optimize tax liabilities.
+
+### `plot_example_transactions_in_context()`
+
+**Note:** Only generates with DETAIL_MODE enabled.
+
+![Example Transactions In Context Chart](/docs/images/dm_transactions.png)
+
+- **Purpose:** Displays transactions alongside bucket balances.
+- **Why it matters:** Provides context for how transactions affect overall balances.
+
+### `plot_example_transactions()`
+
+![Example Transactions Chart](/docs/images/ex_transactions.png)
+
+- **Purpose:** Shows transactions for a given year in a sample simulation.
+- **Why it matters:** Useful for tracing specific flows and verifying transaction logic.
+
+### `plot_example_monthly_expenses()`
+
+![Example Expenses Chart](/docs/images/ex_monthly_expenses.png)
+
+- **Purpose:** Visualizes monthly expenses for an example trial.
+- **Why it matters:** Helps identify shifting spending patterns using inflated costs, especially useful to predict how Medicare premiums and IRMAA penalties affects the monthly budget.
 
 ---
 

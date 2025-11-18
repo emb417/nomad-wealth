@@ -10,6 +10,8 @@ This site is more than a technical manual — it’s a guide to understanding ho
 
 The best place to begin is the [Framework Overview](overview.md). It explains the purpose of Nomad Wealth, its design principles, and how the system fits together.
 
+![Monte Carlo Net Worth Chart](/docs/images/mc_networth.png)
+
 ---
 
 ## 📚 Documentation Structure
