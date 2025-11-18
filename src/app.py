@@ -654,7 +654,7 @@ def main():
             mc_tax_df=mc_tax_df,
             sim_examples=sim_examples,
             ts=ts,
-            show=(SHOW_TAXES_CHART if not SHOW_MONTE_CARLO else SHOW_MONTE_CARLO),
+            show=(SHOW_TAXES_CHART if not DETAILED_MODE else DETAILED_MODE),
             save=(SAVE_TAXES_CHART if not DETAILED_MODE else DETAILED_MODE),
         )
 

@@ -18,7 +18,7 @@ Generated across all trials.
 
 ### `plot_mc_totals_and_rates()`
 
-Two charts are generated:
+**Note:** Two charts are generated with DETAIL_MODE enabled:
 
 ![Monte Carlo Tax Chart](images/mc_tax.png)
 
