@@ -1,13 +1,14 @@
-# 🏠 Nomad Wealth Documentation
+# 🕊️ Nomad Wealth Documentation
 
-Welcome to the documentation for **Nomad Wealth**, a policy‑driven Monte Carlo simulation framework for financial planning. This documentation is designed to provide **audit clarity, transparency, and strategic insight** into every aspect of the system.
+Welcome to the documentation for **Nomad Wealth**, the Python framework for **transparent financial forecasting**. Where traditional models can be opaque and unauditable, Nomad Wealth is built to deliver **clarity, reproducibility, and confidence**.  
+
+This site is more than a technical manual — it’s a guide to understanding how policy‑driven rules, IRS‑aligned tax logic, and Monte Carlo simulations come together to create a **trustworthy system for financial planning**. Whether you’re an auditor validating compliance or a planner exploring retirement scenarios, these pages will help you **define, test, and execute** strategies with confidence.
 
 ---
 
 ## 🚀 Getting Started
 
-The best place to begin is the [Framework Overview](overview.md).  
-It explains the purpose of Nomad Wealth, its design principles, and how the system fits together.
+The best place to begin is the [Framework Overview](overview.md). It explains the purpose of Nomad Wealth, its design principles, and how the system fits together.
 
 ---
 

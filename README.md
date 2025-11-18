@@ -1,7 +1,6 @@
-# 🕊️ Nomad Wealth: Policy-Driven Financial Freedom
+# 🕊️ Nomad Wealth: Transparent Forecasting for Financial Freedom
 
-Nomad Wealth is a Python framework for Monte Carlo simulation of financial futures.  
-It combines auditable bucket-level modeling, explicit policy definitions, and IRS-aligned tax logic to deliver transparent, actionable insights.
+Traditional financial models can be **opaque** and **unauditable**. Nomad Wealth is the Python framework built to solve this challenge. It provides a robust engine for **Monte Carlo simulations** that anchors every projection in **explicit, policy-driven** rules and **IRS-aligned** tax logic. The result is a **transparent and trustworthy** system that gives finance professionals and planners the confidence to **define, test, and execute** their path to financial freedom.
 
 ---
 
@@ -19,8 +18,7 @@ python src/app.py
 
 ## 📚 Documentation
 
-Full documentation is available at:  
-👉 [Nomad Wealth Docs](https://emb417.github.io/nomad-wealth/)
+Full documentation 👉 [Nomad Wealth Docs](https://emb417.github.io/nomad-wealth/)
 
 ---
 
