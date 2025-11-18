@@ -41,7 +41,7 @@ Full documentation 👉 [Nomad Wealth Docs](https://emb417.github.io/nomad-wealt
 
 ## 🤝 Contributing
 
-Pull requests welcome. Please see `CONTRIBUTING.md` for guidelines.
+Pull requests welcome. Please see [`CONTRIBUTING.md`](CONTRIBUTING.md) for guidelines.
 
 ---
 
