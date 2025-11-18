@@ -1,10 +1,14 @@
-# 🕊️ Nomad Wealth: Transparent Forecasting for Financial Freedom
+# 🕊️ Nomad Wealth: Transparent Forecasting for Financial Freedom  
 
-Traditional financial models can be **opaque** and **unauditable**. Nomad Wealth is the Python framework built to solve this challenge. It provides a robust engine for **Monte Carlo simulations** that anchors every projection in **explicit, policy-driven** rules and **IRS-aligned** tax logic. The result is a **transparent and trustworthy** system that gives finance professionals and planners the confidence to **define, test, and execute** their path to financial freedom.
+If you’ve ever tried a financial planning tool and felt like you couldn’t see the assumptions behind the numbers, you know how frustrating that can be. Nomad Wealth is built to solve that challenge.  
+
+It’s a Python framework that runs **Monte Carlo simulations** anchored in **explicit, policy‑driven rules** and **IRS‑aligned tax logic**. Instead of opaque forecasts, you get a system where every projection is **transparent, reproducible, and trustworthy**.  
+
+Nomad Wealth gives finance professionals, planners, and curious retirees the confidence to **define scenarios, test “what‑ifs,” and make decisions** with clarity about how the numbers were calculated and why they matter.  
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Quick Start  
 
 ```bash
 git clone https://github.com/emb417/nomad-wealth
@@ -12,11 +16,16 @@ cd nomad-wealth
 python -m venv venv && source venv/bin/activate
 pip install -r requirements.txt
 python src/app.py
-```
+```  
 
-The script runs 100 Monte Carlo trials in approximately 15 seconds and automatically opens your web browser to display 5 charts from a randomly selected trial, along with 2 aggregate charts summarizing all simulations. For best interpretability, we recommend reviewing the charts from right to left — starting with high‑level outcomes and progressively diving into detailed breakdowns.
+The script runs 100 Monte Carlo trials in about 15 seconds and automatically opens your browser to display:
 
-The chart below visualizes the distribution of net worth outcomes across all trials, month by month. It highlights the median and 15th/85th percentile bounds in green and blue, with individual example trials shown in purple. The chart title includes key summary statistics: total number of trials, the percentage of simulations maintaining positive net worth at various age milestones, and the rate of property liquidations and when (forced sale of the primary residence).
+- **5 charts** from a randomly selected trial, showing detailed flows.  
+- **2 aggregate charts** summarizing all simulations.  
+
+For best interpretability, review the charts from right to left — start with high‑level outcomes, then dive into detailed breakdowns.  
+
+The chart below shows the distribution of net worth outcomes across all trials, month by month. It highlights the median and 15th/85th percentile bounds in green and blue, with individual example trials shown in purple. The chart title includes key summary statistics: number of trials, the percentage of simulations maintaining positive net worth at age milestones, and property liquidation rates (forced sale of the primary residence).  
 
 ![Monte Carlo Net Worth Chart](/docs/images/mc_networth.png)
 

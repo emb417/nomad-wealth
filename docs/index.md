@@ -10,12 +10,6 @@ Whether you’re **planning retirement, testing “what‑if” scenarios, or si
 
 ---
 
-This version speaks directly to the persona’s pain point (“you can’t see the assumptions”) and positions Nomad Wealth as the transparent alternative, without being confrontational about competitors.  
-
-Would you like me to also **recast the “Design Philosophy” section** in this same voice — focusing on how each principle solves a frustration users typically feel (e.g., “Policy‑First means you don’t have to guess what rules are being applied”)?
-
----
-
 ## 🚀 Getting Started  
 
 Run your first retirement forecast in minutes with the [Quick Start](https://github.com/emb417/nomad-wealth?tab=readme-ov-file#-quick-start).  
