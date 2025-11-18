@@ -5,10 +5,6 @@ These charts provide transparency, audit clarity, and intuitive insight into bot
 
 ---
 
-## 📜 Historical Charts
-
----
-
 ## 🎲 Monte Carlo Charts
 
 Generated across all trials.
@@ -60,8 +56,6 @@ Two charts are generated:
 - **Purpose:** Distribution of monthly returns for stocks across trials.
 - **Why it matters:** Quantifies volatility and return variability according to inflation scenarios.
 
-
-
 ---
 
 ## 🧾 Example Trial Charts
@@ -111,6 +105,24 @@ Two charts are generated:
 
 - **Purpose:** Visualizes monthly expenses for an example trial.
 - **Why it matters:** Helps identify shifting spending patterns using inflated costs, especially useful to predict how Medicare premiums and IRMAA penalties affects the monthly budget.
+
+---
+
+## 📜 Historical Charts
+
+### `plot_historical_bucket_gains()`
+
+![Historical Gains Chart](images/hist_monthly_gains.png)
+
+- **Purpose:** Shows monthly gain/loss trends for each bucket.
+- **Why it matters:** Highlights which asset classes contributed to net worth changes over time.
+
+### `plot_historical_balance()`
+
+![Historical Balance Chart](images/hist_networth.png)
+
+- **Purpose:** Net worth line chart + gain/loss bar chart.
+- **Why it matters:** Provides a clear view of overall net worth trajectory and periods of increase/decrease.
 
 ---
 
