@@ -23,7 +23,7 @@
     
     
       
-        <title>Usage Guide - Nomad Wealth Forecasting</title>
+        <title>Usage Guide - Nomad Wealth</title>
       
     
     
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-header__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-header__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -94,7 +94,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Nomad Wealth Forecasting
+            Nomad Wealth
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -178,13 +178,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-nav__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-nav__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Nomad Wealth Forecasting
+    Nomad Wealth
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -601,139 +601,85 @@
 
 
 <h1 id="usage-guide">🚀 Usage Guide</h1>
-<p>This guide explains how to run Nomad Wealth simulations, control output behavior, and interpret results.</p>
+<p>This guide explains how to run Nomad Wealth simulations, adjust settings, and understand the results.  </p>
 <hr />
 <h2 id="running-the-simulation">▶️ Running the Simulation</h2>
 <ol>
 <li>
 <p><strong>Navigate to the project root</strong><br />
-   Ensure you are in the directory containing <code>src/app.py</code>.</p>
+   Make sure you’re in the directory containing <code>src/app.py</code>.  </p>
 </li>
 <li>
-<p><strong>Run the entry point</strong></p>
+<p><strong>Run the entry point</strong>  </p>
 </li>
 </ol>
 <p><code>bash
-   python src/app.py</code></p>
-<p>This executes the <code>main()</code> method, which:</p>
-<ul>
-<li>Loads JSON and CSV configuration files.</li>
-<li>Prepares historical and future timeframes.</li>
-<li>Runs Monte Carlo trials via <code>forecast_engine.py</code> in parallel.</li>
-<li>Aggregates results into DataFrames.</li>
-<li>
-<p>Generates interactive charts and CSV/HTML exports.</p>
-</li>
-<li>
-<p><strong>Check the <code>export/</code> directory</strong><br />
-   All outputs (HTML charts, CSVs) are saved here with timestamped filenames.</p>
-</li>
-</ul>
-<hr />
-<h2 id="controlling-behavior">⚙️ Controlling Behavior</h2>
-<p>Simulation behavior is controlled by flags in <code>app.py</code>:</p>
+   python src/app.py</code>  </p>
+<p>This command:<br />
+   - Loads your configuration files (accounts, balances, policies, taxes).<br />
+   - Prepares historical and future timelines.<br />
+   - Runs Monte Carlo trials in parallel to capture uncertainty.<br />
+   - Aggregates results into clear tables.<br />
+   - Generates interactive charts and CSV/HTML exports.  </p>
 <ol>
-<li>
-<p><strong>Simulation Size</strong></p>
-<ul>
-<li><code>SIM_SIZE</code> → number of Monte Carlo trials.</li>
-</ul>
-</li>
-<li>
-<p><strong>Chart Display</strong></p>
-<ul>
-<li><code>SHOW_*</code> flags → control whether charts open interactively.</li>
-<li>Examples: <code>SHOW_NETWORTH_CHART</code>, <code>SHOW_EXAMPLES</code>, <code>SHOW_HISTORICAL</code>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Chart Export</strong></p>
-<ul>
-<li><code>SAVE_*</code> flags → control whether charts are saved to HTML/CSV.</li>
-<li>Examples: <code>SAVE_NETWORTH_CHART</code>, <code>SAVE_EXAMPLE_TRANSACTIONS_CHART</code>.</li>
-</ul>
-</li>
-<li>
-<p><strong>Detailed Mode</strong></p>
-<ul>
-<li><code>DETAILED_MODE</code> → overrides show/save flags to ensure all charts and exports are generated for IRS‑aligned audit clarity.</li>
-</ul>
-</li>
-<li>
-<p><strong>Example Trials</strong></p>
-<ul>
-<li><code>sim_examples</code> → number of random trials selected for which detailed charts are generated (expenses, transactions, taxes, forecasts).</li>
-</ul>
-</li>
+<li><strong>Check the <code>export/</code> directory</strong><br />
+   All outputs (charts and CSVs) are saved here with timestamped filenames for easy tracking.  </li>
 </ol>
 <hr />
-<h2 id="inputs-required">📂 Inputs Required</h2>
+<h2 id="controlling-behavior">⚙️ Controlling Behavior</h2>
+<p>You can control how the simulation runs by adjusting flags in <code>app.py</code>:  </p>
 <ul>
-<li><strong>profile.json</strong> → simulation horizon and MAGI.</li>
-<li><strong>buckets.json</strong> → account definitions (must align with <code>balance.csv</code>).</li>
-<li><strong>balance.csv</strong> → seed balances.</li>
-<li><strong>policies.json</strong> → refill, liquidation, salary, SEPP, property, unemployment, Roth conversions.</li>
-<li><strong>tax_brackets.json</strong> → federal, state, payroll, capital gains, IRMAA, Medicare premiums.</li>
-<li><strong>inflation_rates.json</strong> → baseline inflation + category profiles.</li>
-<li><strong>inflation_thresholds.json</strong> + <strong>gain_table.json</strong> → asset class return regimes.</li>
-<li><strong>marketplace_premiums.json</strong> → healthcare premiums.</li>
-<li><strong>fixed.csv</strong> → one‑time events (e.g., tuition, travel).</li>
-<li><strong>recurring.csv</strong> → ongoing monthly flows (e.g., insurance, food, utilities).</li>
+<li><strong>Simulation Size</strong> → <code>SIM_SIZE</code> sets the number of Monte Carlo trials.  </li>
+<li><strong>Chart Display</strong> → <code>SHOW_*</code> flags decide which charts open interactively (e.g., net worth, examples, historical).  </li>
+<li><strong>Chart Export</strong> → <code>SAVE_*</code> flags decide which charts are saved to HTML/CSV.  </li>
+<li><strong>Detailed Mode</strong> → <code>DETAILED_MODE</code> forces all charts and exports to be generated for full transparency.  </li>
+<li><strong>Example Trials</strong> → <code>sim_examples</code> sets how many random trials are shown in detail (expenses, transactions, taxes, forecasts).  </li>
+</ul>
+<hr />
+<h2 id="inputs-required">📂 Inputs Required</h2>
+<p>Nomad Wealth uses configuration files to define your plan:  </p>
+<ul>
+<li><strong>profile.json</strong> → retirement horizon and income assumptions.  </li>
+<li><strong>buckets.json</strong> → account definitions (must align with <code>balance.csv</code>).  </li>
+<li><strong>balance.csv</strong> → starting balances for each account.  </li>
+<li><strong>policies.json</strong> → rules for income, withdrawals, property, unemployment, Roth conversions.  </li>
+<li><strong>tax_brackets.json</strong> → IRS‑aligned federal, state, payroll, capital gains, IRMAA, Medicare premiums.  </li>
+<li><strong>inflation_rates.json</strong> → baseline inflation + category profiles.  </li>
+<li><strong>inflation_thresholds.json</strong> + <strong>gain_table.json</strong> → asset class return regimes.  </li>
+<li><strong>marketplace_premiums.json</strong> → healthcare premiums.  </li>
+<li><strong>fixed.csv</strong> → one‑time events (e.g., tuition, travel).  </li>
+<li><strong>recurring.csv</strong> → ongoing monthly flows (e.g., insurance, food, utilities).  </li>
 </ul>
 <blockquote>
-<p>All inputs must conform to schemas in <a href="../configuration/">Configuration Reference</a>.</p>
+<p>All inputs must follow the schemas in <a href="../configuration/">Configuration Reference</a>.  </p>
 </blockquote>
 <hr />
 <h2 id="outputs">📈 Outputs</h2>
-<p>Nomad Wealth produces:</p>
-<ol>
-<li>
-<p><strong>Historical Charts</strong></p>
+<p>Nomad Wealth produces results you can explore in charts and exports:  </p>
 <ul>
-<li><code>plot_historical_bucket_gains()</code> → bucket-level gain/loss trends.</li>
-<li><code>plot_historical_balance()</code> → net worth trajectory + gain/loss bars.</li>
+<li><strong>Historical Charts</strong> → account gains/losses and net worth trajectory.  </li>
+<li><strong>Per‑Trial Example Charts</strong> → detailed views of monthly expenses, transactions, taxes, and forecasts.  </li>
+<li><strong>Aggregate Monte Carlo Charts</strong> → distributions of returns, balances, taxes, withdrawals, and net worth.  </li>
+<li><strong>CSV Exports</strong> → tables of balances, tax breakdowns, monthly returns, and flow logs for reproducibility.  </li>
 </ul>
-</li>
-<li>
-<p><strong>Per-Trial Example Charts</strong> (for trials in <code>sim_examples</code>)</p>
-<ul>
-<li>Monthly expenses, transactions, transactions in context, income taxes, forecasts.</li>
-</ul>
-</li>
-<li>
-<p><strong>Aggregate Monte Carlo Charts</strong></p>
-<ul>
-<li>Monthly returns distribution.</li>
-<li>Taxable balances at SEPP end month.</li>
-<li>Total taxes, effective rates, withdrawal rates.</li>
-<li>Net worth distribution with median and percentile bands.</li>
-</ul>
-</li>
-<li>
-<p><strong>CSV Exports</strong></p>
-<ul>
-<li>Bucket balances, tax breakdowns, monthly returns, flow logs (debits/credits for audit reproducibility).</li>
-</ul>
-</li>
-</ol>
 <hr />
 <h2 id="notes">🧾 Notes</h2>
 <ul>
-<li>Timestamps in filenames use format <code>YYYYMMDD_HHMMSS</code>.</li>
-<li>Net worth = sum of all bucket balances at each month.</li>
-<li>SEPP gating enforces IRS 72(t) rules for tax-deferred withdrawals.</li>
-<li>Roth conversions are modeled independently and may occur before age 59.5.</li>
-<li>Logging records export paths for traceability.</li>
-<li>Detailed Mode ensures <strong>IRS-aligned audit reproducibility</strong> across all charts and exports.</li>
+<li>Filenames include timestamps (<code>YYYYMMDD_HHMMSS</code>) for traceability.  </li>
+<li>Net worth = sum of all account balances each month.  </li>
+<li>SEPP rules enforce IRS 72(t) withdrawal compliance.  </li>
+<li>Roth conversions can occur before age 59.5 if configured.  </li>
+<li>Logging records export paths for transparency.  </li>
+<li>Detailed Mode ensures <strong>IRS‑aligned reproducibility</strong> across all charts and exports.  </li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../overview/">Framework Overview</a> → conceptual landing page</li>
-<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV schemas</li>
-<li><a href="../architecture/">Architecture Overview</a> → modular system design</li>
-<li><a href="../simulation_logic/">Simulation Logic</a> → monthly forecast loop and aggregation</li>
-<li><a href="../visualization/">Visualization Guide</a> → charts and exports</li>
+<li><a href="../overview/">Framework Overview</a> → conceptual landing page  </li>
+<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV schemas  </li>
+<li><a href="../architecture/">Architecture Overview</a> → modular system design  </li>
+<li><a href="../simulation_logic/">Simulation Logic</a> → monthly forecast loop and aggregation  </li>
+<li><a href="../visualization/">Visualization Guide</a> → charts and exports  </li>
 </ul>
 
 

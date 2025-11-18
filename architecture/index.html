@@ -23,7 +23,7 @@
     
     
       
-        <title>Architecture Overview - Nomad Wealth Forecasting</title>
+        <title>Architecture Overview - Nomad Wealth</title>
       
     
     
@@ -80,7 +80,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-header__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-header__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -94,7 +94,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Nomad Wealth Forecasting
+            Nomad Wealth
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -178,13 +178,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-nav__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-nav__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Nomad Wealth Forecasting
+    Nomad Wealth
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -364,10 +364,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#high-level-design" class="md-nav__link">
+  <a href="#highlevel-design" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔍 High-Level Design
+        🔍 High‑Level Design
       
     </span>
   </a>
@@ -518,10 +518,10 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#high-level-design" class="md-nav__link">
+  <a href="#highlevel-design" class="md-nav__link">
     <span class="md-ellipsis">
       
-        🔍 High-Level Design
+        🔍 High‑Level Design
       
     </span>
   </a>
@@ -601,124 +601,99 @@
 
 
 <h1 id="architecture-overview">🏛️ Architecture Overview</h1>
-<p>Nomad Wealth is a <strong>policy-driven Monte Carlo simulation framework</strong> for financial planning.<br />
-Its architecture is designed for <strong>audit clarity, transparency, and extensibility</strong>, ensuring that every projection, chart, and policy is IRS-aligned and defensible.</p>
+<p>Nomad Wealth is a <strong>policy‑driven Monte Carlo simulation framework</strong> for financial planning.<br />
+Its architecture is designed for <strong>clarity, transparency, and extensibility</strong>, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  </p>
 <hr />
-<h2 id="high-level-design">🔍 High-Level Design</h2>
-<p>The system is organized into modular components under <code>src/</code>:</p>
+<h2 id="highlevel-design">🔍 High‑Level Design</h2>
+<p>Nomad Wealth is built from modular components that work together to run forecasts and generate charts:  </p>
 <ul>
-<li><strong>Entry Point (<code>app.py</code>)</strong> → orchestrates configuration loading, staging, parallel execution, aggregation, and visualization.</li>
-<li><strong>Forecast Engine (<code>forecast_engine.py</code>)</strong> → runs the monthly simulation loop, applying transactions, policies, market returns, and taxes.</li>
-<li><strong>Buckets &amp; Holdings (<code>buckets.py</code>)</strong> → core data structures representing accounts, holdings, and asset classes.</li>
-<li><strong>Policies (<code>policy_engine.py</code>, <code>policies_transactions.py</code>)</strong> → enforce refill rules, liquidation hierarchies, and penalty logic.</li>
-<li><strong>Transactions (<code>rules_transactions.py</code>)</strong> → define fixed, recurring, salary, Social Security, Roth conversions, and other flows.</li>
-<li><strong>Economic Factors (<code>economic_factors.py</code>)</strong> → simulate inflation and market returns using historical distributions.</li>
-<li><strong>Taxes (<code>taxes.py</code>)</strong> → apply IRS-compliant tax rules for ordinary income, capital gains, and Social Security.</li>
-<li><strong>Visualization (<code>visualizations.py</code>)</strong> → generate interactive charts (historical, per‑trial, Monte Carlo) and CSV/HTML exports for audit clarity.</li>
-<li><strong>Helper Functions (<code>app.py</code>)</strong> → utilities for timing, inflation modifiers, and bucket creation.</li>
+<li><strong>Entry Point (<code>app.py</code>)</strong> → starts the process: loads your configuration, runs simulations, and produces outputs.  </li>
+<li><strong>Forecast Engine (<code>forecast_engine.py</code>)</strong> → runs the monthly forecast loop, applying transactions, policies, market returns, and taxes.  </li>
+<li><strong>Buckets &amp; Holdings (<code>buckets.py</code>)</strong> → represent your accounts and investments.  </li>
+<li><strong>Policies (<code>policy_engine.py</code>, <code>policies_transactions.py</code>)</strong> → enforce rules like refills, withdrawals, and penalties.  </li>
+<li><strong>Transactions (<code>rules_transactions.py</code>)</strong> → handle income, expenses, Social Security, Roth conversions, and more.  </li>
+<li><strong>Economic Factors (<code>economic_factors.py</code>)</strong> → simulate inflation and market returns based on historical data.  </li>
+<li><strong>Taxes (<code>taxes.py</code>)</strong> → apply IRS‑compliant tax rules for income, gains, and Social Security.  </li>
+<li><strong>Visualization (<code>visualizations.py</code>)</strong> → generate charts and exports that make your plan easy to understand.  </li>
+<li><strong>Helper Functions (<code>app.py</code>)</strong> → utilities that keep balances, inflation, and timing consistent.  </li>
 </ul>
 <hr />
 <h2 id="data-flow">📂 Data Flow</h2>
+<p>Here’s how information moves through the system:  </p>
 <ol>
+<li><strong>Configuration Loading</strong>  </li>
+<li>JSON files define your accounts, policies, tax brackets, and simulation settings.  </li>
 <li>
-<p><strong>Configuration Loading</strong></p>
+<p>CSV files provide starting balances and transactions.  </p>
 </li>
 <li>
-<p>JSON files in <code>config/</code> define buckets, policies, tax brackets, and simulation parameters.</p>
+<p><strong>Staging</strong>  </p>
+</li>
+<li>Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  </li>
+<li>Prepares historical and future timeframes.  </li>
+<li>Seeds accounts, policies, inflation, tax logic, and transactions.  </li>
+<li>
+<p>Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  </p>
 </li>
 <li>
-<p>CSV files in <code>data/</code> seed historical balances and define fixed/recurring transactions.</p>
+<p><strong>Parallel Simulation Loop (Forecast Engine)</strong>  </p>
+</li>
+<li>Runs Monte Carlo trials in parallel for efficiency.  </li>
+<li>Each trial applies monthly transactions, policies, market returns, and taxes.  </li>
+<li>
+<p>FlowTracker records every debit and credit for transparency.  </p>
 </li>
 <li>
-<p><strong>Staging</strong></p>
+<p><strong>Aggregation &amp; Summary</strong>  </p>
+</li>
+<li>Results are combined into net worth, taxes, balances, and returns.  </li>
+<li>
+<p>Property events and compliance checks are tracked.  </p>
 </li>
 <li>
-<p><code>stage_load()</code> → loads JSON configs and CSV inputs.</p>
-<ul>
-<li>Inputs include:</li>
-<li><code>balances.csv</code> → seed balances.</li>
-<li><code>fixed.csv</code> → one‑time events.</li>
-<li><code>recurring.csv</code> → ongoing monthly flows.</li>
-<li>Policies (<code>policies.json</code>), tax brackets (<code>tax_brackets.json</code>), inflation (<code>inflation_rates.json</code> + thresholds + gain table), and marketplace premiums (<code>marketplace_premiums.json</code>) are also loaded.</li>
-</ul>
+<p><strong>Visualization Layer</strong>  </p>
 </li>
-<li><code>stage_prepare_timeframes()</code> → builds historical (<code>hist_df</code>) and future (<code>future_df</code>) frames.</li>
-<li>
-<p><code>stage_init_components()</code> → seeds buckets, policies, inflation, tax calculator, market gains, and transactions.</p>
-<ul>
-<li>Helper functions ensure integrity:</li>
-<li><code>create_bucket()</code> → allocates balances across holdings, correcting rounding drift.</li>
-<li><code>seed_buckets_from_config()</code> → validates bucket definitions against historical balances.</li>
-<li><code>build_description_inflation_modifiers()</code> → applies inflation profiles consistently across categories.</li>
-<li><code>timed()</code> → logs performance metrics for reproducibility.</li>
-</ul>
-</li>
-<li>
-<p><strong>Parallel Simulation Loop (Forecast Engine)</strong></p>
-</li>
-<li>
-<p>Monte Carlo trials executed in parallel with <code>ProcessPoolExecutor</code>.</p>
-</li>
-<li>Each trial applies monthly transactions, refill policies, market returns, and taxes.</li>
-<li>
-<p>FlowTracker records all debits/credits for audit clarity.</p>
-</li>
-<li>
-<p><strong>Aggregation &amp; Summary</strong></p>
-</li>
-<li>
-<p>Trial results aggregated into DataFrames for net worth, taxes, taxable balances, and monthly returns.</p>
-</li>
-<li>Property liquidation events tracked across simulations.</li>
-<li>
-<p>Taxable balances at SEPP end month recorded for compliance checks.</p>
-</li>
-<li>
-<p><strong>Visualization Layer</strong></p>
-</li>
-<li>Per-trial charts: monthly expenses, transactions, taxes, forecasts.</li>
-<li>Aggregate Monte Carlo charts: monthly returns, taxable balances, totals/rates, net worth distribution.</li>
-<li>Historical charts: bucket gains and net worth trajectory.</li>
-<li>All charts exportable to HTML and CSV for reproducibility.</li>
+<li>Produces charts showing monthly details, aggregate distributions, and historical trends.  </li>
+<li>All charts can be exported to HTML and CSV for easy sharing and reproducibility.  </li>
 </ol>
 <hr />
 <h2 id="irs-compliance">🧾 IRS Compliance</h2>
-<p>The tax engine enforces IRS rules with explicit, layered logic:</p>
+<p>Nomad Wealth enforces IRS rules so your forecasts reflect reality:  </p>
 <ul>
-<li>Ordinary income brackets inflated annually.</li>
-<li>Capital gains layered above ordinary income.</li>
-<li>Social Security capped at 85% of provisional income.</li>
-<li>Penalty tax applied only when flagged in metadata.</li>
-<li>AGI includes salary, withdrawals, conversions, gains, and Social Security.</li>
-<li>Taxable income calculated after deductions.</li>
-<li>Inflation modeled stochastically, anchored to a base year.</li>
+<li>Ordinary income brackets updated annually.  </li>
+<li>Capital gains layered above ordinary income.  </li>
+<li>Social Security capped at 85% of provisional income.  </li>
+<li>Penalty taxes applied only when rules require it.  </li>
+<li>AGI includes salary, withdrawals, conversions, gains, and Social Security.  </li>
+<li>Taxable income calculated after deductions.  </li>
+<li>Inflation modeled stochastically, anchored to a base year.  </li>
 </ul>
 <hr />
 <h2 id="visualization-integration">📊 Visualization Integration</h2>
-<p>Visualization is embedded in the simulation loop:</p>
+<p>Visualization is built into the simulation loop, so you always see clear results:  </p>
 <ul>
-<li><strong>Historical context</strong> → charts of bucket gains and net worth trends.</li>
-<li><strong>Per-trial transparency</strong> → expenses, transactions, taxes, forecasts.</li>
-<li><strong>Aggregate clarity</strong> → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.</li>
-<li><strong>Audit reproducibility</strong> → all charts exportable to HTML/CSV with timestamped filenames, with consistent color palettes, percentile overlays, and hover text for interpretability.</li>
+<li><strong>Historical context</strong> → charts of account growth and net worth trends.  </li>
+<li><strong>Per‑trial transparency</strong> → detailed monthly expenses, transactions, taxes, and forecasts.  </li>
+<li><strong>Aggregate clarity</strong> → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.  </li>
+<li><strong>Reproducibility</strong> → charts exportable to HTML/CSV with consistent colors, overlays, and hover text.  </li>
 </ul>
 <hr />
 <h2 id="design-principles">🎯 Design Principles</h2>
 <ul>
-<li><strong>Policy-First</strong> → all financial rules are declarative JSON, transparent and repeatable.</li>
-<li><strong>Audit Clarity</strong> → every dollar is traceable across buckets and scenarios.</li>
-<li><strong>Extensibility</strong> → modular design allows new transaction types, policies, or tax rules.</li>
-<li><strong>Resilience</strong> → Monte Carlo sampling embraces volatility, quantifying sufficiency and optimization.</li>
-<li><strong>Parallelism</strong> → simulations scale efficiently with <code>ProcessPoolExecutor</code>.</li>
-<li><strong>Integrity</strong> → helper functions enforce balance correctness, inflation consistency, and reproducible timing.</li>
+<li><strong>Policy‑First</strong> → all financial rules are transparent and repeatable.  </li>
+<li><strong>Clarity</strong> → every dollar is traceable across accounts and scenarios.  </li>
+<li><strong>Extensibility</strong> → modular design supports new rules and transaction types.  </li>
+<li><strong>Resilience</strong> → Monte Carlo sampling shows how your plan holds up under uncertainty.  </li>
+<li><strong>Parallelism</strong> → simulations run efficiently at scale.  </li>
+<li><strong>Integrity</strong> → helper functions enforce correctness and reproducibility.  </li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../overview/">Framework Overview</a></li>
-<li><a href="../configuration/">Configuration Reference</a></li>
-<li><a href="../simulation_logic/">Simulation Logic</a></li>
-<li><a href="../visualization/">Visualization Guide</a></li>
+<li><a href="../overview/">Framework Overview</a>  </li>
+<li><a href="../configuration/">Configuration Reference</a>  </li>
+<li><a href="../simulation_logic/">Simulation Logic</a>  </li>
+<li><a href="../visualization/">Visualization Guide</a>  </li>
 <li><a href="../usage/">Usage Guide</a></li>
 </ul>
 

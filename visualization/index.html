@@ -21,7 +21,7 @@
     
     
       
-        <title>Visualization Guide - Nomad Wealth Forecasting</title>
+        <title>Visualization Guide - Nomad Wealth</title>
       
     
     
@@ -78,7 +78,7 @@
 
 <header class="md-header md-header--shadow" data-md-component="header">
   <nav class="md-header__inner md-grid" aria-label="Header">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-header__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-header__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
@@ -92,7 +92,7 @@
       <div class="md-header__ellipsis">
         <div class="md-header__topic">
           <span class="md-ellipsis">
-            Nomad Wealth Forecasting
+            Nomad Wealth
           </span>
         </div>
         <div class="md-header__topic" data-md-component="header-topic">
@@ -176,13 +176,13 @@
 
 <nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
   <label class="md-nav__title" for="__drawer">
-    <a href=".." title="Nomad Wealth Forecasting" class="md-nav__button md-logo" aria-label="Nomad Wealth Forecasting" data-md-component="logo">
+    <a href=".." title="Nomad Wealth" class="md-nav__button md-logo" aria-label="Nomad Wealth" data-md-component="logo">
       
   
   <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54"/></svg>
 
     </a>
-    Nomad Wealth Forecasting
+    Nomad Wealth
   </label>
   
   <ul class="md-nav__list" data-md-scrollfix>
@@ -599,10 +599,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#visualization-audit-notes" class="md-nav__link">
+  <a href="#visualization-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📝 Visualization Audit Notes
+        📝 Visualization Notes
       
     </span>
   </a>
@@ -838,10 +838,10 @@
 </li>
       
         <li class="md-nav__item">
-  <a href="#visualization-audit-notes" class="md-nav__link">
+  <a href="#visualization-notes" class="md-nav__link">
     <span class="md-ellipsis">
       
-        📝 Visualization Audit Notes
+        📝 Visualization Notes
       
     </span>
   </a>
@@ -878,142 +878,116 @@
 
 <h1 id="visualization-guide">📊 Visualization Guide</h1>
 <p>Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports.<br />
-These charts provide transparency, audit clarity, and intuitive insight into both historical data and Monte Carlo simulations.</p>
+These charts turn complex simulations into <strong>clear, intuitive visuals</strong> that help you understand your retirement outlook, spot risks, and build confidence in your plan.  </p>
 <hr />
 <h2 id="monte-carlo-charts">🎲 Monte Carlo Charts</h2>
-<p>Generated across all trials.</p>
+<p>Monte Carlo charts summarize results across all trials, showing probabilities and ranges:  </p>
 <h3 id="plot_mc_networth"><code>plot_mc_networth()</code></h3>
-<p><img alt="Monte Carlo Net Worth Chart" src="../images/mc_networth.png" /></p>
+<p><img alt="Monte Carlo Net Worth Chart" src="../images/mc_networth.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Net worth distribution with median trajectory and 15th/85th percentile bands.</li>
-<li><strong>Why it matters:</strong> Summarizes overall financial sufficiency and risk bounds.</li>
+<li><strong>Purpose:</strong> Net worth distribution with median trajectory and 15th/85th percentile bands.  </li>
+<li><strong>Why it matters:</strong> Shows whether your plan is likely to be sufficient, and highlights risk bounds.  </li>
 </ul>
 <h3 id="plot_mc_totals_and_rates"><code>plot_mc_totals_and_rates()</code></h3>
-<p>Two charts are generated:</p>
-<p><img alt="Monte Carlo Tax Chart" src="../images/mc_tax.png" /></p>
+<p><img alt="Monte Carlo Tax Chart" src="../images/mc_tax.png" /><br />
+<img alt="Monte Carlo Withdrawals Chart" src="../images/mc_withdrawals.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Total taxes and effective tax rates.</li>
-<li><strong>Why it matters:</strong> Provides audit clarity on tax burden.</li>
-</ul>
-<p><img alt="Monte Carlo Withdrawals Chart" src="../images/mc_withdrawals.png" /></p>
-<ul>
-<li><strong>Purpose:</strong> Total withdrawals and withdrawal rates across trials.</li>
-<li><strong>Why it matters:</strong> Provides audit clarity on withdrawal sustainability.</li>
+<li><strong>Purpose:</strong> Total taxes and withdrawal rates across trials.  </li>
+<li><strong>Why it matters:</strong> Helps you see the tax burden and whether withdrawals remain sustainable.  </li>
 </ul>
 <h3 id="plot_mc_taxable_balances"><code>plot_mc_taxable_balances()</code></h3>
-<p><img alt="Monte Carlo Taxable Chart" src="../images/mc_taxable.png" /></p>
+<p><img alt="Monte Carlo Taxable Chart" src="../images/mc_taxable.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Taxable balances at SEPP end month.</li>
-<li><strong>Why it matters:</strong> Surfaces liquidity available in taxable accounts at critical milestones.</li>
+<li><strong>Purpose:</strong> Taxable balances at SEPP end month.  </li>
+<li><strong>Why it matters:</strong> Highlights liquidity available in taxable accounts at critical milestones.  </li>
 </ul>
 <h3 id="plot_mc_monthly_returns"><code>plot_mc_monthly_returns()</code></h3>
-<p><strong>Note:</strong> Three charts are generated with DETAIL_MODE enabled:</p>
-<p><img alt="Monte Carlo Property Chart" src="../images/mc_property_returns.png" /></p>
+<p><img alt="Monte Carlo Property Chart" src="../images/mc_property_returns.png" /><br />
+<img alt="Monte Carlo Fixed Income Chart" src="../images/mc_fixed_income_returns.png" /><br />
+<img alt="Monte Carlo Stocks Chart" src="../images/mc_stocks_returns.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Distribution of monthly returns for property across trials.</li>
-<li><strong>Why it matters:</strong> Quantifies volatility and return variability according to inflation scenarios.</li>
-</ul>
-<p><img alt="Monte Carlo Fixed Income Chart" src="../images/mc_fixed_income_returns.png" /></p>
-<ul>
-<li><strong>Purpose:</strong> Distribution of monthly returns for fixed income across trials.</li>
-<li><strong>Why it matters:</strong> Quantifies volatility and return variability according to inflation scenarios.</li>
-</ul>
-<p><img alt="Monte Carlo Stocks Chart" src="../images/mc_stocks_returns.png" /></p>
-<ul>
-<li><strong>Purpose:</strong> Distribution of monthly returns for stocks across trials.</li>
-<li><strong>Why it matters:</strong> Quantifies volatility and return variability according to inflation scenarios.</li>
+<li><strong>Purpose:</strong> Distribution of monthly returns for property, fixed income, and stocks.  </li>
+<li><strong>Why it matters:</strong> Shows volatility and variability, helping you understand how markets affect your plan.  </li>
 </ul>
 <hr />
 <h2 id="example-trial-charts">🧾 Example Trial Charts</h2>
-<p><strong>Note:</strong> Generated only for random example trials.</p>
+<p>Example trial charts show what a single simulation looks like in detail:  </p>
 <h3 id="plot_example_forecast"><code>plot_example_forecast()</code></h3>
-<p><img alt="Example Forecast Chart" src="../images/ex_forecast.png" /></p>
+<p><img alt="Example Forecast Chart" src="../images/ex_forecast.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Forecasted bucket balances over time for a sample simulation.</li>
-<li><strong>Why it matters:</strong> Shows long‑term sustainability of asset allocations.</li>
+<li><strong>Purpose:</strong> Forecasted account balances over time.  </li>
+<li><strong>Why it matters:</strong> Shows how your assets evolve and whether they last through retirement.  </li>
 </ul>
 <h3 id="plot_example_income_taxes"><code>plot_example_income_taxes()</code></h3>
-<p>Two charts are generated:</p>
-<p><img alt="Example Income Chart" src="../images/ex_income.png" /></p>
+<p><img alt="Example Income Chart" src="../images/ex_income.png" /><br />
+<img alt="Example Taxes Chart" src="../images/ex_taxes.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Annual income breakdown for an example trial.</li>
-<li><strong>Why it matters:</strong> Clarifies how income, withdrawals, and gains translate into tax liabilities.</li>
-</ul>
-<p><img alt="Example Taxes Chart" src="../images/ex_taxes.png" /></p>
-<ul>
-<li><strong>Purpose:</strong> Annual tax breakdown for an example trial.</li>
-<li><strong>Why it matters:</strong> Shows where you can optimize tax liabilities.</li>
+<li><strong>Purpose:</strong> Annual income and tax breakdowns.  </li>
+<li><strong>Why it matters:</strong> Clarifies how income sources and withdrawals translate into taxes.  </li>
 </ul>
 <h3 id="plot_example_transactions_in_context"><code>plot_example_transactions_in_context()</code></h3>
-<p><strong>Note:</strong> Only generates with DETAIL_MODE enabled.</p>
-<p><img alt="Example Transactions In Context Chart" src="../images/dm_transactions.png" /></p>
+<p><img alt="Example Transactions In Context Chart" src="../images/dm_transactions.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Displays transactions alongside bucket balances.</li>
-<li><strong>Why it matters:</strong> Provides context for how transactions affect overall balances.</li>
+<li><strong>Purpose:</strong> Transactions shown alongside account balances.  </li>
+<li><strong>Why it matters:</strong> Provides context for how spending and inflows affect your overall plan.  </li>
 </ul>
 <h3 id="plot_example_transactions"><code>plot_example_transactions()</code></h3>
-<p><img alt="Example Transactions Chart" src="../images/ex_transactions.png" /></p>
+<p><img alt="Example Transactions Chart" src="../images/ex_transactions.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Shows transactions for a given year in a sample simulation.</li>
-<li><strong>Why it matters:</strong> Useful for tracing specific flows and verifying transaction logic.</li>
+<li><strong>Purpose:</strong> Transactions for a given year.  </li>
+<li><strong>Why it matters:</strong> Useful for tracing specific flows and verifying assumptions.  </li>
 </ul>
 <h3 id="plot_example_monthly_expenses"><code>plot_example_monthly_expenses()</code></h3>
-<p><img alt="Example Expenses Chart" src="../images/ex_monthly_expenses.png" /></p>
+<p><img alt="Example Expenses Chart" src="../images/ex_monthly_expenses.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Visualizes monthly expenses for an example trial.</li>
-<li><strong>Why it matters:</strong> Helps identify shifting spending patterns using inflated costs, especially useful to predict how Medicare premiums and IRMAA penalties affects the monthly budget.</li>
+<li><strong>Purpose:</strong> Monthly expenses over time.  </li>
+<li><strong>Why it matters:</strong> Helps identify spending patterns and see how healthcare costs (Medicare, IRMAA) affect your budget.  </li>
 </ul>
 <hr />
 <h2 id="historical-charts">📜 Historical Charts</h2>
+<p>Historical charts provide context by showing past performance:  </p>
 <h3 id="plot_historical_bucket_gains"><code>plot_historical_bucket_gains()</code></h3>
-<p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" /></p>
+<p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each bucket.</li>
-<li><strong>Why it matters:</strong> Highlights which asset classes contributed to net worth changes over time.</li>
+<li><strong>Purpose:</strong> Monthly gain/loss trends for each account.  </li>
+<li><strong>Why it matters:</strong> Highlights which assets contributed most to changes in net worth.  </li>
 </ul>
 <h3 id="plot_historical_balance"><code>plot_historical_balance()</code></h3>
-<p><img alt="Historical Balance Chart" src="../images/hist_networth.png" /></p>
+<p><img alt="Historical Balance Chart" src="../images/hist_networth.png" />  </p>
 <ul>
-<li><strong>Purpose:</strong> Net worth line chart + gain/loss bar chart.</li>
-<li><strong>Why it matters:</strong> Provides a clear view of overall net worth trajectory and periods of increase/decrease.</li>
+<li><strong>Purpose:</strong> Net worth trajectory with gains/losses.  </li>
+<li><strong>Why it matters:</strong> Provides a clear view of overall financial progress over time.  </li>
 </ul>
 <hr />
 <h2 id="flags-modes">⚙️ Flags &amp; Modes</h2>
 <ul>
-<li><strong><code>SHOW_*</code> flags</strong> → control whether charts are displayed interactively.</li>
-<li><strong><code>SAVE_*</code> flags</strong> → control whether charts are exported to HTML/CSV.</li>
-<li><strong><code>DETAILED_MODE</code></strong> → overrides show/save behavior for full audit clarity.</li>
+<li><strong><code>SHOW_*</code> flags</strong> → control whether charts are displayed interactively.  </li>
+<li><strong><code>SAVE_*</code> flags</strong> → control whether charts are exported to HTML/CSV.  </li>
+<li><strong><code>DETAILED_MODE</code></strong> → enables full transparency with additional charts and context.  </li>
 </ul>
 <hr />
-<h2 id="visualization-audit-notes">📝 Visualization Audit Notes</h2>
+<h2 id="visualization-notes">📝 Visualization Notes</h2>
+<p>Nomad Wealth’s charts are designed for <strong>clarity and reproducibility</strong>:  </p>
 <ul>
-<li>Visualization helpers ensure <strong>consistent labeling, coloring, and axis formatting</strong> across all charts.</li>
-<li>Percentile overlays (p15, median, p85) provide clear scenario comparison and reproducibility across trials.</li>
-<li>Dual y‑axes allow simultaneous display of dollar values and percentage rates where relevant.</li>
-<li>Month coercion ensures reproducibility in CSV and HTML outputs.</li>
-<li>All charts are designed for <strong>audit clarity</strong>, with explicit labels, hover text, and reference lines.</li>
-<li>CSV/HTML exports preserve both tabular and interactive views, ensuring reproducibility and presentation quality.</li>
-<li>Logging records export paths for traceability.</li>
+<li>Consistent labels, colors, and formatting across all charts.  </li>
+<li>Percentile overlays (p15, median, p85) make scenario comparisons easy.  </li>
+<li>Dual y‑axes show both dollar values and percentage rates where relevant.  </li>
+<li>CSV/HTML exports preserve interactive and tabular views for sharing or review.  </li>
+<li>Logging ensures every chart export is traceable.  </li>
 </ul>
-<p><strong>Specialized chart notes:</strong></p>
+<p><strong>Specialized charts:</strong>  </p>
 <ul>
-<li><strong>Sankey diagrams</strong>: visualize net flows between buckets, normalize gains/losses, order nodes by volume, and use color coding to distinguish deposits, withdrawals, transfers, gains, and losses. Sliders allow year‑by‑year inspection.</li>
-<li><strong>Transactions in context</strong>: align flows with year‑end balances for audit clarity.</li>
-<li><strong>Forecast charts</strong>: provide bucket‑level visibility, net worth trajectory, and age overlays for interpretability.</li>
-<li><strong>Historical charts</strong>: deliver retrospective audit clarity of net worth and bucket‑level performance.</li>
-<li><strong>Monte Carlo charts</strong>: visualize distributions of returns, net worth, taxes, withdrawals, and taxable balances across scenarios and trials.</li>
-<li>Net worth charts highlight probabilistic retirement outcomes, example trials, age metrics, and property liquidation statistics.</li>
-<li>Totals and rates charts show distributional clarity of tax burdens and withdrawal rates.</li>
-<li>Taxable balance charts highlight sustainability of taxable accounts at critical milestones (e.g., SEPP end).</li>
-<li>Scenario color coding (green/red for gains/losses, scenario colors for returns) ensures interpretability.</li>
-<li>Highlighted trials allow auditors to trace specific scenarios.</li>
+<li><strong>Sankey diagrams</strong> → visualize flows between accounts, showing deposits, withdrawals, transfers, gains, and losses.  </li>
+<li><strong>Transactions in context</strong> → align flows with balances for transparency.  </li>
+<li><strong>Forecast charts</strong> → show account‑level visibility, net worth trajectory, and age overlays.  </li>
+<li><strong>Monte Carlo charts</strong> → highlight retirement probabilities, tax burdens, withdrawal sustainability, and account liquidity.  </li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../usage/">Usage Guide</a> → explains workflow and output files</li>
-<li><a href="../architecture/">Architecture Overview</a> → system design and visualization integration</li>
-<li><a href="../simulation_logic/">Simulation Logic</a> → monthly loop and aggregation steps</li>
+<li><a href="../usage/">Usage Guide</a> → explains workflow and output files  </li>
+<li><a href="../architecture/">Architecture Overview</a> → system design and visualization integration  </li>
+<li><a href="../simulation_logic/">Simulation Logic</a> → monthly loop and aggregation steps  </li>
 </ul>
 
 
