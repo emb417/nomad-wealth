@@ -601,8 +601,7 @@
 
 
 <h1 id="architecture-overview">🏛️ Architecture Overview</h1>
-<p>Nomad Wealth is a <strong>policy‑driven Monte Carlo simulation framework</strong> for financial planning.<br />
-Its architecture is designed for <strong>clarity, transparency, and extensibility</strong>, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  </p>
+<p>Nomad Wealth is a <strong>policy‑driven Monte Carlo simulation framework</strong> for financial planning. Its architecture is designed for <strong>clarity, transparency, and extensibility</strong>, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  </p>
 <hr />
 <h2 id="highlevel-design">🔍 High‑Level Design</h2>
 <p>Nomad Wealth is built from modular components that work together to run forecasts and generate charts:  </p>
@@ -621,40 +620,44 @@ Its architecture is designed for <strong>clarity, transparency, and extensibilit
 <h2 id="data-flow">📂 Data Flow</h2>
 <p>Here’s how information moves through the system:  </p>
 <ol>
-<li><strong>Configuration Loading</strong>  </li>
-<li>JSON files define your accounts, policies, tax brackets, and simulation settings.  </li>
 <li>
-<p>CSV files provide starting balances and transactions.  </p>
+<p><strong>Configuration Loading</strong>  </p>
+<ul>
+<li>JSON files define your accounts, policies, tax brackets, and simulation settings.  </li>
+<li>CSV files provide starting balances and transactions.  </li>
+</ul>
 </li>
 <li>
 <p><strong>Staging</strong>  </p>
-</li>
+<ul>
 <li>Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  </li>
 <li>Prepares historical and future timeframes.  </li>
 <li>Seeds accounts, policies, inflation, tax logic, and transactions.  </li>
-<li>
-<p>Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  </p>
+<li>Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  </li>
+</ul>
 </li>
 <li>
 <p><strong>Parallel Simulation Loop (Forecast Engine)</strong>  </p>
-</li>
+<ul>
 <li>Runs Monte Carlo trials in parallel for efficiency.  </li>
 <li>Each trial applies monthly transactions, policies, market returns, and taxes.  </li>
-<li>
-<p>FlowTracker records every debit and credit for transparency.  </p>
+<li>FlowTracker records every debit and credit for transparency.  </li>
+</ul>
 </li>
 <li>
 <p><strong>Aggregation &amp; Summary</strong>  </p>
-</li>
+<ul>
 <li>Results are combined into net worth, taxes, balances, and returns.  </li>
-<li>
-<p>Property events and compliance checks are tracked.  </p>
+<li>Property events and compliance checks are tracked.  </li>
+</ul>
 </li>
 <li>
 <p><strong>Visualization Layer</strong>  </p>
-</li>
+<ul>
 <li>Produces charts showing monthly details, aggregate distributions, and historical trends.  </li>
 <li>All charts can be exported to HTML and CSV for easy sharing and reproducibility.  </li>
+</ul>
+</li>
 </ol>
 <hr />
 <h2 id="irs-compliance">🧾 IRS Compliance</h2>
