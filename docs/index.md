@@ -1,46 +1,58 @@
-# 🕊️ Nomad Wealth Documentation
-
-Welcome to the documentation for **Nomad Wealth**, the Python framework for **transparent financial forecasting**. Where traditional models can be opaque and unauditable, Nomad Wealth is built to deliver **clarity, reproducibility, and confidence**.  
-
-This site is more than a technical manual — it’s a guide to understanding how policy‑driven rules, IRS‑aligned tax logic, and Monte Carlo simulations come together to create a **trustworthy system for financial planning**. Whether you’re an auditor validating compliance or a planner exploring retirement scenarios, these pages will help you **define, test, and execute** strategies with confidence.
+# 🕊️ Nomad Wealth Documentation  
 
 ---
 
-## 🚀 Getting Started
+Welcome to **Nomad Wealth**, the Python framework for **transparent financial forecasting**. If you’ve ever used financial planning tools and felt like you couldn’t see the assumptions behind the numbers, you’re not alone. Many systems give you results but don’t show how they were calculated, leaving you guessing about what’s really driving the forecast.  
 
-The best place to begin is the [Framework Overview](overview.md). It explains the purpose of Nomad Wealth, its design principles, and how the system fits together.
+Nomad Wealth is different. Every rule is explicit, every tax calculation is IRS‑aligned, and every simulation is reproducible. Instead of wondering what’s hidden, you can trace each dollar across accounts, policies, and scenarios. That means you don’t just get a projection — you get **clarity, confidence, and the ability to understand why the numbers look the way they do**.  
 
-![Monte Carlo Net Worth Chart](images/mc_networth.png)
-
----
-
-## 📚 Documentation Structure
-
-- **Framework Overview** → Conceptual landing page, purpose, workflow, design principles.
-- **Configuration Reference** → JSON and CSV schemas for buckets, policies, and seed balances.
-- **Architecture Overview** → Modular system design and data flow.
-- **Simulation Logic (`forecast_engine.py`)** → Step‑by‑step execution of the monthly forecast loop and Monte Carlo trials.
-- **Visualization Guide (`visualizations.py`)** → Interactive charts (historical, per‑trial, Monte Carlo) and CSV/HTML exports for audit clarity.
-- **Usage Guide** → How to run simulations, control flags, and interpret outputs.
-
-> Each section includes **audit notes** to ensure reproducibility and IRS‑aligned transparency.
+Whether you’re **planning retirement, testing “what‑if” scenarios, or simply checking if you’re on track**, Nomad Wealth helps you **see clearly, adjust confidently, and trust the outcomes**.  
 
 ---
 
-## 🎯 Design Philosophy
+This version speaks directly to the persona’s pain point (“you can’t see the assumptions”) and positions Nomad Wealth as the transparent alternative, without being confrontational about competitors.  
 
-Nomad Wealth is built around:
-
-- **Policy‑First** → declarative JSON rules drive all behavior.
-- **Audit Clarity** → every projection is traceable and reproducible.
-- **IRS Alignment** → tax rules, penalties, and premiums modeled explicitly.
-- **Extensibility** → modular design supports new transaction types, policies, and tax rules.
-- **Resilience** → Monte Carlo sampling embraces volatility and quantifies sufficiency.
-- **Transparency & Reproducibility** → charts, CSV/HTML exports, and logging provide clear evidence for auditors and users alike.
+Would you like me to also **recast the “Design Philosophy” section** in this same voice — focusing on how each principle solves a frustration users typically feel (e.g., “Policy‑First means you don’t have to guess what rules are being applied”)?
 
 ---
 
-## 📚 Next Steps
+## 🚀 Getting Started  
 
-👉 Start with the [Framework Overview](overview.md) to understand the system’s purpose and design.  
-From there, follow the flow: **Configuration → Architecture → Simulation → Visualization → Usage**.
+Run your first retirement forecast in minutes with the [Quick Start](https://github.com/emb417/nomad-wealth?tab=readme-ov-file#-quick-start).  
+
+Want to understand how it all works under the hood? Begin with the [Framework Overview](overview.md) to see the design principles and how the system fits together.  
+
+![Monte Carlo Net Worth Chart](images/mc_networth.png)  
+
+---
+
+## 📚 Documentation Structure  
+
+- **Framework Overview** → Why Nomad Wealth exists and how it helps you plan retirement with confidence.  
+- **Configuration Reference** → How to set up your plan inputs (accounts, policies, balances).  
+- **Architecture Overview** → Behind‑the‑scenes look at how the system runs (for advanced users).  
+- **Simulation Logic** → How forecasts are calculated and what Monte Carlo means for your plan.  
+- **Visualization Guide** → How to read charts and reports to understand your retirement outlook.  
+- **Usage Guide** → Step‑by‑step instructions to run forecasts and interpret results.  
+
+> Each section emphasizes **transparency and reproducibility**, so you can trust that every forecast is IRS‑aligned and defensible.  
+
+---
+
+## 🎯 Design Philosophy  
+
+Nomad Wealth is built around:  
+
+- **Policy‑First** → Your plan follows clear, rule‑based logic.  
+- **Audit Clarity** → Every forecast is traceable, so you can trust the numbers.  
+- **IRS Alignment** → Tax rules and penalties are modeled exactly as they apply to you.  
+- **Resilience** → Monte Carlo simulations show how your plan holds up under uncertainty.  
+- **Transparency** → Charts and reports make it easy to see what’s happening.  
+- **Extensibility** → Advanced users can customize rules, but you don’t need to for core planning.  
+
+---
+
+## 📚 Next Steps  
+
+👉 Start with the [Framework Overview](overview.md) to see how Nomad Wealth helps you plan with confidence.  
+From there, follow the flow: **Configuration → Simulation → Visualization → Usage** to set up your plan, run forecasts, and understand your retirement outlook.  

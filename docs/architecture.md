@@ -1,109 +1,95 @@
-# 🏛️ Architecture Overview
+# 🏛️ Architecture Overview  
 
-Nomad Wealth is a **policy-driven Monte Carlo simulation framework** for financial planning.  
-Its architecture is designed for **audit clarity, transparency, and extensibility**, ensuring that every projection, chart, and policy is IRS-aligned and defensible.
-
----
-
-## 🔍 High-Level Design
-
-The system is organized into modular components under `src/`:
-
-- **Entry Point (`app.py`)** → orchestrates configuration loading, staging, parallel execution, aggregation, and visualization.
-- **Forecast Engine (`forecast_engine.py`)** → runs the monthly simulation loop, applying transactions, policies, market returns, and taxes.
-- **Buckets & Holdings (`buckets.py`)** → core data structures representing accounts, holdings, and asset classes.
-- **Policies (`policy_engine.py`, `policies_transactions.py`)** → enforce refill rules, liquidation hierarchies, and penalty logic.
-- **Transactions (`rules_transactions.py`)** → define fixed, recurring, salary, Social Security, Roth conversions, and other flows.
-- **Economic Factors (`economic_factors.py`)** → simulate inflation and market returns using historical distributions.
-- **Taxes (`taxes.py`)** → apply IRS-compliant tax rules for ordinary income, capital gains, and Social Security.
-- **Visualization (`visualizations.py`)** → generate interactive charts (historical, per‑trial, Monte Carlo) and CSV/HTML exports for audit clarity.
-- **Helper Functions (`app.py`)** → utilities for timing, inflation modifiers, and bucket creation.
+Nomad Wealth is a **policy‑driven Monte Carlo simulation framework** for financial planning.  
+Its architecture is designed for **clarity, transparency, and extensibility**, ensuring that every projection, chart, and policy reflects IRS rules and produces trustworthy results.  
 
 ---
 
-## 📂 Data Flow
+## 🔍 High‑Level Design  
 
-1. **Configuration Loading**
+Nomad Wealth is built from modular components that work together to run forecasts and generate charts:  
 
-   - JSON files in `config/` define buckets, policies, tax brackets, and simulation parameters.
-   - CSV files in `data/` seed historical balances and define fixed/recurring transactions.
-
-2. **Staging**
-
-   - `stage_load()` → loads JSON configs and CSV inputs.
-     - Inputs include:
-       - `balances.csv` → seed balances.
-       - `fixed.csv` → one‑time events.
-       - `recurring.csv` → ongoing monthly flows.
-     - Policies (`policies.json`), tax brackets (`tax_brackets.json`), inflation (`inflation_rates.json` + thresholds + gain table), and marketplace premiums (`marketplace_premiums.json`) are also loaded.
-   - `stage_prepare_timeframes()` → builds historical (`hist_df`) and future (`future_df`) frames.
-   - `stage_init_components()` → seeds buckets, policies, inflation, tax calculator, market gains, and transactions.
-     - Helper functions ensure integrity:
-       - `create_bucket()` → allocates balances across holdings, correcting rounding drift.
-       - `seed_buckets_from_config()` → validates bucket definitions against historical balances.
-       - `build_description_inflation_modifiers()` → applies inflation profiles consistently across categories.
-       - `timed()` → logs performance metrics for reproducibility.
-
-3. **Parallel Simulation Loop (Forecast Engine)**
-
-   - Monte Carlo trials executed in parallel with `ProcessPoolExecutor`.
-   - Each trial applies monthly transactions, refill policies, market returns, and taxes.
-   - FlowTracker records all debits/credits for audit clarity.
-
-4. **Aggregation & Summary**
-
-   - Trial results aggregated into DataFrames for net worth, taxes, taxable balances, and monthly returns.
-   - Property liquidation events tracked across simulations.
-   - Taxable balances at SEPP end month recorded for compliance checks.
-
-5. **Visualization Layer**
-   - Per-trial charts: monthly expenses, transactions, taxes, forecasts.
-   - Aggregate Monte Carlo charts: monthly returns, taxable balances, totals/rates, net worth distribution.
-   - Historical charts: bucket gains and net worth trajectory.
-   - All charts exportable to HTML and CSV for reproducibility.
+- **Entry Point (`app.py`)** → starts the process: loads your configuration, runs simulations, and produces outputs.  
+- **Forecast Engine (`forecast_engine.py`)** → runs the monthly forecast loop, applying transactions, policies, market returns, and taxes.  
+- **Buckets & Holdings (`buckets.py`)** → represent your accounts and investments.  
+- **Policies (`policy_engine.py`, `policies_transactions.py`)** → enforce rules like refills, withdrawals, and penalties.  
+- **Transactions (`rules_transactions.py`)** → handle income, expenses, Social Security, Roth conversions, and more.  
+- **Economic Factors (`economic_factors.py`)** → simulate inflation and market returns based on historical data.  
+- **Taxes (`taxes.py`)** → apply IRS‑compliant tax rules for income, gains, and Social Security.  
+- **Visualization (`visualizations.py`)** → generate charts and exports that make your plan easy to understand.  
+- **Helper Functions (`app.py`)** → utilities that keep balances, inflation, and timing consistent.  
 
 ---
 
-## 🧾 IRS Compliance
+## 📂 Data Flow  
 
-The tax engine enforces IRS rules with explicit, layered logic:
+Here’s how information moves through the system:  
 
-- Ordinary income brackets inflated annually.
-- Capital gains layered above ordinary income.
-- Social Security capped at 85% of provisional income.
-- Penalty tax applied only when flagged in metadata.
-- AGI includes salary, withdrawals, conversions, gains, and Social Security.
-- Taxable income calculated after deductions.
-- Inflation modeled stochastically, anchored to a base year.
+1. **Configuration Loading**  
+   - JSON files define your accounts, policies, tax brackets, and simulation settings.  
+   - CSV files provide starting balances and transactions.  
 
----
+2. **Staging**  
+   - Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  
+   - Prepares historical and future timeframes.  
+   - Seeds accounts, policies, inflation, tax logic, and transactions.  
+   - Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  
 
-## 📊 Visualization Integration
+3. **Parallel Simulation Loop (Forecast Engine)**  
+   - Runs Monte Carlo trials in parallel for efficiency.  
+   - Each trial applies monthly transactions, policies, market returns, and taxes.  
+   - FlowTracker records every debit and credit for transparency.  
 
-Visualization is embedded in the simulation loop:
+4. **Aggregation & Summary**  
+   - Results are combined into net worth, taxes, balances, and returns.  
+   - Property events and compliance checks are tracked.  
 
-- **Historical context** → charts of bucket gains and net worth trends.
-- **Per-trial transparency** → expenses, transactions, taxes, forecasts.
-- **Aggregate clarity** → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.
-- **Audit reproducibility** → all charts exportable to HTML/CSV with timestamped filenames, with consistent color palettes, percentile overlays, and hover text for interpretability.
-
----
-
-## 🎯 Design Principles
-
-- **Policy-First** → all financial rules are declarative JSON, transparent and repeatable.
-- **Audit Clarity** → every dollar is traceable across buckets and scenarios.
-- **Extensibility** → modular design allows new transaction types, policies, or tax rules.
-- **Resilience** → Monte Carlo sampling embraces volatility, quantifying sufficiency and optimization.
-- **Parallelism** → simulations scale efficiently with `ProcessPoolExecutor`.
-- **Integrity** → helper functions enforce balance correctness, inflation consistency, and reproducible timing.
+5. **Visualization Layer**  
+   - Produces charts showing monthly details, aggregate distributions, and historical trends.  
+   - All charts can be exported to HTML and CSV for easy sharing and reproducibility.  
 
 ---
 
-## 📚 Related Pages
+## 🧾 IRS Compliance  
 
-- [Framework Overview](overview.md)
-- [Configuration Reference](configuration.md)
-- [Simulation Logic](simulation_logic.md)
-- [Visualization Guide](visualization.md)
+Nomad Wealth enforces IRS rules so your forecasts reflect reality:  
+
+- Ordinary income brackets updated annually.  
+- Capital gains layered above ordinary income.  
+- Social Security capped at 85% of provisional income.  
+- Penalty taxes applied only when rules require it.  
+- AGI includes salary, withdrawals, conversions, gains, and Social Security.  
+- Taxable income calculated after deductions.  
+- Inflation modeled stochastically, anchored to a base year.  
+
+---
+
+## 📊 Visualization Integration  
+
+Visualization is built into the simulation loop, so you always see clear results:  
+
+- **Historical context** → charts of account growth and net worth trends.  
+- **Per‑trial transparency** → detailed monthly expenses, transactions, taxes, and forecasts.  
+- **Aggregate clarity** → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.  
+- **Reproducibility** → charts exportable to HTML/CSV with consistent colors, overlays, and hover text.  
+
+---
+
+## 🎯 Design Principles  
+
+- **Policy‑First** → all financial rules are transparent and repeatable.  
+- **Clarity** → every dollar is traceable across accounts and scenarios.  
+- **Extensibility** → modular design supports new rules and transaction types.  
+- **Resilience** → Monte Carlo sampling shows how your plan holds up under uncertainty.  
+- **Parallelism** → simulations run efficiently at scale.  
+- **Integrity** → helper functions enforce correctness and reproducibility.  
+
+---
+
+## 📚 Related Pages  
+
+- [Framework Overview](overview.md)  
+- [Configuration Reference](configuration.md)  
+- [Simulation Logic](simulation_logic.md)  
+- [Visualization Guide](visualization.md)  
 - [Usage Guide](usage.md)
