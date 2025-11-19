@@ -609,12 +609,13 @@
 <li><strong>Entry Point (<code>app.py</code>)</strong> → starts the process: loads your configuration, runs simulations, and produces outputs.  </li>
 <li><strong>Forecast Engine (<code>forecast_engine.py</code>)</strong> → runs the monthly forecast loop, applying transactions, policies, market returns, and taxes.  </li>
 <li><strong>Buckets &amp; Holdings (<code>buckets.py</code>)</strong> → represent your accounts and investments.  </li>
-<li><strong>Policies (<code>policy_engine.py</code>, <code>policies_transactions.py</code>)</strong> → enforce rules like refills, withdrawals, and penalties.  </li>
-<li><strong>Transactions (<code>rules_transactions.py</code>)</strong> → handle income, expenses, Social Security, Roth conversions, and more.  </li>
+<li><strong>Policies (<code>policy_engine.py</code>, <code>policies_transactions.py</code>)</strong> → enforce rules like refills, income deposits, conversions, withdrawals, RMDs, SEPPs, and unemployment.</li>
+<li><strong>Transactions (<code>rules_transactions.py</code>)</strong> → handle fixed and recurring expenses.  </li>
 <li><strong>Economic Factors (<code>economic_factors.py</code>)</strong> → simulate inflation and market returns based on historical data.  </li>
 <li><strong>Taxes (<code>taxes.py</code>)</strong> → apply IRS‑compliant tax rules for income, gains, and Social Security.  </li>
-<li><strong>Visualization (<code>visualizations.py</code>)</strong> → generate charts and exports that make your plan easy to understand.  </li>
-<li><strong>Helper Functions (<code>app.py</code>)</strong> → utilities that keep balances, inflation, and timing consistent.  </li>
+<li><strong>Visualization (<code>visualizations.py</code>)</strong> → generate charts and exports that make your plan easy to understand.</li>
+<li><strong>Load Data (<code>load_data.py</code>)</strong> → loads CSV and JSON files for simulation and visualization.</li>
+<li><strong>FlowTracker (<code>audit.py</code>)</strong> → records every debit and credit for transparency.</li>
 </ul>
 <hr />
 <h2 id="data-flow">📂 Data Flow</h2>
@@ -623,7 +624,7 @@
 <li>
 <p><strong>Configuration Loading</strong>  </p>
 <ul>
-<li>JSON files define your accounts, policies, tax brackets, and simulation settings.  </li>
+<li>JSON files define your buckets, policies, tax brackets, and simulation settings.  </li>
 <li>CSV files provide starting balances and transactions.  </li>
 </ul>
 </li>
@@ -632,7 +633,7 @@
 <ul>
 <li>Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  </li>
 <li>Prepares historical and future timeframes.  </li>
-<li>Seeds accounts, policies, inflation, tax logic, and transactions.  </li>
+<li>Seeds buckets, policies, inflation, tax logic, and transactions.  </li>
 <li>Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  </li>
 </ul>
 </li>
@@ -663,7 +664,7 @@
 <h2 id="irs-compliance">🧾 IRS Compliance</h2>
 <p>Nomad Wealth enforces IRS rules so your forecasts reflect reality:  </p>
 <ul>
-<li>Ordinary income brackets updated annually.  </li>
+<li>Ordinary income brackets inflated annually.  </li>
 <li>Capital gains layered above ordinary income.  </li>
 <li>Social Security capped at 85% of provisional income.  </li>
 <li>Penalty taxes applied only when rules require it.  </li>
@@ -675,7 +676,7 @@
 <h2 id="visualization-integration">📊 Visualization Integration</h2>
 <p>Visualization is built into the simulation loop, so you always see clear results:  </p>
 <ul>
-<li><strong>Historical context</strong> → charts of account growth and net worth trends.  </li>
+<li><strong>Historical context</strong> → charts of bucket growth and net worth trends.  </li>
 <li><strong>Per‑trial transparency</strong> → detailed monthly expenses, transactions, taxes, and forecasts.  </li>
 <li><strong>Aggregate clarity</strong> → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.  </li>
 <li><strong>Reproducibility</strong> → charts exportable to HTML/CSV with consistent colors, overlays, and hover text.  </li>
@@ -684,7 +685,7 @@
 <h2 id="design-principles">🎯 Design Principles</h2>
 <ul>
 <li><strong>Policy‑First</strong> → all financial rules are transparent and repeatable.  </li>
-<li><strong>Clarity</strong> → every dollar is traceable across accounts and scenarios.  </li>
+<li><strong>Clarity</strong> → every dollar is traceable across buckets and scenarios.  </li>
 <li><strong>Extensibility</strong> → modular design supports new rules and transaction types.  </li>
 <li><strong>Resilience</strong> → Monte Carlo sampling shows how your plan holds up under uncertainty.  </li>
 <li><strong>Parallelism</strong> → simulations run efficiently at scale.  </li>

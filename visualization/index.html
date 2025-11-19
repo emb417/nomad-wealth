@@ -489,10 +489,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#account-balances-forecast" class="md-nav__link">
+  <a href="#bucket-balances-forecast" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Account Balances Forecast
+        Bucket Balances Forecast
       
     </span>
   </a>
@@ -561,10 +561,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#monthly-gains-by-account" class="md-nav__link">
+  <a href="#monthly-gains-by-bucket" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Monthly Gains by Account
+        Monthly Gains by Bucket
       
     </span>
   </a>
@@ -728,10 +728,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#account-balances-forecast" class="md-nav__link">
+  <a href="#bucket-balances-forecast" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Account Balances Forecast
+        Bucket Balances Forecast
       
     </span>
   </a>
@@ -800,10 +800,10 @@
       <ul class="md-nav__list">
         
           <li class="md-nav__item">
-  <a href="#monthly-gains-by-account" class="md-nav__link">
+  <a href="#monthly-gains-by-bucket" class="md-nav__link">
     <span class="md-ellipsis">
       
-        Monthly Gains by Account
+        Monthly Gains by Bucket
       
     </span>
   </a>
@@ -901,7 +901,7 @@
 <p><img alt="Monte Carlo Taxable Chart" src="../images/mc_taxable.png" />  </p>
 <ul>
 <li><strong>Method:</strong> <code>plot_mc_taxable_balances()</code>  </li>
-<li><strong>Purpose:</strong> Highlights taxable account balances at the SEPP end month.  </li>
+<li><strong>Purpose:</strong> Highlights taxable bucket balances at the SEPP end month.  </li>
 <li><strong>How to use it:</strong> Check whether you have enough liquidity in taxable accounts when you turn 59.5 yeas old to avoid early withdrawal penalties - focus on modeling for a higher positive taxable balance according to your risk tolerance.  </li>
 </ul>
 <h3 id="monthly-market-returns">Monthly Market Returns</h3>
@@ -917,7 +917,7 @@
 <hr />
 <h2 id="example-trial-charts">🧾 Example Trial Charts</h2>
 <p>Example trial charts zoom into a single simulation, showing how one possible future unfolds.  </p>
-<h3 id="account-balances-forecast">Account Balances Forecast</h3>
+<h3 id="bucket-balances-forecast">Bucket Balances Forecast</h3>
 <p><img alt="Example Forecast Chart" src="../images/ex_forecast.png" />  </p>
 <ul>
 <li><strong>Method:</strong> <code>plot_example_forecast()</code>  </li>
@@ -936,7 +936,7 @@
 <p><img alt="Example Transactions In Context Chart" src="../images/dm_transactions.png" />  </p>
 <ul>
 <li><strong>Method:</strong> <code>plot_example_transactions_in_context()</code>  </li>
-<li><strong>Purpose:</strong> Shows transactions alongside account balances.  </li>
+<li><strong>Purpose:</strong> Shows transactions alongside bucket balances.  </li>
 <li><strong>How to use it:</strong> Connect spending and inflows directly to changes in balances. This helps you understand the impact of big expenses or income events.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
@@ -957,12 +957,12 @@
 <hr />
 <h2 id="historical-charts">📜 Historical Charts</h2>
 <p>Historical charts provide context by showing past performance, grounding your forecasts in reality.  </p>
-<h3 id="monthly-gains-by-account">Monthly Gains by Account</h3>
+<h3 id="monthly-gains-by-bucket">Monthly Gains by Bucket</h3>
 <p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" />  </p>
 <ul>
 <li><strong>Method:</strong> <code>plot_historical_bucket_gains()</code>  </li>
-<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each account.  </li>
-<li><strong>How to use it:</strong> Identify which accounts contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.</li>
+<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each bucket.  </li>
+<li><strong>How to use it:</strong> Identify which buckets contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <h3 id="net-worth-trajectory">Net Worth Trajectory</h3>
@@ -984,18 +984,10 @@
 <h2 id="visualization-notes">📝 Visualization Notes</h2>
 <p>Nomad Wealth’s charts are designed for <strong>clarity and reproducibility</strong>:  </p>
 <ul>
-<li>Consistent labels, colors, and formatting across all charts.  </li>
+<li>Consistent labels, colors, and formatting across all charts.</li>
 <li>Percentile overlays (p15, median, p85) make scenario comparisons easy.  </li>
-<li>Dual y‑axes show both dollar values and percentage rates where relevant.  </li>
 <li>CSV/HTML exports preserve interactive and tabular views for sharing or review.  </li>
 <li>Logging ensures every chart export is traceable.  </li>
-</ul>
-<p><strong>Specialized charts:</strong>  </p>
-<ul>
-<li><strong>Sankey diagrams</strong> → visualize flows between accounts, showing deposits, withdrawals, transfers, gains, and losses.  </li>
-<li><strong>Transactions in context</strong> → align flows with balances for transparency.  </li>
-<li><strong>Forecast charts</strong> → show account‑level visibility, net worth trajectory, and age overlays.  </li>
-<li><strong>Monte Carlo charts</strong> → highlight retirement probabilities, tax burdens, withdrawal sustainability, and account liquidity.  </li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>

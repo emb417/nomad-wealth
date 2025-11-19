@@ -1331,21 +1331,21 @@
 
 
 <h1 id="configuration-reference">⚙️ Configuration Reference</h1>
-<p>Nomad Wealth is <strong>policy‑first</strong>: all simulation behavior is driven by configuration files. These files represent your accounts, income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.</p>
+<p>Nomad Wealth is <strong>policy‑first</strong>: all simulation behavior is driven by configuration files. These files represent your accounts (i.e., buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.</p>
 <hr />
 <h2 id="getting-started-levels-of-personalization">🔑 Getting Started: Levels of Personalization</h2>
 <h3 id="basic">BASIC</h3>
 <p>Minimum inputs to run your own forecast:  </p>
 <ul>
 <li><strong><code>profile.json</code></strong> → sets your birth month, income assumptions, and retirement horizon.  </li>
-<li><strong><code>balance.csv</code></strong> → starting balances for each account.  </li>
+<li><strong><code>balance.csv</code></strong> → starting balances for each bucket.  </li>
 <li><strong><code>recurring.csv</code></strong> → ongoing monthly expenses (insurance, food, utilities).  </li>
 <li><strong><code>fixed.csv</code></strong> → one‑time events (tuition, travel).  </li>
 </ul>
 <h3 id="recommended">RECOMMENDED</h3>
 <p>Add details for more realistic results:  </p>
 <ul>
-<li><strong><code>buckets.json</code></strong> → defines your accounts and sub‑holdings.  </li>
+<li><strong><code>buckets.json</code></strong> → defines your buckets and sub‑holdings.  </li>
 <li><strong><code>policies.json</code></strong> → income streams (salary, Social Security), property details, unemployment.  </li>
 <li><strong><code>tax_brackets.json</code></strong> → IRS‑aligned federal and Oregon state brackets.  </li>
 <li><strong><code>marketplace_premiums.json</code></strong> → healthcare premiums for marketplace plans.  </li>
@@ -1496,15 +1496,15 @@
 </code></pre>
 <hr />
 <h3 id="buckets-field-definitions">🔑 Buckets Field Definitions</h3>
-<p>Buckets represent your accounts and how money flows through them. Each field defines how the system treats that account:  </p>
+<p>Buckets represent your accounts and how money flows through them. Each field defines how the system treats that bucket:  </p>
 <ul>
 <li><strong><code>holdings</code></strong> → how your money is invested (stocks, bonds, cash).  <ul>
 <li>Optional: <code>cost_basis</code> for property or assets where IRS rules require tracking.  </li>
 </ul>
 </li>
-<li><strong><code>can_go_negative</code></strong> → whether the account can dip below zero (e.g., overdraft in Cash).  </li>
-<li><strong><code>allow_cash_fallback</code></strong> → whether the system automatically pulls from Cash if another account runs short.  </li>
-<li><strong><code>bucket_type</code></strong> → tells the system what kind of account this is:  <ul>
+<li><strong><code>can_go_negative</code></strong> → whether the bucket can dip below zero (e.g., overdraft in Cash).  </li>
+<li><strong><code>allow_cash_fallback</code></strong> → whether the system automatically pulls from Cash if another bucket runs short.  </li>
+<li><strong><code>bucket_type</code></strong> → tells the system what kind of bucket this is:  <ul>
 <li><code>cash</code> → liquid money you can spend immediately.  </li>
 <li><code>taxable</code> → brokerage or CD ladder accounts.  </li>
 <li><code>tax_deferred</code> → retirement accounts (401k, IRA, SEPP IRA).  </li>
@@ -1516,7 +1516,7 @@
 </ul>
 <hr />
 <h3 id="buckets-audit-notes">🧾 Buckets Audit Notes</h3>
-<p>Behind the scenes, Nomad Wealth ensures your accounts are modeled consistently and IRS‑aligned:  </p>
+<p>Behind the scenes, Nomad Wealth ensures your buckets are modeled consistently and IRS‑aligned:  </p>
 <ul>
 <li>Buckets are initialized from your starting balances (<code>balance.csv</code>).  </li>
 <li>The system corrects rounding drift automatically when allocating holdings.  </li>
@@ -1625,15 +1625,15 @@
 </code></pre>
 <hr />
 <h3 id="policies-field-definitions">🔑 Policies Field Definitions</h3>
-<p>Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your accounts:  </p>
+<p>Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your buckets:  </p>
 <ul>
-<li><strong>Refill</strong> → Keeps your cash balance above a minimum by automatically topping it up from other accounts when needed.  </li>
-<li><strong>Liquidation</strong> → Defines when assets are sold to cover shortfalls, which accounts are tapped first, and where proceeds go.  </li>
+<li><strong>Refill</strong> → Keeps your cash balance above a minimum by automatically topping it up from other buckets when needed.  </li>
+<li><strong>Liquidation</strong> → Defines when assets are sold to cover shortfalls, which buckets are tapped first, and where proceeds go.  </li>
 <li><strong>Salary</strong> → Models your income stream: base salary, bonuses, annual raises, and when you retire.  </li>
 <li><strong>Social Security</strong> → Profiles for each person, including date of birth, benefit amounts, and when payouts begin.  </li>
-<li><strong>RMD (Required Minimum Distribution)</strong> → Specifies how mandatory withdrawals from retirement accounts are distributed.  </li>
+<li><strong>RMD (Required Minimum Distribution)</strong> → Specifies how mandatory withdrawals from retirement buckets are distributed.  </li>
 <li><strong>Roth Conversions</strong> → Rules for converting tax‑deferred money into Roth accounts, with limits by age, tax rate, and amount.  </li>
-<li><strong>SEPP (Substantially Equal Periodic Payments)</strong> → IRS 72(t) withdrawals, including timing, interest rate, and source/target accounts.  </li>
+<li><strong>SEPP (Substantially Equal Periodic Payments)</strong> → IRS 72(t) withdrawals, including timing, interest rate, and source/target buckets.  </li>
 <li><strong>Property</strong> → Models real estate: market value, mortgage details, maintenance costs, and rental income.  </li>
 <li><strong>Unemployment</strong> → Temporary income replacement, including start/end dates and monthly benefit amounts.  </li>
 </ul>
@@ -1893,7 +1893,7 @@
 <hr />
 <h2 id="csv-inputs">📂 CSV Inputs</h2>
 <h3 id="balances">Balances</h3>
-<p>Balances seed the simulation with your current account values, so forecasts begin from where you are today.  </p>
+<p>Balances seed the simulation with your current bucket values, so forecasts begin from where you are today.  </p>
 <p>Example (<code>balances.csv</code>):</p>
 <pre><code class="language-csv">Month,Cash,CD Ladder,Brokerage,Tax-Deferred,Tax-Free,Health Savings Account,Vehicles,Property,529K,SEPP IRA
 2023-01,19678,31757,145633,478275,66656,12017,54580,661474,68434,0
@@ -1903,10 +1903,10 @@
 </code></pre>
 <hr />
 <h3 id="balances-field-definitions">🔑 Balances Field Definitions</h3>
-<p>Balances define your starting point — the accounts and assets you hold when the simulation begins. Each column represents one type of account or asset:  </p>
+<p>Balances define your starting point — the buckets and assets you hold when the simulation begins. Each column represents one type of bucket:  </p>
 <ul>
 <li><strong>Month</strong> → the period of the balance snapshot, in <code>YYYY-MM</code> format.  </li>
-<li><strong>Cash</strong> → liquid money available for immediate spending.  </li>
+<li><strong>Cash</strong> → checking and savings accounts, used for expenses, i.e., outflows.  </li>
 <li><strong>CD Ladder</strong> → certificate of deposit accounts.  </li>
 <li><strong>Brokerage</strong> → taxable investment accounts.  </li>
 <li><strong>Tax‑Deferred</strong> → retirement accounts like 401(k) or traditional IRA.  </li>
@@ -1921,7 +1921,7 @@
 <h3 id="balances-audit-notes">🧾 Balances Audit Notes</h3>
 <p>Behind the scenes, Nomad Wealth uses these balances to ensure forecasts are realistic and IRS‑aligned:  </p>
 <ul>
-<li>The last row of <code>balances.csv</code> seeds the simulation with your starting account values.  </li>
+<li>The last row of <code>balances.csv</code> seeds the simulation with your starting bucket values.  </li>
 <li>All bucket names must match those defined in <code>buckets.json</code> for consistency.  </li>
 <li>Vehicles and Property balances are tracked as assets but modeled with depreciation or mortgage flows.  </li>
 <li>SEPP IRA balances are critical for IRS 72(t) withdrawal modeling.  </li>
@@ -1948,7 +1948,7 @@
 <p>Fixed transactions represent <strong>one‑time events</strong> that occur in a specific month. They help you model major expenses or inflows that don’t repeat regularly:  </p>
 <ul>
 <li><strong>Month</strong> → the date of the transaction (<code>YYYY-MM</code>).  </li>
-<li><strong>Bucket</strong> → the account impacted (e.g., <code>529K</code>, <code>CD Ladder</code>).  </li>
+<li><strong>Bucket</strong> → the bucket impacted (e.g., <code>529K</code>, <code>CD Ladder</code>).  </li>
 <li><strong>Amount</strong> → the value of the transaction (negative for expenses, positive for income).  </li>
 <li><strong>Type</strong> → the category of the transaction (e.g., Education, Travel).  </li>
 <li><strong>Description</strong> → a human‑readable label for clarity (e.g., “College Tuition #1”).  </li>
@@ -1958,7 +1958,7 @@
 <p>Behind the scenes, Nomad Wealth ensures these one‑time events are applied consistently and transparently:  </p>
 <ul>
 <li>Fixed transactions are applied once at the specified month.  </li>
-<li>Amounts reduce or increase balances in the designated account.  </li>
+<li>Amounts reduce or increase balances in the designated bucket.  </li>
 <li>Categories (Education, Travel) can be linked to inflation profiles for realism (e.g., tuition inflates faster than goods).  </li>
 <li>FlowTracker logs each transaction so every debit and credit is traceable.  </li>
 <li>For audit clarity, descriptions should match external records (e.g., tuition invoices, travel receipts).  </li>
@@ -2001,7 +2001,7 @@
 <ul>
 <li><strong>Start Month</strong> → when the transaction begins (<code>YYYY-MM</code>).  </li>
 <li><strong>End Month</strong> → when the transaction ends (<code>YYYY-MM</code>).  </li>
-<li><strong>Bucket</strong> → the account impacted (e.g., <code>Cash</code>, <code>Health Savings Account</code>).  </li>
+<li><strong>Bucket</strong> → the bucket impacted (e.g., <code>Cash</code>, <code>Health Savings Account</code>).  </li>
 <li><strong>Amount</strong> → the monthly value (negative for expenses, positive for income).  </li>
 <li><strong>Type</strong> → the category of the transaction (e.g., Vehicle Insurance, Food, Health, Utilities).  </li>
 <li><strong>Description</strong> → a clear label for easy tracking (e.g., “Health Prescriptions”).  </li>

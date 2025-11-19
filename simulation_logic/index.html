@@ -653,9 +653,9 @@
 <h2 id="staging-phase">📂 Staging Phase</h2>
 <p>Before any trial runs, the system prepares your inputs and builds the components that drive the forecast:  </p>
 <ol>
-<li><strong>Load Configuration</strong> → reads your JSON and CSV files (accounts, balances, policies, transactions).  </li>
+<li><strong>Load Configuration</strong> → reads your JSON and CSV files (buckets, balances, policies, transactions).  </li>
 <li><strong>Prepare Timeframes</strong> → sets up historical and future monthly periods until your chosen end date.  </li>
-<li><strong>Initialize Components</strong> → builds accounts, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.  </li>
+<li><strong>Initialize Components</strong> → builds buckets, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.  </li>
 </ol>
 <hr />
 <h2 id="monthly-forecast-loop">📅 Monthly Forecast Loop</h2>
@@ -663,16 +663,16 @@
 <ol>
 <li><strong>Apply Transactions</strong> → tuition, travel, insurance, food, utilities, salary, Social Security, Roth conversions, unemployment, property flows.  </li>
 <li><strong>Trigger Refill Policies</strong> → keeps cash balances above thresholds, prevents early withdrawals, and triggers liquidation if needed.  </li>
-<li><strong>Apply Market Returns</strong> → updates account balances based on inflation‑adjusted returns.  </li>
+<li><strong>Apply Market Returns</strong> → updates bucket balances based on inflation‑adjusted returns.  </li>
 <li><strong>Tax Collection Drip</strong> → monthly withholding moves funds into the Tax Collection bucket.  </li>
-<li><strong>Snapshot Balances</strong> → records account balances and logs flows for transparency.  </li>
+<li><strong>Snapshot Balances</strong> → records bucket balances and logs flows for transparency.  </li>
 <li><strong>Year‑End Settlement</strong> → applies IRS rules for income, gains, and penalties, reconciles taxes, and rolls forward estimates.  </li>
 </ol>
 <hr />
 <h2 id="trial-execution">🎲 Trial Execution</h2>
 <p>Forecasts are run as <strong>Monte Carlo trials</strong> to capture uncertainty:  </p>
 <ul>
-<li><strong><code>run_one_trial()</code></strong> → builds accounts, policies, inflation, tax logic, and transactions, then runs the monthly loop.  </li>
+<li><strong><code>run_one_trial()</code></strong> → builds buckets, policies, inflation, tax logic, and transactions, then runs the monthly loop.  </li>
 <li><strong><code>run_simulation()</code></strong> → wraps each trial and tags results with the trial index.  </li>
 <li><strong>Parallel Execution</strong> → trials run in parallel for efficiency, with results aggregated by trial index.  </li>
 </ul>
@@ -690,7 +690,7 @@
 <h2 id="visualization-integration">📈 Visualization Integration</h2>
 <p>Aggregated results feed directly into charts and reports:  </p>
 <ul>
-<li><strong>Historical Charts</strong> → account growth and net worth trajectory.  </li>
+<li><strong>Historical Charts</strong> → bucket growth and net worth trajectory.  </li>
 <li><strong>Per‑Trial Charts</strong> → monthly details for expenses, transactions, taxes, and forecasts.  </li>
 <li><strong>Aggregate Monte Carlo Charts</strong> → probability distributions for returns, balances, taxes, and net worth.  </li>
 <li><strong>Exports</strong> → all charts available in HTML/CSV with consistent colors, overlays, and hover text.  </li>
@@ -699,7 +699,7 @@
 <h2 id="forecastengine-notes">📝 ForecastEngine Notes</h2>
 <p>The ForecastEngine ensures every forecast is <strong>transparent and IRS‑aligned</strong>:  </p>
 <ul>
-<li>Monthly flows integrate accounts, transactions, market gains, refills, liquidations, and taxes.  </li>
+<li>Monthly flows integrate buckets, transactions, market gains, refills, liquidations, and taxes.  </li>
 <li>All results are auditable via structured records: snapshots, tax logs, and return records.  </li>
 <li>Yearly tax logs reproduce IRS categories (income, gains, Social Security, Roth conversions, penalties).  </li>
 <li>SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied correctly.  </li>
