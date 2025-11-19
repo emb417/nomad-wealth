@@ -16,7 +16,7 @@ This guide explains how to run Nomad Wealth simulations, adjust settings, and un
    ```  
 
    This command:  
-   - Loads your configuration files (accounts, balances, policies, taxes).  
+   - Loads your configuration files (buckets, balances, policies, taxes).  
    - Prepares historical and future timelines.  
    - Runs Monte Carlo trials in parallel to capture uncertainty.  
    - Aggregates results into clear tables.  
@@ -32,10 +32,10 @@ This guide explains how to run Nomad Wealth simulations, adjust settings, and un
 You can control how the simulation runs by adjusting flags in `app.py`:  
 
 - **Simulation Size** → `SIM_SIZE` sets the number of Monte Carlo trials.  
+- **Example Trials** → `SIM_EXAMPLE_SIZE` sets how many random trials are shown in detail (expenses, transactions, taxes, forecasts).  
 - **Chart Display** → `SHOW_*` flags decide which charts open interactively (e.g., net worth, examples, historical).  
 - **Chart Export** → `SAVE_*` flags decide which charts are saved to HTML/CSV.  
 - **Detailed Mode** → `DETAILED_MODE` forces all charts and exports to be generated for full transparency.  
-- **Example Trials** → `sim_examples` sets how many random trials are shown in detail (expenses, transactions, taxes, forecasts).  
 
 ---
 
@@ -43,9 +43,9 @@ You can control how the simulation runs by adjusting flags in `app.py`:
 
 Nomad Wealth uses configuration files to define your plan:  
 
-- **profile.json** → retirement horizon and income assumptions.  
-- **buckets.json** → account definitions (must align with `balance.csv`).  
-- **balance.csv** → starting balances for each account.  
+- **profile.json** → birth month, retirement horizon and past MAGI.  
+- **buckets.json** → bucket definitions (must align with `balance.csv`).  
+- **balance.csv** → starting balances for each bucket.  
 - **policies.json** → rules for income, withdrawals, property, unemployment, Roth conversions.  
 - **tax_brackets.json** → IRS‑aligned federal, state, payroll, capital gains, IRMAA, Medicare premiums.  
 - **inflation_rates.json** → baseline inflation + category profiles.  
@@ -62,7 +62,7 @@ Nomad Wealth uses configuration files to define your plan:
 
 Nomad Wealth produces results you can explore in charts and exports:  
 
-- **Historical Charts** → account gains/losses and net worth trajectory.  
+- **Historical Charts** → bucket gains/losses and net worth trajectory.  
 - **Per‑Trial Example Charts** → detailed views of monthly expenses, transactions, taxes, and forecasts.  
 - **Aggregate Monte Carlo Charts** → distributions of returns, balances, taxes, withdrawals, and net worth.  
 - **CSV Exports** → tables of balances, tax breakdowns, monthly returns, and flow logs for reproducibility.  
@@ -72,7 +72,7 @@ Nomad Wealth produces results you can explore in charts and exports:
 ## 🧾 Notes  
 
 - Filenames include timestamps (`YYYYMMDD_HHMMSS`) for traceability.  
-- Net worth = sum of all account balances each month.  
+- Net worth = sum of all bucket balances each month.  
 - SEPP rules enforce IRS 72(t) withdrawal compliance.  
 - Roth conversions can occur before age 59.5 if configured.  
 - Logging records export paths for transparency.  

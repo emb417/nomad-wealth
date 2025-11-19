@@ -1,6 +1,6 @@
 # ⚙️ Configuration Reference
 
-Nomad Wealth is **policy‑first**: all simulation behavior is driven by configuration files. These files represent your accounts, income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.
+Nomad Wealth is **policy‑first**: all simulation behavior is driven by configuration files. These files represent your accounts (i.e., buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.
 
 ---
 
@@ -11,7 +11,7 @@ Nomad Wealth is **policy‑first**: all simulation behavior is driven by configu
 Minimum inputs to run your own forecast:  
 
 - **`profile.json`** → sets your birth month, income assumptions, and retirement horizon.  
-- **`balance.csv`** → starting balances for each account.  
+- **`balance.csv`** → starting balances for each bucket.  
 - **`recurring.csv`** → ongoing monthly expenses (insurance, food, utilities).  
 - **`fixed.csv`** → one‑time events (tuition, travel).  
 
@@ -19,7 +19,7 @@ Minimum inputs to run your own forecast:
 
 Add details for more realistic results:  
 
-- **`buckets.json`** → defines your accounts and sub‑holdings.  
+- **`buckets.json`** → defines your buckets and sub‑holdings.  
 - **`policies.json`** → income streams (salary, Social Security), property details, unemployment.  
 - **`tax_brackets.json`** → IRS‑aligned federal and Oregon state brackets.  
 - **`marketplace_premiums.json`** → healthcare premiums for marketplace plans.  
@@ -186,13 +186,13 @@ Example (`buckets.json`):
 
 ### 🔑 Buckets Field Definitions  
 
-Buckets represent your accounts and how money flows through them. Each field defines how the system treats that account:  
+Buckets represent your accounts and how money flows through them. Each field defines how the system treats that bucket:  
 
 - **`holdings`** → how your money is invested (stocks, bonds, cash).  
     - Optional: `cost_basis` for property or assets where IRS rules require tracking.  
-- **`can_go_negative`** → whether the account can dip below zero (e.g., overdraft in Cash).  
-- **`allow_cash_fallback`** → whether the system automatically pulls from Cash if another account runs short.  
-- **`bucket_type`** → tells the system what kind of account this is:  
+- **`can_go_negative`** → whether the bucket can dip below zero (e.g., overdraft in Cash).  
+- **`allow_cash_fallback`** → whether the system automatically pulls from Cash if another bucket runs short.  
+- **`bucket_type`** → tells the system what kind of bucket this is:  
     - `cash` → liquid money you can spend immediately.  
     - `taxable` → brokerage or CD ladder accounts.  
     - `tax_deferred` → retirement accounts (401k, IRA, SEPP IRA).  
@@ -204,7 +204,7 @@ Buckets represent your accounts and how money flows through them. Each field def
 
 ### 🧾 Buckets Audit Notes  
 
-Behind the scenes, Nomad Wealth ensures your accounts are modeled consistently and IRS‑aligned:  
+Behind the scenes, Nomad Wealth ensures your buckets are modeled consistently and IRS‑aligned:  
 
 - Buckets are initialized from your starting balances (`balance.csv`).  
 - The system corrects rounding drift automatically when allocating holdings.  
@@ -321,15 +321,15 @@ Example (`policies.json`):
 
 ### 🔑 Policies Field Definitions  
 
-Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your accounts:  
+Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your buckets:  
 
-- **Refill** → Keeps your cash balance above a minimum by automatically topping it up from other accounts when needed.  
-- **Liquidation** → Defines when assets are sold to cover shortfalls, which accounts are tapped first, and where proceeds go.  
+- **Refill** → Keeps your cash balance above a minimum by automatically topping it up from other buckets when needed.  
+- **Liquidation** → Defines when assets are sold to cover shortfalls, which buckets are tapped first, and where proceeds go.  
 - **Salary** → Models your income stream: base salary, bonuses, annual raises, and when you retire.  
 - **Social Security** → Profiles for each person, including date of birth, benefit amounts, and when payouts begin.  
-- **RMD (Required Minimum Distribution)** → Specifies how mandatory withdrawals from retirement accounts are distributed.  
+- **RMD (Required Minimum Distribution)** → Specifies how mandatory withdrawals from retirement buckets are distributed.  
 - **Roth Conversions** → Rules for converting tax‑deferred money into Roth accounts, with limits by age, tax rate, and amount.  
-- **SEPP (Substantially Equal Periodic Payments)** → IRS 72(t) withdrawals, including timing, interest rate, and source/target accounts.  
+- **SEPP (Substantially Equal Periodic Payments)** → IRS 72(t) withdrawals, including timing, interest rate, and source/target buckets.  
 - **Property** → Models real estate: market value, mortgage details, maintenance costs, and rental income.  
 - **Unemployment** → Temporary income replacement, including start/end dates and monthly benefit amounts.  
 
@@ -613,7 +613,7 @@ Behind the scenes, Nomad Wealth applies these premiums consistently so your plan
 
 ### Balances
 
-Balances seed the simulation with your current account values, so forecasts begin from where you are today.  
+Balances seed the simulation with your current bucket values, so forecasts begin from where you are today.  
 
 Example (`balances.csv`):
 
@@ -629,10 +629,10 @@ Month,Cash,CD Ladder,Brokerage,Tax-Deferred,Tax-Free,Health Savings Account,Vehi
 
 ### 🔑 Balances Field Definitions  
 
-Balances define your starting point — the accounts and assets you hold when the simulation begins. Each column represents one type of account or asset:  
+Balances define your starting point — the buckets and assets you hold when the simulation begins. Each column represents one type of bucket:  
 
 - **Month** → the period of the balance snapshot, in `YYYY-MM` format.  
-- **Cash** → liquid money available for immediate spending.  
+- **Cash** → checking and savings accounts, used for expenses, i.e., outflows.  
 - **CD Ladder** → certificate of deposit accounts.  
 - **Brokerage** → taxable investment accounts.  
 - **Tax‑Deferred** → retirement accounts like 401(k) or traditional IRA.  
@@ -649,7 +649,7 @@ Balances define your starting point — the accounts and assets you hold when th
 
 Behind the scenes, Nomad Wealth uses these balances to ensure forecasts are realistic and IRS‑aligned:  
 
-- The last row of `balances.csv` seeds the simulation with your starting account values.  
+- The last row of `balances.csv` seeds the simulation with your starting bucket values.  
 - All bucket names must match those defined in `buckets.json` for consistency.  
 - Vehicles and Property balances are tracked as assets but modeled with depreciation or mortgage flows.  
 - SEPP IRA balances are critical for IRS 72(t) withdrawal modeling.  
@@ -684,7 +684,7 @@ Month,Bucket,Amount,Type,Description
 Fixed transactions represent **one‑time events** that occur in a specific month. They help you model major expenses or inflows that don’t repeat regularly:  
 
 - **Month** → the date of the transaction (`YYYY-MM`).  
-- **Bucket** → the account impacted (e.g., `529K`, `CD Ladder`).  
+- **Bucket** → the bucket impacted (e.g., `529K`, `CD Ladder`).  
 - **Amount** → the value of the transaction (negative for expenses, positive for income).  
 - **Type** → the category of the transaction (e.g., Education, Travel).  
 - **Description** → a human‑readable label for clarity (e.g., “College Tuition #1”).  
@@ -696,7 +696,7 @@ Fixed transactions represent **one‑time events** that occur in a specific mont
 Behind the scenes, Nomad Wealth ensures these one‑time events are applied consistently and transparently:  
 
 - Fixed transactions are applied once at the specified month.  
-- Amounts reduce or increase balances in the designated account.  
+- Amounts reduce or increase balances in the designated bucket.  
 - Categories (Education, Travel) can be linked to inflation profiles for realism (e.g., tuition inflates faster than goods).  
 - FlowTracker logs each transaction so every debit and credit is traceable.  
 - For audit clarity, descriptions should match external records (e.g., tuition invoices, travel receipts).  
@@ -747,7 +747,7 @@ Recurring transactions represent **ongoing monthly expenses or income** that rep
 
 - **Start Month** → when the transaction begins (`YYYY-MM`).  
 - **End Month** → when the transaction ends (`YYYY-MM`).  
-- **Bucket** → the account impacted (e.g., `Cash`, `Health Savings Account`).  
+- **Bucket** → the bucket impacted (e.g., `Cash`, `Health Savings Account`).  
 - **Amount** → the monthly value (negative for expenses, positive for income).  
 - **Type** → the category of the transaction (e.g., Vehicle Insurance, Food, Health, Utilities).  
 - **Description** → a clear label for easy tracking (e.g., “Health Prescriptions”).  

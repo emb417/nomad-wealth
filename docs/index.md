@@ -4,7 +4,7 @@
 
 Welcome to **Nomad Wealth**, the Python framework for **transparent financial forecasting**. If you’ve ever used financial planning tools and felt like you couldn’t see the assumptions behind the numbers, you’re not alone. Many systems give you results but don’t show how they were calculated, leaving you guessing about what’s really driving the forecast.  
 
-Nomad Wealth is different. Every rule is explicit, every tax calculation is IRS‑aligned, and every simulation is reproducible. Instead of wondering what’s hidden, you can trace each dollar across accounts, policies, and scenarios. That means you don’t just get a projection — you get **clarity, confidence, and the ability to understand why the numbers look the way they do**.  
+Nomad Wealth is different. Every rule is explicit, every tax calculation is IRS‑aligned, and every simulation is reproducible. Instead of wondering what’s hidden, you can trace each dollar across buckets, policies, and scenarios. That means you don’t just get a projection — you get **clarity, confidence, and the ability to understand why the numbers look the way they do**.  
 
 Whether you’re **planning retirement, testing “what‑if” scenarios, or simply checking if you’re on track**, Nomad Wealth helps you **see clearly, adjust confidently, and trust the outcomes**.  
 
@@ -23,7 +23,7 @@ Want to understand how it all works under the hood? Begin with the [Framework Ov
 ## 📚 Documentation Structure  
 
 - **Framework Overview** → Why Nomad Wealth exists and how it helps you plan retirement with confidence.  
-- **Configuration Reference** → How to set up your plan inputs (accounts, policies, balances).  
+- **Configuration Reference** → How to set up your plan inputs (buckets, policies, balances).  
 - **Architecture Overview** → Behind‑the‑scenes look at how the system runs (for advanced users).  
 - **Simulation Logic** → How forecasts are calculated and what Monte Carlo means for your plan.  
 - **Visualization Guide** → How to read charts and reports to understand your retirement outlook.  

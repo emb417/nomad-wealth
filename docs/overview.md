@@ -10,7 +10,7 @@ Nomad Wealth helps you plan retirement with confidence by:
 
 - Showing whether your savings are sufficient under uncertainty.  
 - Comparing scenarios with clear percentile overlays and reference lines.  
-- Tracing every dollar across accounts, transactions, and policies.  
+- Tracing every dollar across buckets, transactions, and policies.  
 - Ensuring forecasts align with IRS rules and historical data.  
 - Exporting reproducible charts and CSVs you can review or share.  
 
@@ -20,7 +20,7 @@ Nomad Wealth helps you plan retirement with confidence by:
 
 Nomad Wealth is organized into modular layers:
 
-- **Configuration** → Define your accounts, policies, and balances.  
+- **Configuration** → Define your buckets, policies, and balances.  
 - **Architecture** → Behind‑the‑scenes system design (for advanced users).  
 - **Simulation Logic (`forecast_engine.py`)** → How monthly forecasts and Monte Carlo trials are calculated.  
 - **Visualization (`visualizations.py`)** → Charts and exports that make your plan easy to understand.  
@@ -31,7 +31,7 @@ Nomad Wealth is organized into modular layers:
 ## 📂 Workflow
 
 1. **Configure**  
-    - Set up accounts, balances, and tax rules.  
+    - Set up buckets, balances, and tax rules.  
 2. **Simulate**  
     - Run Monte Carlo trials that apply monthly transactions, policies, market returns, and taxes.  
     - Results are aggregated into net worth, taxes, balances, and flow logs.  
@@ -60,7 +60,7 @@ Nomad Wealth enforces IRS rules so your forecasts reflect reality:
 
 Nomad Wealth produces:  
 
-- **Historical Charts** → See how your accounts have grown and changed.  
+- **Historical Charts** → See how your buckets have grown and changed.  
 - **Per‑Trial Charts** → Explore detailed monthly forecasts.  
 - **Aggregate Monte Carlo Charts** → Understand probabilities and ranges for your retirement outlook.  
 - **CSV/HTML Exports** → Download reports for deeper review or sharing.  

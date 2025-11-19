@@ -14,9 +14,9 @@ The simulation logic is the **operational core** of the system described in [Arc
 
 Before any trial runs, the system prepares your inputs and builds the components that drive the forecast:  
 
-1. **Load Configuration** → reads your JSON and CSV files (accounts, balances, policies, transactions).  
+1. **Load Configuration** → reads your JSON and CSV files (buckets, balances, policies, transactions).  
 2. **Prepare Timeframes** → sets up historical and future monthly periods until your chosen end date.  
-3. **Initialize Components** → builds accounts, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.  
+3. **Initialize Components** → builds buckets, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.  
 
 ---
 
@@ -26,9 +26,9 @@ Each month in the simulation follows a clear sequence:
 
 1. **Apply Transactions** → tuition, travel, insurance, food, utilities, salary, Social Security, Roth conversions, unemployment, property flows.  
 2. **Trigger Refill Policies** → keeps cash balances above thresholds, prevents early withdrawals, and triggers liquidation if needed.  
-3. **Apply Market Returns** → updates account balances based on inflation‑adjusted returns.  
+3. **Apply Market Returns** → updates bucket balances based on inflation‑adjusted returns.  
 4. **Tax Collection Drip** → monthly withholding moves funds into the Tax Collection bucket.  
-5. **Snapshot Balances** → records account balances and logs flows for transparency.  
+5. **Snapshot Balances** → records bucket balances and logs flows for transparency.  
 6. **Year‑End Settlement** → applies IRS rules for income, gains, and penalties, reconciles taxes, and rolls forward estimates.  
 
 ---
@@ -37,7 +37,7 @@ Each month in the simulation follows a clear sequence:
 
 Forecasts are run as **Monte Carlo trials** to capture uncertainty:  
 
-- **`run_one_trial()`** → builds accounts, policies, inflation, tax logic, and transactions, then runs the monthly loop.  
+- **`run_one_trial()`** → builds buckets, policies, inflation, tax logic, and transactions, then runs the monthly loop.  
 - **`run_simulation()`** → wraps each trial and tags results with the trial index.  
 - **Parallel Execution** → trials run in parallel for efficiency, with results aggregated by trial index.  
 
@@ -59,7 +59,7 @@ After all trials complete, results are combined into clear outputs:
 
 Aggregated results feed directly into charts and reports:  
 
-- **Historical Charts** → account growth and net worth trajectory.  
+- **Historical Charts** → bucket growth and net worth trajectory.  
 - **Per‑Trial Charts** → monthly details for expenses, transactions, taxes, and forecasts.  
 - **Aggregate Monte Carlo Charts** → probability distributions for returns, balances, taxes, and net worth.  
 - **Exports** → all charts available in HTML/CSV with consistent colors, overlays, and hover text.  
@@ -70,7 +70,7 @@ Aggregated results feed directly into charts and reports:
 
 The ForecastEngine ensures every forecast is **transparent and IRS‑aligned**:  
 
-- Monthly flows integrate accounts, transactions, market gains, refills, liquidations, and taxes.  
+- Monthly flows integrate buckets, transactions, market gains, refills, liquidations, and taxes.  
 - All results are auditable via structured records: snapshots, tax logs, and return records.  
 - Yearly tax logs reproduce IRS categories (income, gains, Social Security, Roth conversions, penalties).  
 - SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied correctly.  

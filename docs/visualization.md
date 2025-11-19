@@ -31,7 +31,7 @@ Monte Carlo charts summarize results across all trials, showing probabilities an
 ![Monte Carlo Taxable Chart](images/mc_taxable.png)  
 
 - **Method:** `plot_mc_taxable_balances()`  
-- **Purpose:** Highlights taxable account balances at the SEPP end month.  
+- **Purpose:** Highlights taxable bucket balances at the SEPP end month.  
 - **How to use it:** Check whether you have enough liquidity in taxable accounts when you turn 59.5 yeas old to avoid early withdrawal penalties - focus on modeling for a higher positive taxable balance according to your risk tolerance.  
 
 ### Monthly Market Returns  
@@ -51,7 +51,7 @@ Monte Carlo charts summarize results across all trials, showing probabilities an
 
 Example trial charts zoom into a single simulation, showing how one possible future unfolds.  
 
-### Account Balances Forecast  
+### Bucket Balances Forecast  
 
 ![Example Forecast Chart](images/ex_forecast.png)  
 
@@ -73,7 +73,7 @@ Example trial charts zoom into a single simulation, showing how one possible fut
 ![Example Transactions In Context Chart](images/dm_transactions.png)  
 
 - **Method:** `plot_example_transactions_in_context()`  
-- **Purpose:** Shows transactions alongside account balances.  
+- **Purpose:** Shows transactions alongside bucket balances.  
 - **How to use it:** Connect spending and inflows directly to changes in balances. This helps you understand the impact of big expenses or income events.
 - **Note:** This chart is only available in Detailed Mode.
 
@@ -99,13 +99,13 @@ Example trial charts zoom into a single simulation, showing how one possible fut
 
 Historical charts provide context by showing past performance, grounding your forecasts in reality.  
 
-### Monthly Gains by Account  
+### Monthly Gains by Bucket  
 
 ![Historical Gains Chart](images/hist_monthly_gains.png)  
 
 - **Method:** `plot_historical_bucket_gains()`  
-- **Purpose:** Shows monthly gain/loss trends for each account.  
-- **How to use it:** Identify which accounts contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.
+- **Purpose:** Shows monthly gain/loss trends for each bucket.  
+- **How to use it:** Identify which buckets contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.
 - **Note:** This chart is only available in Detailed Mode.
 
 ### Net Worth Trajectory  
@@ -131,18 +131,10 @@ Historical charts provide context by showing past performance, grounding your fo
 
 Nomad Wealth’s charts are designed for **clarity and reproducibility**:  
 
-- Consistent labels, colors, and formatting across all charts.  
+- Consistent labels, colors, and formatting across all charts.
 - Percentile overlays (p15, median, p85) make scenario comparisons easy.  
-- Dual y‑axes show both dollar values and percentage rates where relevant.  
 - CSV/HTML exports preserve interactive and tabular views for sharing or review.  
 - Logging ensures every chart export is traceable.  
-
-**Specialized charts:**  
-
-- **Sankey diagrams** → visualize flows between accounts, showing deposits, withdrawals, transfers, gains, and losses.  
-- **Transactions in context** → align flows with balances for transparency.  
-- **Forecast charts** → show account‑level visibility, net worth trajectory, and age overlays.  
-- **Monte Carlo charts** → highlight retirement probabilities, tax burdens, withdrawal sustainability, and account liquidity.  
 
 ---
 

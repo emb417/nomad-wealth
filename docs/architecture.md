@@ -11,12 +11,13 @@ Nomad Wealth is built from modular components that work together to run forecast
 - **Entry Point (`app.py`)** → starts the process: loads your configuration, runs simulations, and produces outputs.  
 - **Forecast Engine (`forecast_engine.py`)** → runs the monthly forecast loop, applying transactions, policies, market returns, and taxes.  
 - **Buckets & Holdings (`buckets.py`)** → represent your accounts and investments.  
-- **Policies (`policy_engine.py`, `policies_transactions.py`)** → enforce rules like refills, withdrawals, and penalties.  
-- **Transactions (`rules_transactions.py`)** → handle income, expenses, Social Security, Roth conversions, and more.  
+- **Policies (`policy_engine.py`, `policies_transactions.py`)** → enforce rules like refills, income deposits, conversions, withdrawals, RMDs, SEPPs, and unemployment.
+- **Transactions (`rules_transactions.py`)** → handle fixed and recurring expenses.  
 - **Economic Factors (`economic_factors.py`)** → simulate inflation and market returns based on historical data.  
 - **Taxes (`taxes.py`)** → apply IRS‑compliant tax rules for income, gains, and Social Security.  
-- **Visualization (`visualizations.py`)** → generate charts and exports that make your plan easy to understand.  
-- **Helper Functions (`app.py`)** → utilities that keep balances, inflation, and timing consistent.  
+- **Visualization (`visualizations.py`)** → generate charts and exports that make your plan easy to understand.
+- **Load Data (`load_data.py`)** → loads CSV and JSON files for simulation and visualization.
+- **FlowTracker (`audit.py`)** → records every debit and credit for transparency.
 
 ---
 
@@ -25,13 +26,13 @@ Nomad Wealth is built from modular components that work together to run forecast
 Here’s how information moves through the system:  
 
 1. **Configuration Loading**  
-    - JSON files define your accounts, policies, tax brackets, and simulation settings.  
+    - JSON files define your buckets, policies, tax brackets, and simulation settings.  
     - CSV files provide starting balances and transactions.  
 
 2. **Staging**  
     - Loads all inputs (balances, fixed events, recurring expenses, policies, tax brackets, inflation, healthcare premiums).  
     - Prepares historical and future timeframes.  
-    - Seeds accounts, policies, inflation, tax logic, and transactions.  
+    - Seeds buckets, policies, inflation, tax logic, and transactions.  
     - Helper functions ensure balances are correct, inflation is applied consistently, and performance is logged.  
 
 3. **Parallel Simulation Loop (Forecast Engine)**  
@@ -53,7 +54,7 @@ Here’s how information moves through the system:
 
 Nomad Wealth enforces IRS rules so your forecasts reflect reality:  
 
-- Ordinary income brackets updated annually.  
+- Ordinary income brackets inflated annually.  
 - Capital gains layered above ordinary income.  
 - Social Security capped at 85% of provisional income.  
 - Penalty taxes applied only when rules require it.  
@@ -67,7 +68,7 @@ Nomad Wealth enforces IRS rules so your forecasts reflect reality:
 
 Visualization is built into the simulation loop, so you always see clear results:  
 
-- **Historical context** → charts of account growth and net worth trends.  
+- **Historical context** → charts of bucket growth and net worth trends.  
 - **Per‑trial transparency** → detailed monthly expenses, transactions, taxes, and forecasts.  
 - **Aggregate clarity** → distributions of returns, balances, taxes, and net worth across Monte Carlo trials.  
 - **Reproducibility** → charts exportable to HTML/CSV with consistent colors, overlays, and hover text.  
@@ -77,7 +78,7 @@ Visualization is built into the simulation loop, so you always see clear results
 ## 🎯 Design Principles  
 
 - **Policy‑First** → all financial rules are transparent and repeatable.  
-- **Clarity** → every dollar is traceable across accounts and scenarios.  
+- **Clarity** → every dollar is traceable across buckets and scenarios.  
 - **Extensibility** → modular design supports new rules and transaction types.  
 - **Resilience** → Monte Carlo sampling shows how your plan holds up under uncertainty.  
 - **Parallelism** → simulations run efficiently at scale.  
