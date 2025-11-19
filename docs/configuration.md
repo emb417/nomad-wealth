@@ -62,9 +62,9 @@ Profiles set your retirement horizon and income assumptions, so the system can c
 - **Birth Month** → start of simulation, expressed as `YYYY-MM`.
 - **End Month** → end of simulation horizon, expressed as `YYYY-MM`.
 - **MAGI** → dictionary of Modified Adjusted Gross Income values by year.
-  - Keys are years (`2023`, `2024`, `2025`).
-  - Values are annual MAGI amounts.
-  - Used for IRMAA premium calculations and tax logic.
+      - Keys are years (`2023`, `2024`, `2025`).
+      - Values are annual MAGI amounts.
+      - Used for IRMAA premium calculations and tax logic.
 
 ---
 
@@ -189,16 +189,16 @@ Example (`buckets.json`):
 Buckets represent your accounts and how money flows through them. Each field defines how the system treats that account:  
 
 - **`holdings`** → how your money is invested (stocks, bonds, cash).  
-  - Optional: `cost_basis` for property or assets where IRS rules require tracking.  
+    - Optional: `cost_basis` for property or assets where IRS rules require tracking.  
 - **`can_go_negative`** → whether the account can dip below zero (e.g., overdraft in Cash).  
 - **`allow_cash_fallback`** → whether the system automatically pulls from Cash if another account runs short.  
 - **`bucket_type`** → tells the system what kind of account this is:  
-  - `cash` → liquid money you can spend immediately.  
-  - `taxable` → brokerage or CD ladder accounts.  
-  - `tax_deferred` → retirement accounts (401k, IRA, SEPP IRA).  
-  - `tax_free` → Roth accounts.  
-  - `property` → real estate holdings with explicit cost basis.  
-  - `other` → vehicles, HSAs, 529K, or miscellaneous accounts.  
+    - `cash` → liquid money you can spend immediately.  
+    - `taxable` → brokerage or CD ladder accounts.  
+    - `tax_deferred` → retirement accounts (401k, IRA, SEPP IRA).  
+    - `tax_free` → Roth accounts.  
+    - `property` → real estate holdings with explicit cost basis.  
+    - `other` → vehicles, HSAs, 529K, or miscellaneous accounts.  
 
 ---
 
@@ -420,10 +420,10 @@ Tax brackets define how income, gains, and premiums are calculated in your plan.
 
 - **Standard Deduction** → the baseline deduction applied before taxable income is calculated.  
 - **Ordinary Income Brackets** → progressive tax brackets for federal, state, and local income taxes.  
-  - Each bracket specifies a minimum income level (`min_salary`) and the tax rate applied.  
+    - Each bracket specifies a minimum income level (`min_salary`) and the tax rate applied.  
 - **Payroll Taxes** → Social Security and Medicare contributions.  
-  - Social Security is capped at the annual wage base (e.g., $176,100 in 2025).  
-  - Medicare includes an additional surtax above certain thresholds.  
+    - Social Security is capped at the annual wage base (e.g., $176,100 in 2025).  
+    - Medicare includes an additional surtax above certain thresholds.  
 - **Capital Gains** → long‑term capital gains brackets layered on top of ordinary income.  
 - **Social Security Taxability** → thresholds that determine how much of your Social Security benefits are taxable (0%, 50%, or 85%).  
 - **IRMAA (Income‑Related Monthly Adjustment Amount)** → Medicare premium adjustments based on your income (Part B and Part D).  
@@ -530,25 +530,25 @@ Inflation profiles make your plan realistic — healthcare inflates faster than 
 Inflation settings make your forecasts realistic by showing how costs rise and assets behave over time:  
 
 - **default** → baseline inflation assumptions for the overall economy.  
-  - `avg` → average annual inflation rate.  
-  - `std` → volatility (how much inflation varies year to year).  
+    - `avg` → average annual inflation rate.  
+    - `std` → volatility (how much inflation varies year to year).  
 
 - **profiles** → category‑specific inflation for different types of spending or assets.  
-  - Each profile represents a category (e.g., Education, Food, Rent).  
-  - `avg` → typical inflation rate for that category.  
-  - `std` → volatility for that category.  
-  - Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.  
+    - Each profile represents a category (e.g., Education, Food, Rent).  
+    - `avg` → typical inflation rate for that category.  
+    - `std` → volatility for that category.  
+    - Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.  
 
 - **thresholds** (`inflation_thresholds.json`) → cutoffs that determine which regime applies to each asset class.  
-  - If inflation is below `low` → Low regime.  
-  - Between `low` and `high` → Average regime.  
-  - Above `high` → High regime.  
+    - If inflation is below `low` → Low regime.  
+    - Between `low` and `high` → Average regime.  
+    - Above `high` → High regime.  
 
 - **gain table** (`gain_table.json`) → defines how assets perform under each regime.  
-  - `avg` → expected monthly return.  
-  - `std` → volatility of returns.  
-  - Vehicles are modeled as depreciating assets (negative returns).  
-  - Cash is modeled as stable with zero returns.  
+    - `avg` → expected monthly return.  
+    - `std` → volatility of returns.  
+    - Vehicles are modeled as depreciating assets (negative returns).  
+    - Cash is modeled as stable with zero returns.  
 
 ---
 
@@ -592,8 +592,8 @@ Marketplace premiums represent your monthly health insurance costs. These values
 
 - **Plan Key** → the name of the plan type (e.g., `silver_family`, `silver_couple`).  
 - **monthly_premium** → the monthly cost of the plan in dollars.  
-  - Treated as a recurring expense in your forecast.  
-  - Can be extended to include other tiers (e.g., `silver_individual`, `gold_family`).  
+    - Treated as a recurring expense in your forecast.  
+    - Can be extended to include other tiers (e.g., `silver_individual`, `gold_family`).  
 
 ---
 

@@ -105,7 +105,8 @@ Historical charts provide context by showing past performance, grounding your fo
 
 - **Method:** `plot_historical_bucket_gains()`  
 - **Purpose:** Shows monthly gain/loss trends for each account.  
-- **How to use it:** Identify which accounts contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.  
+- **How to use it:** Identify which accounts contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.
+- **Note:** This chart is only available in Detailed Mode.
 
 ### Net Worth Trajectory  
 
@@ -113,7 +114,8 @@ Historical charts provide context by showing past performance, grounding your fo
 
 - **Method:** `plot_historical_balance()`  
 - **Purpose:** Net worth line chart with gain/loss bars.  
-- **How to use it:** See your overall financial trajectory and spot periods of growth or decline. This provides a baseline for comparing future simulations.  
+- **How to use it:** See your overall financial trajectory and spot periods of growth or decline. This provides a baseline for comparing future simulations.
+- **Note:** This chart is only available in Detailed Mode.
 
 ---
 
