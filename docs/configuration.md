@@ -6,32 +6,32 @@ Nomad Wealth is **policy‑first**: all simulation behavior is driven by configu
 
 ## 🔑 Getting Started: Levels of Personalization
 
-### BASIC  
+### BASIC
 
-Minimum inputs to run your own forecast:  
+Minimum inputs to run your own forecast:
 
-- **`profile.json`** → sets your birth month, income assumptions, and retirement horizon.  
-- **`balance.csv`** → starting balances for each bucket.  
-- **`recurring.csv`** → ongoing monthly expenses (insurance, food, utilities).  
-- **`fixed.csv`** → one‑time events (tuition, travel).  
+- **`profile.json`** → sets your birth month, income assumptions, and retirement horizon.
+- **`balance.csv`** → starting balances for each bucket.
+- **`recurring.csv`** → ongoing monthly expenses (insurance, food, utilities).
+- **`fixed.csv`** → one‑time events (tuition, travel).
 
-### RECOMMENDED  
+### RECOMMENDED
 
-Add details for more realistic results:  
+Add details for more realistic results:
 
-- **`buckets.json`** → defines your buckets and sub‑holdings.  
-- **`policies.json`** → income streams (salary, Social Security), property details, unemployment.  
-- **`tax_brackets.json`** → IRS‑aligned federal and Oregon state brackets.  
-- **`marketplace_premiums.json`** → healthcare premiums for marketplace plans.  
+- **`buckets.json`** → defines your buckets and sub‑holdings.
+- **`policies.json`** → income streams (salary, Social Security), property details, unemployment.
+- **`tax_brackets.json`** → IRS‑aligned federal and Oregon state brackets.
+- **`marketplace_premiums.json`** → healthcare premiums for marketplace plans.
 
-### ADVANCED  
+### ADVANCED
 
-Fine‑tune rules for deeper scenario analysis:  
+Fine‑tune rules for deeper scenario analysis:
 
-- **`buckets.json`** → customize holdings to reflect your investment strategy.  
-- **`policies.json`** → add refill rules, liquidation hierarchy, Roth conversions, SEPP withdrawals.  
-- **`inflation_rates.json`** → category‑specific inflation (healthcare, rent, travel).  
-- **`inflation_thresholds.json`** + **`gain_table.json`** → asset class return regimes for Monte Carlo sampling.  
+- **`buckets.json`** → customize holdings to reflect your investment strategy.
+- **`policies.json`** → add refill rules, liquidation hierarchy, Roth conversions, SEPP withdrawals.
+- **`inflation_rates.json`** → category‑specific inflation (healthcare, rent, travel).
+- **`inflation_thresholds.json`** + **`gain_table.json`** → asset class return regimes for Monte Carlo sampling.
 
 ---
 
@@ -39,7 +39,7 @@ Fine‑tune rules for deeper scenario analysis:
 
 ### Profiles
 
-Profiles set your retirement horizon and income assumptions, so the system can calculate eligibility, Medicare premiums, and sufficiency.  
+Profiles set your retirement horizon and income assumptions, so the system can calculate eligibility, Medicare premiums, and sufficiency.
 
 **Example (`profile.json`):**
 
@@ -61,10 +61,7 @@ Profiles set your retirement horizon and income assumptions, so the system can c
 
 - **Birth Month** → start of simulation, expressed as `YYYY-MM`.
 - **End Month** → end of simulation horizon, expressed as `YYYY-MM`.
-- **MAGI** → dictionary of Modified Adjusted Gross Income values by year.
-      - Keys are years (`2023`, `2024`, `2025`).
-      - Values are annual MAGI amounts.
-      - Used for IRMAA premium calculations and tax logic.
+- **MAGI** → dictionary of Modified Adjusted Gross Income values by year. - Keys are years (`2023`, `2024`, `2025`). - Values are annual MAGI amounts. - Used for IRMAA premium calculations and tax logic.
 
 ---
 
@@ -80,7 +77,7 @@ Profiles set your retirement horizon and income assumptions, so the system can c
 
 ### Buckets
 
-Buckets represent your accounts — cash, brokerage, retirement, property — and define how money grows or is spent.  
+Buckets represent your accounts — cash, brokerage, retirement, property — and define how money grows or is spent.
 
 Example (`buckets.json`):
 
@@ -184,39 +181,39 @@ Example (`buckets.json`):
 
 ---
 
-### 🔑 Buckets Field Definitions  
+### 🔑 Buckets Field Definitions
 
-Buckets represent your accounts and how money flows through them. Each field defines how the system treats that bucket:  
+Buckets represent your accounts and how money flows through them. Each field defines how the system treats that bucket:
 
-- **`holdings`** → how your money is invested (stocks, bonds, cash).  
-    - Optional: `cost_basis` for property or assets where IRS rules require tracking.  
-- **`can_go_negative`** → whether the bucket can dip below zero (e.g., overdraft in Cash).  
-- **`allow_cash_fallback`** → whether the system automatically pulls from Cash if another bucket runs short.  
-- **`bucket_type`** → tells the system what kind of bucket this is:  
-    - `cash` → liquid money you can spend immediately.  
-    - `taxable` → brokerage or CD ladder accounts.  
-    - `tax_deferred` → retirement accounts (401k, IRA, SEPP IRA).  
-    - `tax_free` → Roth accounts.  
-    - `property` → real estate holdings with explicit cost basis.  
-    - `other` → vehicles, HSAs, 529K, or miscellaneous accounts.  
+- **`holdings`** → how your money is invested (stocks, bonds, cash).
+    - Optional: `cost_basis` for property or assets where IRS rules require tracking.
+- **`can_go_negative`** → whether the bucket can dip below zero (e.g., overdraft in Cash).
+- **`allow_cash_fallback`** → whether the system automatically pulls from Cash if another bucket runs short.
+- **`bucket_type`** → tells the system what kind of bucket this is:
+    - `cash` → liquid money you can spend immediately.
+    - `taxable` → brokerage or CD ladder accounts.
+    - `tax_deferred` → retirement accounts (401k, IRA, SEPP IRA).
+    - `tax_free` → Roth accounts.
+    - `property` → real estate holdings with explicit cost basis.
+    - `other` → vehicles, HSAs, 529K, or miscellaneous accounts.
 
 ---
 
-### 🧾 Buckets Audit Notes  
+### 🧾 Buckets Audit Notes
 
-Behind the scenes, Nomad Wealth ensures your buckets are modeled consistently and IRS‑aligned:  
+Behind the scenes, Nomad Wealth ensures your buckets are modeled consistently and IRS‑aligned:
 
-- Buckets are initialized from your starting balances (`balance.csv`).  
-- The system corrects rounding drift automatically when allocating holdings.  
-- A **Tax Collection bucket** is always present to handle withholding and settlement.  
-- Property buckets should include `cost_basis` to stay IRS‑compliant.  
-- Cash buckets can allow negative balances to realistically model overdrafts.  
+- Buckets are initialized from your starting balances (`balance.csv`).
+- The system corrects rounding drift automatically when allocating holdings.
+- A **Tax Collection bucket** is always present to handle withholding and settlement.
+- Property buckets should include `cost_basis` to stay IRS‑compliant.
+- Cash buckets can allow negative balances to realistically model overdrafts.
 
 ---
 
 ### Policies
 
-Policies define how income, withdrawals, and conversions happen in your plan — from salary and Social Security to Roth conversions and property flows.  
+Policies define how income, withdrawals, and conversions happen in your plan — from salary and Social Security to Roth conversions and property flows.
 
 Example (`policies.json`):
 
@@ -225,7 +222,9 @@ Example (`policies.json`):
   "Refill": {
     "Thresholds": { "Cash": 30000 },
     "Amounts": { "Cash": 20000 },
-    "Sources": { "Cash": ["SEPP IRA", "Tax-Deferred", "Brokerage", "Tax-Free"] }
+    "Sources": {
+      "Cash": ["SEPP IRA", "Tax-Deferred", "Brokerage", "Tax-Free"]
+    }
   },
   "Liquidation": {
     "Threshold": -15000,
@@ -319,38 +318,38 @@ Example (`policies.json`):
 
 ---
 
-### 🔑 Policies Field Definitions  
+### 🔑 Policies Field Definitions
 
-Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your buckets:  
+Policies describe the rules that shape how money flows in your plan — income, withdrawals, conversions, and special cases. Each section defines how the system applies real‑world rules to your buckets:
 
-- **Refill** → Keeps your cash balance above a minimum by automatically topping it up from other buckets when needed.  
-- **Liquidation** → Defines when assets are sold to cover shortfalls, which buckets are tapped first, and where proceeds go.  
-- **Salary** → Models your income stream: base salary, bonuses, annual raises, and when you retire.  
-- **Social Security** → Profiles for each person, including date of birth, benefit amounts, and when payouts begin.  
-- **RMD (Required Minimum Distribution)** → Specifies how mandatory withdrawals from retirement buckets are distributed.  
-- **Roth Conversions** → Rules for converting tax‑deferred money into Roth accounts, with limits by age, tax rate, and amount.  
-- **SEPP (Substantially Equal Periodic Payments)** → IRS 72(t) withdrawals, including timing, interest rate, and source/target buckets.  
-- **Property** → Models real estate: market value, mortgage details, maintenance costs, and rental income.  
-- **Unemployment** → Temporary income replacement, including start/end dates and monthly benefit amounts.  
+- **Refill** → Keeps your cash balance above a minimum by automatically topping it up from other buckets when needed.
+- **Liquidation** → Defines when assets are sold to cover shortfalls, which buckets are tapped first, and where proceeds go.
+- **Salary** → Models your income stream: base salary, bonuses, annual raises, and when you retire.
+- **Social Security** → Profiles for each person, including date of birth, benefit amounts, and when payouts begin.
+- **RMD (Required Minimum Distribution)** → Specifies how mandatory withdrawals from retirement buckets are distributed.
+- **Roth Conversions** → Rules for converting tax‑deferred money into Roth accounts, with limits by age, tax rate, and amount.
+- **SEPP (Substantially Equal Periodic Payments)** → IRS 72(t) withdrawals, including timing, interest rate, and source/target buckets.
+- **Property** → Models real estate: market value, mortgage details, maintenance costs, and rental income.
+- **Unemployment** → Temporary income replacement, including start/end dates and monthly benefit amounts.
 
 ---
 
-### 🧾 Policies Audit Notes  
+### 🧾 Policies Audit Notes
 
-Behind the scenes, Nomad Wealth ensures these policies are applied consistently and IRS‑aligned:  
+Behind the scenes, Nomad Wealth ensures these policies are applied consistently and IRS‑aligned:
 
-- Refill and liquidation rules enforce liquidity thresholds so you don’t run out of cash.  
-- Salary and Social Security profiles generate realistic income streams.  
-- RMD and SEPP enforce IRS withdrawal requirements.  
-- Roth conversions model tax‑optimized transfers across different phases of retirement.  
-- Property policies integrate mortgage payments, maintenance, and rental flows.  
-- Unemployment policies allow temporary income replacement during gaps.  
+- Refill and liquidation rules enforce liquidity thresholds so you don’t run out of cash.
+- Salary and Social Security profiles generate realistic income streams.
+- RMD and SEPP enforce IRS withdrawal requirements.
+- Roth conversions model tax‑optimized transfers across different phases of retirement.
+- Property policies integrate mortgage payments, maintenance, and rental flows.
+- Unemployment policies allow temporary income replacement during gaps.
 
 ---
 
 ### Tax Brackets
 
-Tax brackets ensure your forecasts reflect real IRS rules — from income and capital gains to Medicare premiums and IRMAA thresholds.  
+Tax brackets ensure your forecasts reflect real IRS rules — from income and capital gains to Medicare premiums and IRMAA thresholds.
 
 Example (`tax_brackets.json`):
 
@@ -414,40 +413,40 @@ Example (`tax_brackets.json`):
 
 ---
 
-### 🔑 Tax Brackets Field Definitions  
+### 🔑 Tax Brackets Field Definitions
 
-Tax brackets define how income, gains, and premiums are calculated in your plan. They ensure your forecasts reflect real IRS rules and healthcare costs:  
+Tax brackets define how income, gains, and premiums are calculated in your plan. They ensure your forecasts reflect real IRS rules and healthcare costs:
 
-- **Standard Deduction** → the baseline deduction applied before taxable income is calculated.  
-- **Ordinary Income Brackets** → progressive tax brackets for federal, state, and local income taxes.  
-    - Each bracket specifies a minimum income level (`min_salary`) and the tax rate applied.  
-- **Payroll Taxes** → Social Security and Medicare contributions.  
-    - Social Security is capped at the annual wage base (e.g., $176,100 in 2025).  
-    - Medicare includes an additional surtax above certain thresholds.  
-- **Capital Gains** → long‑term capital gains brackets layered on top of ordinary income.  
-- **Social Security Taxability** → thresholds that determine how much of your Social Security benefits are taxable (0%, 50%, or 85%).  
-- **IRMAA (Income‑Related Monthly Adjustment Amount)** → Medicare premium adjustments based on your income (Part B and Part D).  
-- **Medicare Base Premiums** → the baseline monthly premiums for Medicare coverage.  
+- **Standard Deduction** → the baseline deduction applied before taxable income is calculated.
+- **Ordinary Income Brackets** → progressive tax brackets for federal, state, and local income taxes.
+    - Each bracket specifies a minimum income level (`min_salary`) and the tax rate applied.
+- **Payroll Taxes** → Social Security and Medicare contributions.
+    - Social Security is capped at the annual wage base (e.g., $176,100 in 2025).
+    - Medicare includes an additional surtax above certain thresholds.
+- **Capital Gains** → long‑term capital gains brackets layered on top of ordinary income.
+- **Social Security Taxability** → thresholds that determine how much of your Social Security benefits are taxable (0%, 50%, or 85%).
+- **IRMAA (Income‑Related Monthly Adjustment Amount)** → Medicare premium adjustments based on your income (Part B and Part D).
+- **Medicare Base Premiums** → the baseline monthly premiums for Medicare coverage.
 
 ---
 
-### 🧾 Tax Brackets Audit Notes  
+### 🧾 Tax Brackets Audit Notes
 
-Behind the scenes, Nomad Wealth applies these rules exactly as the IRS does, so your forecasts remain defensible:  
+Behind the scenes, Nomad Wealth applies these rules exactly as the IRS does, so your forecasts remain defensible:
 
-- Federal, state, and local brackets are layered to compute total ordinary income tax.  
-- Payroll taxes (Social Security and Medicare) are applied monthly to salary flows.  
-- Capital gains brackets are applied after ordinary income.  
-- Social Security taxability is capped at 85% of provisional income.  
-- IRMAA thresholds adjust Medicare premiums based on your Modified Adjusted Gross Income (MAGI).  
-- The standard deduction reduces taxable income before brackets are applied.  
+- Federal, state, and local brackets are layered to compute total ordinary income tax.
+- Payroll taxes (Social Security and Medicare) are applied monthly to salary flows.
+- Capital gains brackets are applied after ordinary income.
+- Social Security taxability is capped at 85% of provisional income.
+- IRMAA thresholds adjust Medicare premiums based on your Modified Adjusted Gross Income (MAGI).
+- The standard deduction reduces taxable income before brackets are applied.
 - All values are year‑specific and must be updated annually to stay compliant.
 
 ---
 
 ### Inflation
 
-Inflation profiles make your plan realistic — healthcare inflates faster than groceries, vehicles depreciate, and property costs rise over time.  
+Inflation profiles make your plan realistic — healthcare inflates faster than groceries, vehicles depreciate, and property costs rise over time.
 
 #### Example (`inflation_rates.json`)
 
@@ -525,51 +524,54 @@ Inflation profiles make your plan realistic — healthcare inflates faster than 
 
 ---
 
-### 🔑 Inflation Field Definitions  
+### 🔑 Inflation Field Definitions
 
-Inflation settings make your forecasts realistic by showing how costs rise and assets behave over time:  
+Inflation settings make your forecasts realistic by showing how costs rise and assets behave over time:
 
-- **default** → baseline inflation assumptions for the overall economy.  
-    - `avg` → average annual inflation rate.  
-    - `std` → volatility (how much inflation varies year to year).  
+- **default** → baseline inflation assumptions for the overall economy.
 
-- **profiles** → category‑specific inflation for different types of spending or assets.  
-    - Each profile represents a category (e.g., Education, Food, Rent).  
-    - `avg` → typical inflation rate for that category.  
-    - `std` → volatility for that category.  
-    - Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.  
+    - `avg` → average annual inflation rate.
+    - `std` → volatility (how much inflation varies year to year).
 
-- **thresholds** (`inflation_thresholds.json`) → cutoffs that determine which regime applies to each asset class.  
-    - If inflation is below `low` → Low regime.  
-    - Between `low` and `high` → Average regime.  
-    - Above `high` → High regime.  
+- **profiles** → category‑specific inflation for different types of spending or assets.
 
-- **gain table** (`gain_table.json`) → defines how assets perform under each regime.  
-    - `avg` → expected monthly return.  
-    - `std` → volatility of returns.  
-    - Vehicles are modeled as depreciating assets (negative returns).  
-    - Cash is modeled as stable with zero returns.  
+    - Each profile represents a category (e.g., Education, Food, Rent).
+    - `avg` → typical inflation rate for that category.
+    - `std` → volatility for that category.
+    - Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.
+
+- **thresholds** (`inflation_thresholds.json`) → cutoffs that determine which regime applies to each asset class.
+
+    - If inflation is below `low` → Low regime.
+    - Between `low` and `high` → Average regime.
+    - Above `high` → High regime.
+
+- **gain table** (`gain_table.json`) → defines how assets perform under each regime.
+    - `avg` → expected monthly return.
+    - `std` → volatility of returns.
+    - Vehicles are modeled as depreciating assets (negative returns).
+    - Cash is modeled as stable with zero returns.
 
 ---
 
-### 🧾 Inflation Audit Notes  
+### 🧾 Inflation Audit Notes
 
-Behind the scenes, Nomad Wealth applies these rules to keep forecasts defensible and reproducible:  
+Behind the scenes, Nomad Wealth applies these rules to keep forecasts defensible and reproducible:
 
-- Default inflation anchors the generator that drives year‑by‑year adjustments.  
-- Profiles adjust spending categories against the baseline for realism.  
-- Thresholds determine which regime (Low, Average, High) applies to each asset class.  
-- Gain tables provide return distributions for the selected regime.  
-- Each profile produces modifiers applied to transactions (e.g., rent, property maintenance, healthcare).  
-- Ensures category‑specific realism (e.g., healthcare inflates faster than goods, vehicles depreciate).  
-- Randomness is seeded per trial so results are reproducible.  
+- Default inflation anchors the generator that drives year‑by‑year adjustments.
+- Profiles adjust spending categories against the baseline for realism.
+- Thresholds determine which regime (Low, Average, High) applies to each asset class.
+- Gain tables provide return distributions for the selected regime.
+- Each profile produces modifiers applied to transactions (e.g., rent, property maintenance, healthcare).
+- Ensures category‑specific realism (e.g., healthcare inflates faster than goods, vehicles depreciate).
+- Randomness is seeded per trial so results are reproducible.
 - All modifiers, thresholds, and gain tables are logged for transparency.
 
 ---
 
 ### Marketplace Premiums
 
-Marketplace premiums model your monthly healthcare costs, so you can see how insurance affects your retirement outlook.  
+Marketplace premiums model your monthly healthcare costs, so you can see how insurance affects your retirement outlook.
 
 Example (`marketplace_premiums.json`):
 
@@ -586,26 +588,26 @@ Example (`marketplace_premiums.json`):
 
 ---
 
-### 🔑 Marketplace Premiums Field Definitions  
+### 🔑 Marketplace Premiums Field Definitions
 
-Marketplace premiums represent your monthly health insurance costs. These values ensure your forecasts account for real, recurring expenses:  
+Marketplace premiums represent your monthly health insurance costs. These values ensure your forecasts account for real, recurring expenses:
 
-- **Plan Key** → the name of the plan type (e.g., `silver_family`, `silver_couple`).  
-- **monthly_premium** → the monthly cost of the plan in dollars.  
-    - Treated as a recurring expense in your forecast.  
-    - Can be extended to include other tiers (e.g., `silver_individual`, `gold_family`).  
+- **Plan Key** → the name of the plan type (e.g., `silver_family`, `silver_couple`).
+- **monthly_premium** → the monthly cost of the plan in dollars.
+    - Treated as a recurring expense in your forecast.
+    - Can be extended to include other tiers (e.g., `silver_individual`, `gold_family`).
 
 ---
 
-### 🧾 Marketplace Premiums Audit Notes  
+### 🧾 Marketplace Premiums Audit Notes
 
-Behind the scenes, Nomad Wealth applies these premiums consistently so your plan reflects reality:  
+Behind the scenes, Nomad Wealth applies these premiums consistently so your plan reflects reality:
 
-- Premiums are modeled as fixed monthly expenses unless linked to inflation (e.g., healthcare costs rising over time).  
-- Values feed directly into expense transactions and reduce available cash balances.  
-- MAGI values from `profile.json` interact with IRMAA thresholds, but marketplace premiums are tracked separately.  
-- Premiums should be updated annually to reflect current marketplace rates.  
-- Plan keys must match naming conventions used in transaction logic to avoid misalignment.  
+- Premiums are modeled as fixed monthly expenses unless linked to inflation (e.g., healthcare costs rising over time).
+- Values feed directly into expense transactions and reduce available cash balances.
+- MAGI values from `profile.json` interact with IRMAA thresholds, but marketplace premiums are tracked separately.
+- Premiums should be updated annually to reflect current marketplace rates.
+- Plan keys must match naming conventions used in transaction logic to avoid misalignment.
 
 ---
 
@@ -613,7 +615,7 @@ Behind the scenes, Nomad Wealth applies these premiums consistently so your plan
 
 ### Balances
 
-Balances seed the simulation with your current bucket values, so forecasts begin from where you are today.  
+Balances seed the simulation with your current bucket values, so forecasts begin from where you are today.
 
 Example (`balances.csv`):
 
@@ -627,40 +629,40 @@ Month,Cash,CD Ladder,Brokerage,Tax-Deferred,Tax-Free,Health Savings Account,Vehi
 
 ---
 
-### 🔑 Balances Field Definitions  
+### 🔑 Balances Field Definitions
 
-Balances define your starting point — the buckets and assets you hold when the simulation begins. Each column represents one type of bucket:  
+Balances define your starting point — the buckets and assets you hold when the simulation begins. Each column represents one type of bucket:
 
-- **Month** → the period of the balance snapshot, in `YYYY-MM` format.  
-- **Cash** → checking and savings accounts, used for expenses, i.e., outflows.  
-- **CD Ladder** → certificate of deposit accounts.  
-- **Brokerage** → taxable investment accounts.  
-- **Tax‑Deferred** → retirement accounts like 401(k) or traditional IRA.  
-- **Tax‑Free** → Roth accounts or other tax‑free holdings.  
-- **Health Savings Account** → HSA balances for medical expenses.  
-- **Vehicles** → depreciating assets such as cars.  
-- **Property** → real estate holdings, linked to the Property policy.  
-- **529K** → education savings accounts.  
-- **SEPP IRA** → IRA designated for Substantially Equal Periodic Payments (IRS 72(t)).  
+- **Month** → the period of the balance snapshot, in `YYYY-MM` format.
+- **Cash** → checking and savings accounts, used for expenses, i.e., outflows.
+- **CD Ladder** → certificate of deposit accounts.
+- **Brokerage** → taxable investment accounts.
+- **Tax‑Deferred** → retirement accounts like 401(k) or traditional IRA.
+- **Tax‑Free** → Roth accounts or other tax‑free holdings.
+- **Health Savings Account** → HSA balances for medical expenses.
+- **Vehicles** → depreciating assets such as cars.
+- **Property** → real estate holdings, linked to the Property policy.
+- **529K** → education savings accounts.
+- **SEPP IRA** → IRA designated for Substantially Equal Periodic Payments (IRS 72(t)).
 
 ---
 
-### 🧾 Balances Audit Notes  
+### 🧾 Balances Audit Notes
 
-Behind the scenes, Nomad Wealth uses these balances to ensure forecasts are realistic and IRS‑aligned:  
+Behind the scenes, Nomad Wealth uses these balances to ensure forecasts are realistic and IRS‑aligned:
 
-- The last row of `balances.csv` seeds the simulation with your starting bucket values.  
-- All bucket names must match those defined in `buckets.json` for consistency.  
-- Vehicles and Property balances are tracked as assets but modeled with depreciation or mortgage flows.  
-- SEPP IRA balances are critical for IRS 72(t) withdrawal modeling.  
-- FlowTracker records every debit and credit against these balances for transparency.  
-- For reproducibility, balances should align with external statements so forecasts remain defensible.  
+- The last row of `balances.csv` seeds the simulation with your starting bucket values.
+- All bucket names must match those defined in `buckets.json` for consistency.
+- Vehicles and Property balances are tracked as assets but modeled with depreciation or mortgage flows.
+- SEPP IRA balances are critical for IRS 72(t) withdrawal modeling.
+- FlowTracker records every debit and credit against these balances for transparency.
+- For reproducibility, balances should align with external statements so forecasts remain defensible.
 
 ---
 
 ### Fixed Transactions
 
-One‑time events like tuition or travel.  
+One‑time events like tuition or travel.
 
 Example (`fixed.csv`):
 
@@ -679,33 +681,33 @@ Month,Bucket,Amount,Type,Description
 
 ---
 
-### 🔑 Fixed Transactions Field Definitions  
+### 🔑 Fixed Transactions Field Definitions
 
-Fixed transactions represent **one‑time events** that occur in a specific month. They help you model major expenses or inflows that don’t repeat regularly:  
+Fixed transactions represent **one‑time events** that occur in a specific month. They help you model major expenses or inflows that don’t repeat regularly:
 
-- **Month** → the date of the transaction (`YYYY-MM`).  
-- **Bucket** → the bucket impacted (e.g., `529K`, `CD Ladder`).  
-- **Amount** → the value of the transaction (negative for expenses, positive for income).  
-- **Type** → the category of the transaction (e.g., Education, Travel).  
-- **Description** → a human‑readable label for clarity (e.g., “College Tuition #1”).  
+- **Month** → the date of the transaction (`YYYY-MM`).
+- **Bucket** → the bucket impacted (e.g., `529K`, `CD Ladder`).
+- **Amount** → the value of the transaction (negative for expenses, positive for income).
+- **Type** → the category of the transaction (e.g., Education, Travel).
+- **Description** → a human‑readable label for clarity (e.g., “College Tuition #1”).
 
 ---
 
-### 🧾 Fixed Transactions Audit Notes  
+### 🧾 Fixed Transactions Audit Notes
 
-Behind the scenes, Nomad Wealth ensures these one‑time events are applied consistently and transparently:  
+Behind the scenes, Nomad Wealth ensures these one‑time events are applied consistently and transparently:
 
-- Fixed transactions are applied once at the specified month.  
-- Amounts reduce or increase balances in the designated bucket.  
-- Categories (Education, Travel) can be linked to inflation profiles for realism (e.g., tuition inflates faster than goods).  
-- FlowTracker logs each transaction so every debit and credit is traceable.  
-- For audit clarity, descriptions should match external records (e.g., tuition invoices, travel receipts).  
+- Fixed transactions are applied once at the specified month.
+- Amounts reduce or increase balances in the designated bucket.
+- Categories (Education, Travel) can be linked to inflation profiles for realism (e.g., tuition inflates faster than goods).
+- FlowTracker logs each transaction so every debit and credit is traceable.
+- For audit clarity, descriptions should match external records (e.g., tuition invoices, travel receipts).
 
 ---
 
 ### Recurring Transactions
 
-Ongoing monthly expenses like insurance, utilities, or groceries.  
+Ongoing monthly expenses like insurance, utilities, or groceries.
 
 Example (`recurring.csv`):
 
@@ -741,35 +743,35 @@ Start Month,End Month,Bucket,Amount,Type,Description
 
 ---
 
-### 🔑 Recurring Transactions Field Definitions  
+### 🔑 Recurring Transactions Field Definitions
 
-Recurring transactions represent **ongoing monthly expenses or income** that repeat over time. They help you capture the rhythm of everyday life in your plan:  
+Recurring transactions represent **ongoing monthly expenses or income** that repeat over time. They help you capture the rhythm of everyday life in your plan:
 
-- **Start Month** → when the transaction begins (`YYYY-MM`).  
-- **End Month** → when the transaction ends (`YYYY-MM`).  
-- **Bucket** → the bucket impacted (e.g., `Cash`, `Health Savings Account`).  
-- **Amount** → the monthly value (negative for expenses, positive for income).  
-- **Type** → the category of the transaction (e.g., Vehicle Insurance, Food, Health, Utilities).  
-- **Description** → a clear label for easy tracking (e.g., “Health Prescriptions”).  
+- **Start Month** → when the transaction begins (`YYYY-MM`).
+- **End Month** → when the transaction ends (`YYYY-MM`).
+- **Bucket** → the bucket impacted (e.g., `Cash`, `Health Savings Account`).
+- **Amount** → the monthly value (negative for expenses, positive for income).
+- **Type** → the category of the transaction (e.g., Vehicle Insurance, Food, Health, Utilities).
+- **Description** → a clear label for easy tracking (e.g., “Health Prescriptions”).
 
 ---
 
-### 🧾 Recurring Transactions Audit Notes  
+### 🧾 Recurring Transactions Audit Notes
 
-Behind the scenes, Nomad Wealth applies these recurring flows consistently so your forecasts reflect real life:  
+Behind the scenes, Nomad Wealth applies these recurring flows consistently so your forecasts reflect real life:
 
-- All months are stored in `YYYY-MM` format for monthly precision.  
-- Buckets must be defined consistently across files to avoid mismatches.  
-- Inflation profiles adjust categories over time for realism (e.g., healthcare costs rise faster than groceries).  
-- FlowTracker logs every debit and credit, ensuring transparency and reproducibility.  
+- All months are stored in `YYYY-MM` format for monthly precision.
+- Buckets must be defined consistently across files to avoid mismatches.
+- Inflation profiles adjust categories over time for realism (e.g., healthcare costs rise faster than groceries).
+- FlowTracker logs every debit and credit, ensuring transparency and reproducibility.
 
 ---
 
 ## 📚 Related Pages
 
-- [Framework Overview](overview.md)  
-- [Architecture Overview](architecture.md)  
-- [Simulation Logic](simulation_logic.md)  
-- [Visualization Guide](visualization.md)  
-- [Usage Guide](usage.md)  
-- See `../src/README.md` for source code details.  
+- [Framework Overview](overview.md)
+- [Architecture Overview](architecture.md)
+- [Simulation Logic](simulation_logic.md)
+- [Visualization Guide](visualization.md)
+- [Usage Guide](usage.md)
+- See `../src/README.md` for source code details.
