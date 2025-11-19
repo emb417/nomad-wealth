@@ -1378,10 +1378,12 @@
 <ul>
 <li><strong>Birth Month</strong> → start of simulation, expressed as <code>YYYY-MM</code>.</li>
 <li><strong>End Month</strong> → end of simulation horizon, expressed as <code>YYYY-MM</code>.</li>
-<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.</li>
+<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.<ul>
 <li>Keys are years (<code>2023</code>, <code>2024</code>, <code>2025</code>).</li>
 <li>Values are annual MAGI amounts.</li>
 <li>Used for IRMAA premium calculations and tax logic.</li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3 id="profiles-audit-notes">🧾 Profiles Audit Notes</h3>
@@ -1496,17 +1498,21 @@
 <h3 id="buckets-field-definitions">🔑 Buckets Field Definitions</h3>
 <p>Buckets represent your accounts and how money flows through them. Each field defines how the system treats that account:  </p>
 <ul>
-<li><strong><code>holdings</code></strong> → how your money is invested (stocks, bonds, cash).  </li>
+<li><strong><code>holdings</code></strong> → how your money is invested (stocks, bonds, cash).  <ul>
 <li>Optional: <code>cost_basis</code> for property or assets where IRS rules require tracking.  </li>
+</ul>
+</li>
 <li><strong><code>can_go_negative</code></strong> → whether the account can dip below zero (e.g., overdraft in Cash).  </li>
 <li><strong><code>allow_cash_fallback</code></strong> → whether the system automatically pulls from Cash if another account runs short.  </li>
-<li><strong><code>bucket_type</code></strong> → tells the system what kind of account this is:  </li>
+<li><strong><code>bucket_type</code></strong> → tells the system what kind of account this is:  <ul>
 <li><code>cash</code> → liquid money you can spend immediately.  </li>
 <li><code>taxable</code> → brokerage or CD ladder accounts.  </li>
 <li><code>tax_deferred</code> → retirement accounts (401k, IRA, SEPP IRA).  </li>
 <li><code>tax_free</code> → Roth accounts.  </li>
 <li><code>property</code> → real estate holdings with explicit cost basis.  </li>
 <li><code>other</code> → vehicles, HSAs, 529K, or miscellaneous accounts.  </li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3 id="buckets-audit-notes">🧾 Buckets Audit Notes</h3>
@@ -1707,11 +1713,15 @@
 <p>Tax brackets define how income, gains, and premiums are calculated in your plan. They ensure your forecasts reflect real IRS rules and healthcare costs:  </p>
 <ul>
 <li><strong>Standard Deduction</strong> → the baseline deduction applied before taxable income is calculated.  </li>
-<li><strong>Ordinary Income Brackets</strong> → progressive tax brackets for federal, state, and local income taxes.  </li>
+<li><strong>Ordinary Income Brackets</strong> → progressive tax brackets for federal, state, and local income taxes.  <ul>
 <li>Each bracket specifies a minimum income level (<code>min_salary</code>) and the tax rate applied.  </li>
-<li><strong>Payroll Taxes</strong> → Social Security and Medicare contributions.  </li>
+</ul>
+</li>
+<li><strong>Payroll Taxes</strong> → Social Security and Medicare contributions.  <ul>
 <li>Social Security is capped at the annual wage base (e.g., $176,100 in 2025).  </li>
 <li>Medicare includes an additional surtax above certain thresholds.  </li>
+</ul>
+</li>
 <li><strong>Capital Gains</strong> → long‑term capital gains brackets layered on top of ordinary income.  </li>
 <li><strong>Social Security Taxability</strong> → thresholds that determine how much of your Social Security benefits are taxable (0%, 50%, or 85%).  </li>
 <li><strong>IRMAA (Income‑Related Monthly Adjustment Amount)</strong> → Medicare premium adjustments based on your income (Part B and Part D).  </li>
@@ -1799,35 +1809,39 @@
 <h3 id="inflation-field-definitions">🔑 Inflation Field Definitions</h3>
 <p>Inflation settings make your forecasts realistic by showing how costs rise and assets behave over time:  </p>
 <ul>
-<li><strong>default</strong> → baseline inflation assumptions for the overall economy.  </li>
-<li><code>avg</code> → average annual inflation rate.  </li>
 <li>
-<p><code>std</code> → volatility (how much inflation varies year to year).  </p>
+<p><strong>default</strong> → baseline inflation assumptions for the overall economy.  </p>
+<ul>
+<li><code>avg</code> → average annual inflation rate.  </li>
+<li><code>std</code> → volatility (how much inflation varies year to year).  </li>
+</ul>
 </li>
 <li>
 <p><strong>profiles</strong> → category‑specific inflation for different types of spending or assets.  </p>
-</li>
+<ul>
 <li>Each profile represents a category (e.g., Education, Food, Rent).  </li>
 <li><code>avg</code> → typical inflation rate for that category.  </li>
 <li><code>std</code> → volatility for that category.  </li>
-<li>
-<p>Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.  </p>
+<li>Examples: healthcare inflates faster than groceries, property taxes rise steadily, vehicles depreciate.  </li>
+</ul>
 </li>
 <li>
 <p><strong>thresholds</strong> (<code>inflation_thresholds.json</code>) → cutoffs that determine which regime applies to each asset class.  </p>
-</li>
+<ul>
 <li>If inflation is below <code>low</code> → Low regime.  </li>
 <li>Between <code>low</code> and <code>high</code> → Average regime.  </li>
-<li>
-<p>Above <code>high</code> → High regime.  </p>
+<li>Above <code>high</code> → High regime.  </li>
+</ul>
 </li>
 <li>
 <p><strong>gain table</strong> (<code>gain_table.json</code>) → defines how assets perform under each regime.  </p>
-</li>
+<ul>
 <li><code>avg</code> → expected monthly return.  </li>
 <li><code>std</code> → volatility of returns.  </li>
 <li>Vehicles are modeled as depreciating assets (negative returns).  </li>
 <li>Cash is modeled as stable with zero returns.  </li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3 id="inflation-audit-notes">🧾 Inflation Audit Notes</h3>
@@ -1860,9 +1874,11 @@
 <p>Marketplace premiums represent your monthly health insurance costs. These values ensure your forecasts account for real, recurring expenses:  </p>
 <ul>
 <li><strong>Plan Key</strong> → the name of the plan type (e.g., <code>silver_family</code>, <code>silver_couple</code>).  </li>
-<li><strong>monthly_premium</strong> → the monthly cost of the plan in dollars.  </li>
+<li><strong>monthly_premium</strong> → the monthly cost of the plan in dollars.  <ul>
 <li>Treated as a recurring expense in your forecast.  </li>
 <li>Can be extended to include other tiers (e.g., <code>silver_individual</code>, <code>gold_family</code>).  </li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3 id="marketplace-premiums-audit-notes">🧾 Marketplace Premiums Audit Notes</h3>
