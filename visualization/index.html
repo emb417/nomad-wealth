@@ -877,124 +877,124 @@
 
 
 <h1 id="visualization-guide">📊 Visualization Guide</h1>
-<p>Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports. These charts turn complex simulations into <strong>clear, intuitive visuals</strong> that help you understand your retirement outlook, spot risks, and build confidence in your plan.  </p>
+<p>Nomad Wealth includes a visualization layer that generates interactive Plotly charts and CSV exports. These charts turn complex simulations into <strong>clear, intuitive visuals</strong> that help you understand your retirement outlook, spot risks, and build confidence in your plan.</p>
 <hr />
 <h2 id="monte-carlo-charts">🎲 Monte Carlo Charts</h2>
-<p>Monte Carlo charts summarize results across all trials, showing probabilities and ranges. They help you see the “big picture” of how your plan performs under uncertainty.  </p>
+<p>Monte Carlo charts summarize results across all trials, showing probabilities and ranges. They help you see the “big picture” of how your plan performs under uncertainty.</p>
 <h3 id="net-worth-over-time">Net Worth Over Time</h3>
-<p><img alt="Monte Carlo Net Worth Chart" src="../images/mc_networth.png" />  </p>
+<p><img alt="Monte Carlo Net Worth Chart" src="../images/mc_networth.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_mc_networth()</code>  </li>
-<li><strong>Purpose:</strong> Shows the distribution of net worth outcomes with median trajectory and 15th/85th percentile bands.  </li>
-<li><strong>How to use it:</strong> Look at the median line to see your most likely trajectory. The shaded bands show optimistic and pessimistic scenarios. If the lower band dips below zero, that’s a warning sign for sufficiency risk.  </li>
+<li><strong>Method:</strong> <code>plot_mc_networth()</code></li>
+<li><strong>Purpose:</strong> Shows the distribution of net worth outcomes with median trajectory and 15th/85th percentile bands.</li>
+<li><strong>How to use it:</strong> Look at the median line to see your most likely trajectory. The shaded bands show optimistic and pessimistic scenarios. If the lower band dips below zero, that’s a warning sign for sufficiency risk.</li>
 </ul>
 <h3 id="taxes-and-withdrawal-rates">Taxes and Withdrawal Rates</h3>
-<p><img alt="Monte Carlo Withdrawals Chart" src="../images/mc_withdrawals.png" /><br />
-<img alt="Monte Carlo Tax Chart" src="../images/mc_tax.png" />  </p>
+<p><img alt="Monte Carlo Withdrawals Chart" src="../images/mc_withdrawals.png" />
+<img alt="Monte Carlo Tax Chart" src="../images/mc_tax.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_mc_totals_and_rates()</code>  </li>
-<li><strong>Purpose:</strong> Displays total taxes and withdrawal rates across trials.  </li>
+<li><strong>Method:</strong> <code>plot_mc_totals_and_rates()</code></li>
+<li><strong>Purpose:</strong> Displays total taxes and withdrawal rates across trials.</li>
 <li><strong>How to use it:</strong> The withdrawal chart shows whether your spending levels are sustainable — focus on modeling for lower median withdrawal rates. Use the tax chart to understand how much of your income is lost to taxes over time - focus on modeling for lower median tax rates.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <h3 id="taxable-balances-at-sepp-milestones">Taxable Balances at SEPP Milestones</h3>
-<p><img alt="Monte Carlo Taxable Chart" src="../images/mc_taxable.png" />  </p>
+<p><img alt="Monte Carlo Taxable Chart" src="../images/mc_taxable.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_mc_taxable_balances()</code>  </li>
-<li><strong>Purpose:</strong> Highlights taxable bucket balances at the SEPP end month.  </li>
-<li><strong>How to use it:</strong> Check whether you have enough liquidity in taxable accounts when you turn 59.5 yeas old to avoid early withdrawal penalties - focus on modeling for a higher positive taxable balance according to your risk tolerance.  </li>
+<li><strong>Method:</strong> <code>plot_mc_taxable_balances()</code></li>
+<li><strong>Purpose:</strong> Highlights taxable bucket balances at the SEPP end month.</li>
+<li><strong>How to use it:</strong> Check whether you have enough liquidity in taxable accounts when you turn 59.5 yeas old to avoid early withdrawal penalties - focus on modeling for a higher positive taxable balance according to your risk tolerance.</li>
 </ul>
 <h3 id="monthly-market-returns">Monthly Market Returns</h3>
-<p><img alt="Monte Carlo Property Chart" src="../images/mc_property_returns.png" /><br />
-<img alt="Monte Carlo Fixed Income Chart" src="../images/mc_fixed_income_returns.png" /><br />
-<img alt="Monte Carlo Stocks Chart" src="../images/mc_stocks_returns.png" />  </p>
+<p><img alt="Monte Carlo Property Chart" src="../images/mc_property_returns.png" />
+<img alt="Monte Carlo Fixed Income Chart" src="../images/mc_fixed_income_returns.png" />
+<img alt="Monte Carlo Stocks Chart" src="../images/mc_stocks_returns.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_mc_monthly_returns()</code>  </li>
-<li><strong>Purpose:</strong> Shows distributions of monthly returns for property, fixed income, and stocks.  </li>
+<li><strong>Method:</strong> <code>plot_mc_monthly_returns()</code></li>
+<li><strong>Purpose:</strong> Shows distributions of monthly returns for property, fixed income, and stocks.</li>
 <li><strong>How to use it:</strong> Used for transparency to validate the gains and losses of your portfolio, this chart shows the annual inflation rate and scenario per asset type, plus the monthly gains/losses percent and the trial number.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <hr />
 <h2 id="example-trial-charts">🧾 Example Trial Charts</h2>
-<p>Example trial charts zoom into a single simulation, showing how one possible future unfolds.  </p>
+<p>Example trial charts zoom into a single simulation, showing how one possible future unfolds.</p>
 <h3 id="bucket-balances-forecast">Bucket Balances Forecast</h3>
-<p><img alt="Example Forecast Chart" src="../images/ex_forecast.png" />  </p>
+<p><img alt="Example Forecast Chart" src="../images/ex_forecast.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_example_forecast()</code>  </li>
-<li><strong>Purpose:</strong> Forecasted balances over time for each bucket.  </li>
-<li><strong>How to use it:</strong> See how your assets evolve in one trial. This helps you visualize how your model affects different buckets over time and what thresholds you can set to optimize your plan.  </li>
+<li><strong>Method:</strong> <code>plot_example_forecast()</code></li>
+<li><strong>Purpose:</strong> Forecasted balances over time for each bucket.</li>
+<li><strong>How to use it:</strong> See how your assets evolve in one trial. This helps you visualize how your model affects different buckets over time and what thresholds you can set to optimize your plan.</li>
 </ul>
 <h3 id="income-and-taxes-breakdown">Income and Taxes Breakdown</h3>
-<p><img alt="Example Income Chart" src="../images/ex_income.png" /><br />
-<img alt="Example Taxes Chart" src="../images/ex_taxes.png" />  </p>
+<p><img alt="Example Income Chart" src="../images/ex_income.png" />
+<img alt="Example Taxes Chart" src="../images/ex_taxes.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_example_income_taxes()</code>  </li>
-<li><strong>Purpose:</strong> Annual income and tax breakdowns.  </li>
+<li><strong>Method:</strong> <code>plot_example_income_taxes()</code></li>
+<li><strong>Purpose:</strong> Annual income and tax breakdowns.</li>
 <li><strong>How to use it:</strong> Identify which income sources drive your tax liability. This helps you spot opportunities for tax optimization, like Roth conversions or timing withdrawals.</li>
 </ul>
 <h3 id="transactions-in-context">Transactions in Context</h3>
-<p><img alt="Example Transactions In Context Chart" src="../images/dm_transactions.png" />  </p>
+<p><img alt="Example Transactions In Context Chart" src="../images/dm_transactions.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_example_transactions_in_context()</code>  </li>
-<li><strong>Purpose:</strong> Shows transactions alongside bucket balances.  </li>
+<li><strong>Method:</strong> <code>plot_example_transactions_in_context()</code></li>
+<li><strong>Purpose:</strong> Shows transactions alongside bucket balances.</li>
 <li><strong>How to use it:</strong> Connect spending and inflows directly to changes in balances. This helps you understand the impact of big expenses or income events.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <h3 id="annual-transactions">Annual Transactions</h3>
-<p><img alt="Example Transactions Chart" src="../images/ex_transactions.png" />  </p>
+<p><img alt="Example Transactions Chart" src="../images/ex_transactions.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_example_transactions()</code>  </li>
-<li><strong>Purpose:</strong> Displays transactions for a given year.  </li>
+<li><strong>Method:</strong> <code>plot_example_transactions()</code></li>
+<li><strong>Purpose:</strong> Displays transactions for a given year.</li>
 <li><strong>How to use it:</strong> Use this chart to better understand income flows to investments and expenses in future years to help you understand your plan.</li>
 </ul>
 <h3 id="monthly-expenses">Monthly Expenses</h3>
-<p><img alt="Example Expenses Chart" src="../images/ex_monthly_expenses.png" />  </p>
+<p><img alt="Example Expenses Chart" src="../images/ex_monthly_expenses.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_example_monthly_expenses()</code>  </li>
-<li><strong>Purpose:</strong> Visualizes monthly expenses over time.  </li>
-<li><strong>How to use it:</strong> Spot spending patterns and see how inflation or healthcare costs (Medicare, IRMAA) affect your monthly budget.  </li>
+<li><strong>Method:</strong> <code>plot_example_monthly_expenses()</code></li>
+<li><strong>Purpose:</strong> Visualizes monthly expenses over time.</li>
+<li><strong>How to use it:</strong> Spot spending patterns and see how inflation or healthcare costs (Medicare, IRMAA) affect your monthly budget.</li>
 </ul>
 <hr />
 <h2 id="historical-charts">📜 Historical Charts</h2>
-<p>Historical charts provide context by showing past performance, grounding your forecasts in reality.  </p>
+<p>Historical charts provide context by showing past performance, grounding your forecasts in reality.</p>
 <h3 id="monthly-gains-by-bucket">Monthly Gains by Bucket</h3>
-<p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" />  </p>
+<p><img alt="Historical Gains Chart" src="../images/hist_monthly_gains.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_historical_bucket_gains()</code>  </li>
-<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each bucket.  </li>
+<li><strong>Method:</strong> <code>plot_historical_bucket_gains()</code></li>
+<li><strong>Purpose:</strong> Shows monthly gain/loss trends for each bucket.</li>
 <li><strong>How to use it:</strong> Identify which buckets contributed most to net worth changes. This helps you understand historical strengths and weaknesses in your portfolio.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <h3 id="net-worth-trajectory">Net Worth Trajectory</h3>
-<p><img alt="Historical Balance Chart" src="../images/hist_networth.png" />  </p>
+<p><img alt="Historical Balance Chart" src="../images/hist_networth.png" /></p>
 <ul>
-<li><strong>Method:</strong> <code>plot_historical_balance()</code>  </li>
-<li><strong>Purpose:</strong> Net worth line chart with gain/loss bars.  </li>
+<li><strong>Method:</strong> <code>plot_historical_balance()</code></li>
+<li><strong>Purpose:</strong> Net worth line chart with gain/loss bars.</li>
 <li><strong>How to use it:</strong> See your overall financial trajectory and spot periods of growth or decline. This provides a baseline for comparing future simulations.</li>
 <li><strong>Note:</strong> This chart is only available in Detailed Mode.</li>
 </ul>
 <hr />
 <h2 id="flags-modes">⚙️ Flags &amp; Modes</h2>
 <ul>
-<li><strong><code>SHOW_*</code> flags</strong> → control whether charts are displayed interactively.  </li>
-<li><strong><code>SAVE_*</code> flags</strong> → control whether charts are exported to HTML/CSV.  </li>
-<li><strong><code>DETAILED_MODE</code></strong> → enables full transparency with additional charts and context.  </li>
+<li><strong><code>SHOW_*</code> flags</strong> → control whether charts are displayed interactively.</li>
+<li><strong><code>SAVE_*</code> flags</strong> → control whether charts are exported to HTML/CSV.</li>
+<li><strong><code>DETAILED_MODE</code></strong> → enables full transparency with additional charts and context.</li>
 </ul>
 <hr />
 <h2 id="visualization-notes">📝 Visualization Notes</h2>
-<p>Nomad Wealth’s charts are designed for <strong>clarity and reproducibility</strong>:  </p>
+<p>Nomad Wealth’s charts are designed for <strong>clarity and reproducibility</strong>:</p>
 <ul>
 <li>Consistent labels, colors, and formatting across all charts.</li>
-<li>Percentile overlays (p15, median, p85) make scenario comparisons easy.  </li>
-<li>CSV/HTML exports preserve interactive and tabular views for sharing or review.  </li>
-<li>Logging ensures every chart export is traceable.  </li>
+<li>Percentile overlays (p15, median, p85) make scenario comparisons easy.</li>
+<li>CSV/HTML exports preserve interactive and tabular views for sharing or review.</li>
+<li>Logging ensures every chart export is traceable.</li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../usage/">Usage Guide</a> → explains workflow and output files  </li>
-<li><a href="../architecture/">Architecture Overview</a> → system design and visualization integration  </li>
-<li><a href="../simulation_logic/">Simulation Logic</a> → monthly loop and aggregation steps  </li>
+<li><a href="../usage/">Usage Guide</a> → explains workflow and output files</li>
+<li><a href="../architecture/">Architecture Overview</a> → system design and visualization integration</li>
+<li><a href="../simulation_logic/">Simulation Logic</a> → monthly loop and aggregation steps</li>
 </ul>
 
 

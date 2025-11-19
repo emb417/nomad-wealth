@@ -626,81 +626,81 @@
 <p>Nomad Wealth is a <strong>policy‑driven financial simulation framework</strong> built for transparency, clarity, and confidence. It models retirement scenarios, withdrawal strategies, and tax implications using <strong>Monte Carlo simulations</strong> and <strong>IRS‑aligned rules</strong>.</p>
 <hr />
 <h2 id="purpose">🎯 Purpose</h2>
-<p>Nomad Wealth helps you plan retirement with confidence by:  </p>
+<p>Nomad Wealth helps you plan retirement with confidence by:</p>
 <ul>
-<li>Showing whether your savings are sufficient under uncertainty.  </li>
-<li>Comparing scenarios with clear percentile overlays and reference lines.  </li>
-<li>Tracing every dollar across buckets, transactions, and policies.  </li>
-<li>Ensuring forecasts align with IRS rules and historical data.  </li>
-<li>Exporting reproducible charts and CSVs you can review or share.  </li>
+<li>Showing whether your savings are sufficient under uncertainty.</li>
+<li>Comparing scenarios with clear percentile overlays and reference lines.</li>
+<li>Tracing every dollar across buckets, transactions, and policies.</li>
+<li>Ensuring forecasts align with IRS rules and historical data.</li>
+<li>Exporting reproducible charts and CSVs you can review or share.</li>
 </ul>
 <hr />
 <h2 id="core-components">🧩 Core Components</h2>
 <p>Nomad Wealth is organized into modular layers:</p>
 <ul>
-<li><strong>Configuration</strong> → Define your buckets, policies, and balances.  </li>
-<li><strong>Architecture</strong> → Behind‑the‑scenes system design (for advanced users).  </li>
-<li><strong>Simulation Logic (<code>forecast_engine.py</code>)</strong> → How monthly forecasts and Monte Carlo trials are calculated.  </li>
-<li><strong>Visualization (<code>visualizations.py</code>)</strong> → Charts and exports that make your plan easy to understand.  </li>
-<li><strong>Usage</strong> → Options to control forecast size, charts, and exports.  </li>
+<li><strong>Configuration</strong> → Define your buckets, policies, and balances.</li>
+<li><strong>Architecture</strong> → Behind‑the‑scenes system design (for advanced users).</li>
+<li><strong>Simulation Logic (<code>forecast_engine.py</code>)</strong> → How monthly forecasts and Monte Carlo trials are calculated.</li>
+<li><strong>Visualization (<code>visualizations.py</code>)</strong> → Charts and exports that make your plan easy to understand.</li>
+<li><strong>Usage</strong> → Options to control forecast size, charts, and exports.</li>
 </ul>
 <hr />
 <h2 id="workflow">📂 Workflow</h2>
 <ol>
-<li><strong>Configure</strong>  <ul>
-<li>Set up buckets, balances, and tax rules.  </li>
+<li><strong>Configure</strong><ul>
+<li>Set up buckets, balances, and tax rules.</li>
 </ul>
 </li>
-<li><strong>Simulate</strong>  <ul>
-<li>Run Monte Carlo trials that apply monthly transactions, policies, market returns, and taxes.  </li>
-<li>Results are aggregated into net worth, taxes, balances, and flow logs.  </li>
-<li>Every debit and credit is tracked for reproducibility.  </li>
+<li><strong>Simulate</strong><ul>
+<li>Run Monte Carlo trials that apply monthly transactions, policies, market returns, and taxes.</li>
+<li>Results are aggregated into net worth, taxes, balances, and flow logs.</li>
+<li>Every debit and credit is tracked for reproducibility.</li>
 </ul>
 </li>
-<li><strong>Visualize</strong>  <ul>
-<li>Generate charts and reports that show whether you’re on track.  </li>
-<li>Export HTML and CSV outputs with consistent color palettes, percentile overlays, and hover text for clarity.  </li>
+<li><strong>Visualize</strong><ul>
+<li>Generate charts and reports that show whether you’re on track.</li>
+<li>Export HTML and CSV outputs with consistent color palettes, percentile overlays, and hover text for clarity.</li>
 </ul>
 </li>
 </ol>
 <hr />
 <h2 id="irs-alignment">🧾 IRS Alignment</h2>
-<p>Nomad Wealth enforces IRS rules so your forecasts reflect reality:  </p>
+<p>Nomad Wealth enforces IRS rules so your forecasts reflect reality:</p>
 <ul>
-<li>Ordinary income brackets (married filing jointly).  </li>
-<li>Capital gains layered above ordinary income.  </li>
-<li>Social Security taxation capped at 85%.  </li>
-<li>Penalty taxes applied to early withdrawals.  </li>
-<li>Roth conversions modeled independently.  </li>
-<li>IRMAA premiums applied based on prior MAGI, doubled for MFJ.  </li>
-<li>Marketplace premiums capped at 8.5% of prior MAGI.  </li>
+<li>Ordinary income brackets (married filing jointly).</li>
+<li>Capital gains layered above ordinary income.</li>
+<li>Social Security taxation capped at 85%.</li>
+<li>Penalty taxes applied to early withdrawals.</li>
+<li>Roth conversions modeled independently.</li>
+<li>IRMAA premiums applied based on prior MAGI, doubled for MFJ.</li>
+<li>Marketplace premiums capped at 8.5% of prior MAGI.</li>
 </ul>
 <hr />
 <h2 id="outputs">📊 Outputs</h2>
-<p>Nomad Wealth produces:  </p>
+<p>Nomad Wealth produces:</p>
 <ul>
-<li><strong>Historical Charts</strong> → See how your buckets have grown and changed.  </li>
-<li><strong>Per‑Trial Charts</strong> → Explore detailed monthly forecasts.  </li>
-<li><strong>Aggregate Monte Carlo Charts</strong> → Understand probabilities and ranges for your retirement outlook.  </li>
-<li><strong>CSV/HTML Exports</strong> → Download reports for deeper review or sharing.  </li>
+<li><strong>Historical Charts</strong> → See how your buckets have grown and changed.</li>
+<li><strong>Per‑Trial Charts</strong> → Explore detailed monthly forecasts.</li>
+<li><strong>Aggregate Monte Carlo Charts</strong> → Understand probabilities and ranges for your retirement outlook.</li>
+<li><strong>CSV/HTML Exports</strong> → Download reports for deeper review or sharing.</li>
 </ul>
 <hr />
 <h2 id="design-principles">🎯 Design Principles</h2>
 <ul>
-<li><strong>Policy‑First</strong> → Your plan follows clear, rule‑based logic.  </li>
-<li><strong>Audit Clarity</strong> → Every forecast is traceable, so you can trust the numbers.  </li>
-<li><strong>Resilience</strong> → Monte Carlo simulations show how your plan holds up under uncertainty.  </li>
-<li><strong>Transparency</strong> → Charts and reports make it easy to see what’s happening.  </li>
-<li><strong>Extensibility</strong> → Advanced users can customize rules, but you don’t need to for core planning.  </li>
+<li><strong>Policy‑First</strong> → Your plan follows clear, rule‑based logic.</li>
+<li><strong>Audit Clarity</strong> → Every forecast is traceable, so you can trust the numbers.</li>
+<li><strong>Resilience</strong> → Monte Carlo simulations show how your plan holds up under uncertainty.</li>
+<li><strong>Transparency</strong> → Charts and reports make it easy to see what’s happening.</li>
+<li><strong>Extensibility</strong> → Advanced users can customize rules, but you don’t need to for core planning.</li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../configuration/">Configuration Reference</a>  </li>
-<li><a href="../architecture/">Architecture Overview</a>  </li>
-<li><a href="../simulation_logic/">Simulation Logic</a>  </li>
-<li><a href="../visualization/">Visualization Guide</a>  </li>
-<li><a href="../usage/">Usage Guide</a>  </li>
+<li><a href="../configuration/">Configuration Reference</a></li>
+<li><a href="../architecture/">Architecture Overview</a></li>
+<li><a href="../simulation_logic/">Simulation Logic</a></li>
+<li><a href="../visualization/">Visualization Guide</a></li>
+<li><a href="../usage/">Usage Guide</a></li>
 </ul>
 
 

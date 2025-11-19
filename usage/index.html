@@ -601,85 +601,85 @@
 
 
 <h1 id="usage-guide">🚀 Usage Guide</h1>
-<p>This guide explains how to run Nomad Wealth simulations, adjust settings, and understand the results.  </p>
+<p>This guide explains how to run Nomad Wealth simulations, adjust settings, and understand the results.</p>
 <hr />
 <h2 id="running-the-simulation">▶️ Running the Simulation</h2>
 <ol>
 <li>
-<p><strong>Navigate to the project root</strong><br />
-   Make sure you’re in the directory containing <code>src/app.py</code>.  </p>
+<p><strong>Navigate to the project root</strong>
+ Make sure you’re in the directory containing <code>src/app.py</code>.</p>
 </li>
 <li>
-<p><strong>Run the entry point</strong>  </p>
+<p><strong>Run the entry point</strong></p>
+<p><code>bash
+python src/app.py</code></p>
 </li>
 </ol>
-<p><code>bash
-   python src/app.py</code>  </p>
-<p>This command:<br />
-   - Loads your configuration files (buckets, balances, policies, taxes).<br />
-   - Prepares historical and future timelines.<br />
-   - Runs Monte Carlo trials in parallel to capture uncertainty.<br />
-   - Aggregates results into clear tables.<br />
-   - Generates interactive charts and CSV/HTML exports.  </p>
+<p>This command:
+    - Loads your configuration files (buckets, balances, policies, taxes).
+    - Prepares historical and future timelines.
+    - Runs Monte Carlo trials in parallel to capture uncertainty.
+    - Aggregates results into clear tables.
+    - Generates interactive charts and CSV/HTML exports.</p>
 <ol>
-<li><strong>Check the <code>export/</code> directory</strong><br />
-   All outputs (charts and CSVs) are saved here with timestamped filenames for easy tracking.  </li>
+<li><strong>Check the <code>export/</code> directory</strong></li>
 </ol>
+<p>All outputs (charts and CSVs) are saved here with timestamped filenames for easy tracking.</p>
 <hr />
 <h2 id="controlling-behavior">⚙️ Controlling Behavior</h2>
-<p>You can control how the simulation runs by adjusting flags in <code>app.py</code>:  </p>
+<p>You can control how the simulation runs by adjusting flags in <code>app.py</code>:</p>
 <ul>
-<li><strong>Simulation Size</strong> → <code>SIM_SIZE</code> sets the number of Monte Carlo trials.  </li>
-<li><strong>Example Trials</strong> → <code>SIM_EXAMPLE_SIZE</code> sets how many random trials are shown in detail (expenses, transactions, taxes, forecasts).  </li>
-<li><strong>Chart Display</strong> → <code>SHOW_*</code> flags decide which charts open interactively (e.g., net worth, examples, historical).  </li>
-<li><strong>Chart Export</strong> → <code>SAVE_*</code> flags decide which charts are saved to HTML/CSV.  </li>
-<li><strong>Detailed Mode</strong> → <code>DETAILED_MODE</code> forces all charts and exports to be generated for full transparency.  </li>
+<li><strong>Simulation Size</strong> → <code>SIM_SIZE</code> sets the number of Monte Carlo trials.</li>
+<li><strong>Example Trials</strong> → <code>SIM_EXAMPLE_SIZE</code> sets how many random trials are shown in detail (expenses, transactions, taxes, forecasts).</li>
+<li><strong>Chart Display</strong> → <code>SHOW_*</code> flags decide which charts open interactively (e.g., net worth, examples, historical).</li>
+<li><strong>Chart Export</strong> → <code>SAVE_*</code> flags decide which charts are saved to HTML/CSV.</li>
+<li><strong>Detailed Mode</strong> → <code>DETAILED_MODE</code> forces all charts and exports to be generated for full transparency.</li>
 </ul>
 <hr />
 <h2 id="inputs-required">📂 Inputs Required</h2>
-<p>Nomad Wealth uses configuration files to define your plan:  </p>
+<p>Nomad Wealth uses configuration files to define your plan:</p>
 <ul>
-<li><strong>profile.json</strong> → birth month, retirement horizon and past MAGI.  </li>
-<li><strong>buckets.json</strong> → bucket definitions (must align with <code>balance.csv</code>).  </li>
-<li><strong>balance.csv</strong> → starting balances for each bucket.  </li>
-<li><strong>policies.json</strong> → rules for income, withdrawals, property, unemployment, Roth conversions.  </li>
-<li><strong>tax_brackets.json</strong> → IRS‑aligned federal, state, payroll, capital gains, IRMAA, Medicare premiums.  </li>
-<li><strong>inflation_rates.json</strong> → baseline inflation + category profiles.  </li>
-<li><strong>inflation_thresholds.json</strong> + <strong>gain_table.json</strong> → asset class return regimes.  </li>
-<li><strong>marketplace_premiums.json</strong> → healthcare premiums.  </li>
-<li><strong>fixed.csv</strong> → one‑time events (e.g., tuition, travel).  </li>
-<li><strong>recurring.csv</strong> → ongoing monthly flows (e.g., insurance, food, utilities).  </li>
+<li><strong>profile.json</strong> → birth month, retirement horizon and past MAGI.</li>
+<li><strong>buckets.json</strong> → bucket definitions (must align with <code>balance.csv</code>).</li>
+<li><strong>balance.csv</strong> → starting balances for each bucket.</li>
+<li><strong>policies.json</strong> → rules for income, withdrawals, property, unemployment, Roth conversions.</li>
+<li><strong>tax_brackets.json</strong> → IRS‑aligned federal, state, payroll, capital gains, IRMAA, Medicare premiums.</li>
+<li><strong>inflation_rates.json</strong> → baseline inflation + category profiles.</li>
+<li><strong>inflation_thresholds.json</strong> + <strong>gain_table.json</strong> → asset class return regimes.</li>
+<li><strong>marketplace_premiums.json</strong> → healthcare premiums.</li>
+<li><strong>fixed.csv</strong> → one‑time events (e.g., tuition, travel).</li>
+<li><strong>recurring.csv</strong> → ongoing monthly flows (e.g., insurance, food, utilities).</li>
 </ul>
 <blockquote>
-<p>All inputs must follow the schemas in <a href="../configuration/">Configuration Reference</a>.  </p>
+<p>All inputs must follow the schemas in <a href="../configuration/">Configuration Reference</a>.</p>
 </blockquote>
 <hr />
 <h2 id="outputs">📈 Outputs</h2>
-<p>Nomad Wealth produces results you can explore in charts and exports:  </p>
+<p>Nomad Wealth produces results you can explore in charts and exports:</p>
 <ul>
-<li><strong>Historical Charts</strong> → bucket gains/losses and net worth trajectory.  </li>
-<li><strong>Per‑Trial Example Charts</strong> → detailed views of monthly expenses, transactions, taxes, and forecasts.  </li>
-<li><strong>Aggregate Monte Carlo Charts</strong> → distributions of returns, balances, taxes, withdrawals, and net worth.  </li>
-<li><strong>CSV Exports</strong> → tables of balances, tax breakdowns, monthly returns, and flow logs for reproducibility.  </li>
+<li><strong>Historical Charts</strong> → bucket gains/losses and net worth trajectory.</li>
+<li><strong>Per‑Trial Example Charts</strong> → detailed views of monthly expenses, transactions, taxes, and forecasts.</li>
+<li><strong>Aggregate Monte Carlo Charts</strong> → distributions of returns, balances, taxes, withdrawals, and net worth.</li>
+<li><strong>CSV Exports</strong> → tables of balances, tax breakdowns, monthly returns, and flow logs for reproducibility.</li>
 </ul>
 <hr />
 <h2 id="notes">🧾 Notes</h2>
 <ul>
-<li>Filenames include timestamps (<code>YYYYMMDD_HHMMSS</code>) for traceability.  </li>
-<li>Net worth = sum of all bucket balances each month.  </li>
-<li>SEPP rules enforce IRS 72(t) withdrawal compliance.  </li>
-<li>Roth conversions can occur before age 59.5 if configured.  </li>
-<li>Logging records export paths for transparency.  </li>
-<li>Detailed Mode ensures <strong>IRS‑aligned reproducibility</strong> across all charts and exports.  </li>
+<li>Filenames include timestamps (<code>YYYYMMDD_HHMMSS</code>) for traceability.</li>
+<li>Net worth = sum of all bucket balances each month.</li>
+<li>SEPP rules enforce IRS 72(t) withdrawal compliance.</li>
+<li>Roth conversions can occur before age 59.5 if configured.</li>
+<li>Logging records export paths for transparency.</li>
+<li>Detailed Mode ensures <strong>IRS‑aligned reproducibility</strong> across all charts and exports.</li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../overview/">Framework Overview</a> → conceptual landing page  </li>
-<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV schemas  </li>
-<li><a href="../architecture/">Architecture Overview</a> → modular system design  </li>
-<li><a href="../simulation_logic/">Simulation Logic</a> → monthly forecast loop and aggregation  </li>
-<li><a href="../visualization/">Visualization Guide</a> → charts and exports  </li>
+<li><a href="../overview/">Framework Overview</a> → conceptual landing page</li>
+<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV schemas</li>
+<li><a href="../architecture/">Architecture Overview</a> → modular system design</li>
+<li><a href="../simulation_logic/">Simulation Logic</a> → monthly forecast loop and aggregation</li>
+<li><a href="../visualization/">Visualization Guide</a> → charts and exports</li>
 </ul>
 
 

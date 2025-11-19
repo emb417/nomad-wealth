@@ -645,74 +645,74 @@
 
 
 <h1 id="simulation-logic">🔄 Simulation Logic</h1>
-<p>Nomad Wealth’s simulation engine models financial flows month by month, applying transactions, policies, market returns, and taxes. This page explains the <strong>step‑by‑step logic</strong> of the forecast loop — how trials are prepared, executed, and turned into charts you can use to understand your retirement outlook.  </p>
+<p>Nomad Wealth’s simulation engine models financial flows month by month, applying transactions, policies, market returns, and taxes. This page explains the <strong>step‑by‑step logic</strong> of the forecast loop — how trials are prepared, executed, and turned into charts you can use to understand your retirement outlook.</p>
 <hr />
 <h2 id="relationship-to-architecture">🧩 Relationship to Architecture</h2>
-<p>The simulation logic is the <strong>operational core</strong> of the system described in <a href="../architecture/">Architecture Overview</a>. Where architecture explains the design and components, this page focuses on the <strong>execution flow</strong> inside the <code>ForecastEngine</code> and <code>app.py</code>.  </p>
+<p>The simulation logic is the <strong>operational core</strong> of the system described in <a href="../architecture/">Architecture Overview</a>. Where architecture explains the design and components, this page focuses on the <strong>execution flow</strong> inside the <code>ForecastEngine</code> and <code>app.py</code>.</p>
 <hr />
 <h2 id="staging-phase">📂 Staging Phase</h2>
-<p>Before any trial runs, the system prepares your inputs and builds the components that drive the forecast:  </p>
+<p>Before any trial runs, the system prepares your inputs and builds the components that drive the forecast:</p>
 <ol>
-<li><strong>Load Configuration</strong> → reads your JSON and CSV files (buckets, balances, policies, transactions).  </li>
-<li><strong>Prepare Timeframes</strong> → sets up historical and future monthly periods until your chosen end date.  </li>
-<li><strong>Initialize Components</strong> → builds buckets, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.  </li>
+<li><strong>Load Configuration</strong> → reads your JSON and CSV files (buckets, balances, policies, transactions).</li>
+<li><strong>Prepare Timeframes</strong> → sets up historical and future monthly periods until your chosen end date.</li>
+<li><strong>Initialize Components</strong> → builds buckets, applies refill/liquidation rules, sets inflation and tax logic, and wires in transactions like salary, Social Security, property flows, and healthcare premiums.</li>
 </ol>
 <hr />
 <h2 id="monthly-forecast-loop">📅 Monthly Forecast Loop</h2>
-<p>Each month in the simulation follows a clear sequence:  </p>
+<p>Each month in the simulation follows a clear sequence:</p>
 <ol>
-<li><strong>Apply Transactions</strong> → tuition, travel, insurance, food, utilities, salary, Social Security, Roth conversions, unemployment, property flows.  </li>
-<li><strong>Trigger Refill Policies</strong> → keeps cash balances above thresholds, prevents early withdrawals, and triggers liquidation if needed.  </li>
-<li><strong>Apply Market Returns</strong> → updates bucket balances based on inflation‑adjusted returns.  </li>
-<li><strong>Tax Collection Drip</strong> → monthly withholding moves funds into the Tax Collection bucket.  </li>
-<li><strong>Snapshot Balances</strong> → records bucket balances and logs flows for transparency.  </li>
-<li><strong>Year‑End Settlement</strong> → applies IRS rules for income, gains, and penalties, reconciles taxes, and rolls forward estimates.  </li>
+<li><strong>Apply Transactions</strong> → tuition, travel, insurance, food, utilities, salary, Social Security, Roth conversions, unemployment, property flows.</li>
+<li><strong>Trigger Refill Policies</strong> → keeps cash balances above thresholds, prevents early withdrawals, and triggers liquidation if needed.</li>
+<li><strong>Apply Market Returns</strong> → updates bucket balances based on inflation‑adjusted returns.</li>
+<li><strong>Tax Collection Drip</strong> → monthly withholding moves funds into the Tax Collection bucket.</li>
+<li><strong>Snapshot Balances</strong> → records bucket balances and logs flows for transparency.</li>
+<li><strong>Year‑End Settlement</strong> → applies IRS rules for income, gains, and penalties, reconciles taxes, and rolls forward estimates.</li>
 </ol>
 <hr />
 <h2 id="trial-execution">🎲 Trial Execution</h2>
-<p>Forecasts are run as <strong>Monte Carlo trials</strong> to capture uncertainty:  </p>
+<p>Forecasts are run as <strong>Monte Carlo trials</strong> to capture uncertainty:</p>
 <ul>
-<li><strong><code>run_one_trial()</code></strong> → builds buckets, policies, inflation, tax logic, and transactions, then runs the monthly loop.  </li>
-<li><strong><code>run_simulation()</code></strong> → wraps each trial and tags results with the trial index.  </li>
-<li><strong>Parallel Execution</strong> → trials run in parallel for efficiency, with results aggregated by trial index.  </li>
+<li><strong><code>run_one_trial()</code></strong> → builds buckets, policies, inflation, tax logic, and transactions, then runs the monthly loop.</li>
+<li><strong><code>run_simulation()</code></strong> → wraps each trial and tags results with the trial index.</li>
+<li><strong>Parallel Execution</strong> → trials run in parallel for efficiency, with results aggregated by trial index.</li>
 </ul>
 <hr />
 <h2 id="aggregation-phase">📊 Aggregation Phase</h2>
-<p>After all trials complete, results are combined into clear outputs:  </p>
+<p>After all trials complete, results are combined into clear outputs:</p>
 <ul>
-<li><strong>Net Worth DataFrame</strong> → monthly net worth across trials.  </li>
-<li><strong>Tax DataFrame</strong> → detailed tax records by trial and year.  </li>
-<li><strong>Taxable Balances</strong> → balances at SEPP end month for compliance checks.  </li>
-<li><strong>Monthly Returns</strong> → consolidated returns across trials.  </li>
-<li><strong>Summary Tracking</strong> → property events and taxable balances logged for transparency.  </li>
+<li><strong>Net Worth DataFrame</strong> → monthly net worth across trials.</li>
+<li><strong>Tax DataFrame</strong> → detailed tax records by trial and year.</li>
+<li><strong>Taxable Balances</strong> → balances at SEPP end month for compliance checks.</li>
+<li><strong>Monthly Returns</strong> → consolidated returns across trials.</li>
+<li><strong>Summary Tracking</strong> → property events and taxable balances logged for transparency.</li>
 </ul>
 <hr />
 <h2 id="visualization-integration">📈 Visualization Integration</h2>
-<p>Aggregated results feed directly into charts and reports:  </p>
+<p>Aggregated results feed directly into charts and reports:</p>
 <ul>
-<li><strong>Historical Charts</strong> → bucket growth and net worth trajectory.  </li>
-<li><strong>Per‑Trial Charts</strong> → monthly details for expenses, transactions, taxes, and forecasts.  </li>
-<li><strong>Aggregate Monte Carlo Charts</strong> → probability distributions for returns, balances, taxes, and net worth.  </li>
-<li><strong>Exports</strong> → all charts available in HTML/CSV with consistent colors, overlays, and hover text.  </li>
+<li><strong>Historical Charts</strong> → bucket growth and net worth trajectory.</li>
+<li><strong>Per‑Trial Charts</strong> → monthly details for expenses, transactions, taxes, and forecasts.</li>
+<li><strong>Aggregate Monte Carlo Charts</strong> → probability distributions for returns, balances, taxes, and net worth.</li>
+<li><strong>Exports</strong> → all charts available in HTML/CSV with consistent colors, overlays, and hover text.</li>
 </ul>
 <hr />
 <h2 id="forecastengine-notes">📝 ForecastEngine Notes</h2>
-<p>The ForecastEngine ensures every forecast is <strong>transparent and IRS‑aligned</strong>:  </p>
+<p>The ForecastEngine ensures every forecast is <strong>transparent and IRS‑aligned</strong>:</p>
 <ul>
-<li>Monthly flows integrate buckets, transactions, market gains, refills, liquidations, and taxes.  </li>
-<li>All results are auditable via structured records: snapshots, tax logs, and return records.  </li>
-<li>Yearly tax logs reproduce IRS categories (income, gains, Social Security, Roth conversions, penalties).  </li>
-<li>SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied correctly.  </li>
-<li>Roth conversions follow policy‑driven thresholds (age cutoffs, balances, tax rates).  </li>
-<li>Year‑end reconciliation ensures taxes are paid from the Tax Collection bucket first, then Cash.  </li>
+<li>Monthly flows integrate buckets, transactions, market gains, refills, liquidations, and taxes.</li>
+<li>All results are auditable via structured records: snapshots, tax logs, and return records.</li>
+<li>Yearly tax logs reproduce IRS categories (income, gains, Social Security, Roth conversions, penalties).</li>
+<li>SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied correctly.</li>
+<li>Roth conversions follow policy‑driven thresholds (age cutoffs, balances, tax rates).</li>
+<li>Year‑end reconciliation ensures taxes are paid from the Tax Collection bucket first, then Cash.</li>
 </ul>
 <hr />
 <h2 id="related-pages">📚 Related Pages</h2>
 <ul>
-<li><a href="../architecture/">Architecture Overview</a> → system design and modular components  </li>
-<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV inputs  </li>
-<li><a href="../visualization/">Visualization Guide</a> → charts and exports  </li>
-<li><a href="../usage/">Usage Guide</a> → workflow and output files  </li>
+<li><a href="../architecture/">Architecture Overview</a> → system design and modular components</li>
+<li><a href="../configuration/">Configuration Reference</a> → JSON and CSV inputs</li>
+<li><a href="../visualization/">Visualization Guide</a> → charts and exports</li>
+<li><a href="../usage/">Usage Guide</a> → workflow and output files</li>
 </ul>
 
 
