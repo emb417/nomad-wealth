@@ -4,6 +4,7 @@ import pandas as pd
 import plotly.graph_objects as go
 
 from datetime import datetime
+from pandas import Period, Timestamp
 
 
 COLOR_PALETTE = [
@@ -171,14 +172,13 @@ def assign_colors_by_base_label(labels, color_palette):
 def coerce_month_column(df: pd.DataFrame) -> pd.DataFrame:
     """
     Ensures the 'Month' column is datetime64[ns] at month-end.
-    Avoids using pd.api.types.
     """
     month_col = df["Month"]
 
-    if isinstance(month_col.iloc[0], pd.Period):
-        df["Month"] = month_col.dt.to_timestamp("M")
-    elif isinstance(month_col.iloc[0], (pd.Timestamp, datetime)):
-        df["Month"] = month_col.dt.to_period("M").dt.to_timestamp("M")
+    if isinstance(month_col.iloc[0], Period):
+        df["Month"] = pd.PeriodIndex(month_col, freq="M").to_timestamp()
+    elif isinstance(month_col.iloc[0], (Timestamp, datetime)):
+        df["Month"] = pd.to_datetime(month_col).dt.to_period("M").dt.to_timestamp("M")
     else:
         df["Month"] = pd.to_datetime(month_col).dt.to_period("M").dt.to_timestamp("M")
 
@@ -478,8 +478,8 @@ def plot_example_transactions(
     ts: str = "",
 ):
     df = flow_df.copy()
-    df["date"] = df["date"].dt.to_timestamp()
-    df["year"] = df["date"].dt.year
+    df["date"] = pd.PeriodIndex(df["date"], freq="M").to_timestamp()
+    df["year"] = pd.DatetimeIndex(df["date"]).year
 
     years = sorted(df["year"].unique())
 
@@ -614,21 +614,42 @@ def plot_example_transactions_in_context(
     save: bool,
     export_path: str = "export/",
 ):
-    forecast_df = coerce_month_column(forecast_df.copy())
-    forecast_df = forecast_df[forecast_df["Month"].dt.month == 12].sort_values("Month")
-
-    bucket_names = [col for col in forecast_df.columns if col != "Month"]
-    years = forecast_df["Month"].dt.year.tolist()
-    transitions = [(y - 1, y) for y in years]
+    forecast_df = forecast_df.copy()
+    forecast_df["Month"] = pd.PeriodIndex(forecast_df["Month"], freq="M").to_timestamp(
+        how="end"
+    )
 
     flow_df = flow_df.copy()
-    flow_df["date"] = flow_df["date"].dt.to_timestamp()
-    flow_df["year"] = flow_df["date"].dt.year
+    flow_df["date"] = pd.PeriodIndex(flow_df["date"], freq="M").to_timestamp(how="end")
+
+    forecast_df = forecast_df[
+        pd.DatetimeIndex(forecast_df["Month"]).month == 12
+    ].sort_values("Month")
+
+    bucket_names = [col for col in forecast_df.columns if col != "Month"]
+    years = pd.DatetimeIndex(forecast_df["Month"]).year.tolist()
+    transitions = [(y - 1, y) for y in years]
+
+    # Precompute year column for flows
+    flow_df["year"] = pd.DatetimeIndex(flow_df["date"]).year
 
     sankey_traces = []
     for y0, y1 in transitions:
-        target_month = pd.Period(f"{y1}-12", freq="M").to_timestamp("M")
-        bal_end = forecast_df.loc[forecast_df["Month"] == target_month].iloc[0]
+        # 3) Construct target month as month-end to match the normalization above
+        target_month = pd.Period(f"{y1}-12", freq="M").to_timestamp(how="end")
+
+        # Robust selection: guard against missing rows
+        rows = forecast_df.loc[forecast_df["Month"] == target_month]
+        if rows.empty:
+            # Optional: fallback to the last row for that year if equality fails
+            # This handles subtle nanosecond mismatches or data gaps
+            rows = forecast_df[pd.DatetimeIndex(forecast_df["Month"]).year == y1]
+            if rows.empty:
+                raise ValueError(f"No forecast row found for {y1}-12 (month-end).")
+            bal_end = rows.sort_values("Month").iloc[-1]
+        else:
+            bal_end = rows.iloc[0]
+
         flows_y = flow_df[flow_df["year"] == y1].copy()
         agg = (
             flows_y.groupby(["source", "target", "type"])["amount"].sum().reset_index()
@@ -648,6 +669,7 @@ def plot_example_transactions_in_context(
                 values.append(v)
                 colors.append("rgba(0,0,0,0.1)")
                 used_keys.update([s_key, t_key])
+
         # Routed flows (excluding gain/loss)
         for _, row in agg.iterrows():
             if row["type"] not in ["gain", "loss"]:
@@ -1093,7 +1115,8 @@ def plot_mc_monthly_returns(
         return
 
     sim_size = df["Trial"].nunique()
-    df["MonthStr"] = df["Month"].dt.strftime("%Y-%m")
+    df["Month"] = pd.PeriodIndex(df["Month"], freq="M").to_timestamp()
+    df["MonthStr"] = pd.DatetimeIndex(df["Month"]).strftime("%Y-%m")
 
     # Discover asset classes from first row
     asset_classes = [
@@ -1238,7 +1261,7 @@ def plot_mc_networth(
     # Invisible age trace for hover
     fig.add_trace(
         go.Scatter(
-            x=mc_networth_df.index.to_timestamp(),
+            x=pd.PeriodIndex(mc_networth_df.index, freq="M").to_timestamp(),
             y=pct_df["median"],
             customdata=ages,
             mode="markers",
@@ -1270,7 +1293,7 @@ def plot_mc_networth(
 
         fig.add_trace(
             go.Scatter(
-                x=mc_networth_df.index.to_timestamp(),
+                x=pd.PeriodIndex(mc_networth_df.index, freq="M").to_timestamp(),
                 y=mc_networth_df[col],
                 showlegend=False,
                 line=dict(color=color, width=width),
@@ -1289,7 +1312,7 @@ def plot_mc_networth(
         )
 
     # Percentile lines
-    timestamp_index = mc_networth_df.index.to_timestamp()
+    timestamp_index = pd.PeriodIndex(mc_networth_df.index, freq="M").to_timestamp()
     fig.add_trace(
         make_trace(
             "85th Percentile",

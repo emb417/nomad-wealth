@@ -1,5 +1,3 @@
-# external_transactions.py
-
 import logging
 import pandas as pd
 from abc import ABC, abstractmethod
@@ -40,11 +38,11 @@ class FixedTransaction(RuleTransaction):
         )
         self.description_inflation_modifiers = description_inflation_modifiers or {}
         self.simulation_start_year = (
-            simulation_start_year or self.df["Month"].dt.year.min()
+            simulation_start_year or pd.DatetimeIndex(self.df["Month"]).year.min()
         )
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
-        hits = self.df[self.df["Month"].dt.to_period("M") == tx_month]
+        hits = self.df[pd.PeriodIndex(self.df["Month"], freq="M") == tx_month]
         for _, row in hits.iterrows():
             bucket_name = str(row.get("Bucket", "Cash")).strip()
             if bucket_name not in buckets:
@@ -128,7 +126,7 @@ class RecurringTransaction(RuleTransaction):
         )
         self.description_inflation_modifiers = description_inflation_modifiers or {}
         self.simulation_start_year = (
-            simulation_start_year or self.df["Start Month"].dt.year.min()
+            simulation_start_year or pd.DatetimeIndex(self.df["Month"]).year.min()
         )
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
