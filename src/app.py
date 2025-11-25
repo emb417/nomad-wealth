@@ -269,7 +269,7 @@ def stage_init_components(
     # base inflation and modifiers
     inflation_defaults = inflation_rate.get("default", {"avg": 0.02, "std": 0.01})
     inflation_profiles = inflation_rate.get("profiles", {})
-    years = sorted(future_df["Month"].dt.year.unique())
+    years = sorted(future_df["Month"].apply(lambda p: p.year).unique())
     infl_gen = InflationGenerator(
         years, avg=inflation_defaults["avg"], std=inflation_defaults["std"], seed=trial
     )
@@ -525,7 +525,7 @@ def main():
                 forecast_df["Net Worth"] = (
                     forecast_df.iloc[:, 1:].sum(axis=1).apply(lambda x: int(round(x)))
                 )
-                forecast_df["Year"] = forecast_df["Month"].dt.year
+                forecast_df["Year"] = forecast_df["Month"].apply(lambda p: p.year)
 
                 # Aggregate trial data
                 monthly_nw_series = forecast_df.set_index("Month")["Net Worth"]
