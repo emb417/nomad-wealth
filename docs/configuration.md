@@ -1,6 +1,6 @@
 # ⚙️ Configuration Reference
 
-Nomad Wealth is **policy‑first**: all simulation behavior is driven by configuration files. These files represent your accounts (i.e., buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.
+Nomad Wealth is **policy‑first**: all simulation behavior is driven by configuration files. These files represent your accounts (buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules, state surcharges, and inflation shape your financial future.
 
 ---
 
@@ -10,7 +10,7 @@ Nomad Wealth is **policy‑first**: all simulation behavior is driven by configu
 
 Minimum inputs to run your own forecast:
 
-- **`profile.json`** → sets your birth month, income assumptions, and retirement horizon.
+- **`profile.json`** → sets your birth month, income actuals, and retirement horizon.
 - **`balance.csv`** → starting balances for each bucket.
 - **`recurring.csv`** → ongoing monthly expenses (insurance, food, utilities).
 - **`fixed.csv`** → one‑time events (tuition, travel).
@@ -39,7 +39,7 @@ Fine‑tune rules for deeper scenario analysis:
 
 ### Profiles
 
-Profiles set your retirement horizon and income assumptions, so the system can calculate eligibility, Medicare premiums, and sufficiency.
+Profiles define your retirement horizon, income actuals, and year‑to‑date context. They drive calculations for eligibility, Medicare premiums, and tax sufficiency.
 
 **Example (`profile.json`):**
 
@@ -49,8 +49,16 @@ Profiles set your retirement horizon and income assumptions, so the system can c
   "End Month": "2065-12",
   "MAGI": {
     "2023": 200000,
-    "2024": 204000,
-    "2025": 208000
+    "2024": 204000
+  },
+  "YTD Income": {
+    "salary": 173333,
+    "withdrawals": 0,
+    "gains": 0,
+    "ss_benefits": 0,
+    "fixed_income_interest": 200,
+    "unemployment": 0,
+    "tax_paid": 56000
   }
 }
 ```
@@ -61,17 +69,25 @@ Profiles set your retirement horizon and income assumptions, so the system can c
 
 - **Birth Month** → start of simulation, expressed as `YYYY-MM`.
 - **End Month** → end of simulation horizon, expressed as `YYYY-MM`.
-- **MAGI** → dictionary of Modified Adjusted Gross Income values by year. - Keys are years (`2023`, `2024`, `2025`). - Values are annual MAGI amounts. - Used for IRMAA premium calculations and tax logic.
+- **MAGI** → dictionary of Modified Adjusted Gross Income values by year.  
+  - Keys are years (`2023`, `2024`, …).  
+  - Values are annual MAGI amounts.  
+  - Used for IRMAA premium calculations and tax logic.  
+- **YTD Income** → snapshot of income and taxes already earned/paid in the current year.  
+  - Keys include `salary`, `withdrawals`, `gains`, `ss_benefits`, `fixed_income_interest`, `unemployment`, and `tax_paid`.  
+  - Values are cumulative amounts up to the current month.  
+  - Used to seed simulations with realistic year‑to‑date baselines, ensuring withholding and liability match real‑world outcomes.
 
 ---
 
 ### 🧾 Profiles Audit Notes
 
-- Birth Month is used to calculate retirement eligibility (e.g., age 59.5 for penalty‑free withdrawals).
-- End Month defines the final forecast period.
-- MAGI values feed into IRMAA thresholds and Medicare premium adjustments.
+- **Birth Month** → determines retirement eligibility (e.g., age 59.5 for penalty‑free withdrawals).
+- **End Month** → defines the final forecast period.
+- **MAGI** → feeds into IRMAA thresholds and Medicare premium adjustments.
+- **YTD Income** → ensures simulations start from actual year‑to‑date earnings and taxes, preventing cold‑start distortions.
 - All dates are parsed into `pandas.Period("M")` for monthly granularity.
-- Audit clarity: profiles must be updated annually to reflect current MAGI values.
+- **Audit clarity**: profiles should be updated annually to reflect current MAGI and YTD income values.
 
 ---
 

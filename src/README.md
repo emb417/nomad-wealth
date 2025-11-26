@@ -247,7 +247,7 @@ This ensures every deposit, withdrawal, transfer, and market gain/loss can be tr
 ### `taxes.py`
 
 Provides the **TaxCalculator** class, which models federal and payroll taxes, capital gains, Social Security taxability, IRMAA surcharges, Medicare premiums, and early withdrawal penalties.  
-This class inflates brackets and deductions by year using inflation modifiers, ensuring audit clarity and reproducibility.
+This class inflates brackets and deductions by year using inflation modifiers, ensuring audit clarity and reproducibility. It is designed to integrate with `ForecastEngine` by consuming **actual year‑to‑date baselines** and monthly increments, so simulated withholding and liability align with real‑world outcomes.
 
 ---
 
@@ -262,14 +262,18 @@ This class inflates brackets and deductions by year using inflation modifiers, e
     - Calculates taxable Social Security benefits based on provisional income.
     - Applies ordinary, payroll, and capital gains taxes to income streams.
     - Applies penalties for early withdrawals.
-    - Returns a detailed tax breakdown for a given year.
+    - Returns a detailed tax breakdown for a given year, including marginal and effective rates.
+    - Supports monthly marginal tax estimation by comparing prior vs. current cumulative income logs.
 
 ---
 
 #### Taxes Important Methods
 
 - **`calculate_tax(...)`**  
-  Computes AGI, ordinary income, taxable SS, ordinary tax, payroll tax, capital gains tax, penalty tax, total tax, and effective tax rate. Returns a dictionary with all components for audit clarity.
+  Computes AGI, ordinary income, taxable SS, ordinary tax, payroll tax, capital gains tax, penalty tax, total tax, and effective tax rate.
+
+  - Accepts both cumulative year‑to‑date values and baseline actuals from `profile.json`.
+  - Returns a dictionary with all components for audit clarity.
 
 - **`_inflate_deductions(deduction)`** → inflates standard deduction by year.
 - **`_inflate_brackets_by_year(brackets_by_label)`** → inflates ordinary and payroll brackets.
@@ -277,24 +281,25 @@ This class inflates brackets and deductions by year using inflation modifiers, e
 - **`_inflate_social_security_brackets(base_brackets)`** → inflates SS taxability thresholds.
 - **`_inflate_irmaa_brackets(base_brackets)`** → inflates IRMAA thresholds and surcharges.
 - **`_inflate_base_premiums(base_premiums)`** → inflates Medicare Part B/D base premiums.
-- **`_taxable_social_security(year, ss_benefits, agi)`** → calculates taxable SS benefits.
-- **`_calculate_ordinary_tax(bracket_list, income)`** → applies bracketed tax rates to income.
+- **`_taxable_social_security(year, ss_benefits, agi)`** → calculates taxable SS benefits based on provisional income rules.
+- **`_calculate_ordinary_tax(bracket_list, income)`** → applies bracketed tax rates to ordinary income.
 - **`_calculate_capital_gains_tax(ordinary_income, gains, brackets)`**
   - Applies capital gains tax using bracketed thresholds.
   - Considers ordinary income floor when determining taxable gains.
-  - Iterates through capital gains brackets, applying rates to chunks of remaining gains.
+  - Iterates through capital gains brackets, applying rates progressively.
   - Returns total capital gains tax owed.
 
 ---
 
 #### Taxes Audit Notes
 
-- Capital gains tax is applied progressively, with ordinary income acting as a floor for bracket eligibility.
-- Ensures compliance with IRS rules for long‑term capital gains taxation.
-- Social Security taxability is capped at maximum taxable benefit.
-- IRMAA surcharges and Medicare premiums are modeled explicitly for compliance.
-- Penalty logic applies a fixed rate to early withdrawal basis.
-- All outputs are structured for audit reproducibility and can be validated against IRS tables.
+- **Capital gains tax** is applied progressively, with ordinary income acting as a floor for bracket eligibility.
+- **Social Security taxability** is capped at maximum taxable benefit, consistent with IRS rules.
+- **IRMAA surcharges and Medicare premiums** are modeled explicitly, inflated annually, and doubled for MFJ.
+- **Penalty logic** applies a fixed rate to early withdrawal basis.
+- **Monthly marginal tax estimation** now derives directly from cumulative logs, eliminating reliance on cached snapshots (`_last_ylog_by_year`).
+- All outputs are structured for **audit reproducibility** and can be validated against IRS tables and SSA premium schedules.
+- Integration with `ForecastEngine` ensures that withholding and reconciliation are based on **actual year‑to‑date baselines**, preventing cold‑start distortions.
 
 ---
 
@@ -616,7 +621,7 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
     - `inflation` → inflation modifiers by year.
     - `tax_calc` → `TaxCalculator` instance.
     - `dob` → date of birth for age calculations.
-    - `magi` → dictionary of MAGI values by year.
+    - `magi` → dictionary of **actual MAGI values** by year.
     - `retirement_period` → cutoff period for retirement.
     - `sepp_policies` → SEPP configuration (enabled, source, target, start/end months, interest rate).
     - `roth_policies` → Roth conversion configuration.
@@ -644,6 +649,8 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
 - **`_initialize_results()`**
 
   - Resets records, tax logs, and monthly return records at the start of a run.
+  - Seeds YTD baseline from `profile.json` actuals (salary, withdrawals, gains, SS benefits, unemployment, fixed income interest, tax paid).
+  - No longer initializes `_last_ylog_by_year` — snapshots are derived directly from current vs. prior month logs.
 
 - **`_get_age_in_years(period)`**
 
@@ -739,16 +746,17 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
     - Realized gains, taxable gains.
     - Tax‑free withdrawals, penalty tax.
 
-- **`_update_tax_estimate_if_needed(forecast_date, buckets)`**
+- **`_update_tax_estimate_if_needed(forecast_date)`**
 
   - Computes year‑to‑date tax estimate using `TaxCalculator`.
-  - Compares estimate to taxes already paid (Tax Collection bucket).
-  - Updates `monthly_tax_drip` to spread remaining liability across months.
+  - Compares current cumulative log against prior month’s log (no cached snapshots).
+  - Incorporates YTD baseline actuals from `profile.json`.
+  - Updates `monthly_tax_drip` to reflect marginal liability for the current month.
 
 - **`_withhold_monthly_taxes(tx_month, buckets)`**
 
   - Transfers monthly tax drip from Cash to Tax Collection bucket.
-  - Ensures ongoing withholding aligns with estimated
+  - Ensures ongoing withholding aligns with estimated liability.
 
 - **`_estimate_roth_headroom(...)`**
 
@@ -786,7 +794,8 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
 - All results are **auditable via structured records**: monthly snapshots, tax logs, and return records.
 - Tax inputs (salary, unemployment, Social Security, withdrawals, gains, penalties, etc.) are consistently aggregated through structured getters.
 - Yearly tax logs ensure reproducibility of IRS‑aligned categories (ordinary income, capital gains, Social Security, Roth conversions, penalties).
-- Tax estimation and withholding logic provide **ongoing audit clarity**, spreading liabilities across months and reconciling at year‑end.
+- **Tax estimation now uses actual YTD baselines** from `profile.json`, eliminating cold‑start distortions.
+- **No cached snapshots**: marginal tax is calculated by comparing current vs. prior month logs directly.
 - SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied in compliance with IRS and SSA rules.
 - Roth conversion logic enforces **policy‑driven thresholds** (age cutoffs, source balances, max tax rates) and calculates headroom before applying conversions.
 - Year‑end reconciliation finalizes Roth conversions, computes tax liabilities, and records withdrawal rates and portfolio values.

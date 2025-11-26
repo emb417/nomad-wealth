@@ -402,6 +402,7 @@ def run_one_trial(
         sepp_policies=json_data["policies"]["SEPP"],
         roth_policies=json_data["policies"]["Roth Conversions"],
         marketplace_premiums=dict(json_data["marketplace_premiums"]),
+        ytd_income=json_data["profile"]["YTD Income"],
     )
     forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
 

@@ -7,7 +7,7 @@ Each file defines a specific aspect of the forecast, from personal parameters to
 
 ## 📌 Required
 
-- **`profile.json`** → Defines personal simulation parameters (birth month, end month, MAGI values).  
+- **`profile.json`** → Defines personal simulation parameters (birth month, end month, income actuals).  
   This file **must exist** for simulations to run.
 
 - **`balance.csv`** → Historical monthly balances for all buckets.  

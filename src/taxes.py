@@ -27,7 +27,7 @@ class TaxCalculator:
         self.ordinary_brackets_by_year = self._inflate_brackets_by_year(
             base_brackets.get("Ordinary", {})
         )
-        self.payroll_brackets_by_year = self._inflate_brackets_by_year(
+        self.payroll_brackets_by_year = self._inflate_payroll_brackets(
             base_brackets.get("Payroll Specific", {})
         )
         self.capital_gains_tax_brackets_by_year = self._inflate_cap_gains_brackets(
@@ -98,6 +98,26 @@ class TaxCalculator:
             for year, inflation in self.base_inflation.items():
                 modifier = inflation.get("modifier", 1.0)
                 inflated_key = f"{label} {year}"
+                inflated[inflated_key] = [
+                    {**b, "min_salary": int(round(b["min_salary"] * modifier))}
+                    for b in bracket_list
+                ]
+        return inflated
+
+    def _inflate_payroll_brackets(self, brackets_by_label):
+        inflated = {}
+        for label, bracket_list in brackets_by_label.items():
+            try:
+                base_year = int(label.split()[-1])
+                base_label = " ".join(label.split()[:-1])
+            except (ValueError, IndexError):
+                logging.warning(f"Could not extract year from bracket label: {label}")
+                continue
+
+            for year, inflation in self.base_inflation.items():
+                modifier = inflation.get("modifier", 1.0)
+                inflated_key = f"{base_label} {year}"
+                # For payroll, just scale thresholds — don’t treat them as progressive tiers
                 inflated[inflated_key] = [
                     {**b, "min_salary": int(round(b["min_salary"] * modifier))}
                     for b in bracket_list
@@ -205,13 +225,23 @@ class TaxCalculator:
         )
 
         # Apply Payroll Specific brackets to salary
-        payroll_specific_tax = sum(
-            self._calculate_ordinary_tax(brackets, salary)
-            for label, brackets in self.payroll_brackets_by_year.items()
-            if label.endswith(str(year))
-        )
+        payroll_specific_tax = 0
+        ss_brackets = self.payroll_brackets_by_year.get(f"Social Security {year}", [])
+        if ss_brackets:
+            wage_base = max(b["min_salary"] for b in ss_brackets if b["tax_rate"] == 0)
+            payroll_specific_tax += min(salary, wage_base) * ss_brackets[0]["tax_rate"]
 
-        # Apply Ordinary brackets to ordinary_income
+        medicare_brackets = self.payroll_brackets_by_year.get(f"Medicare {year}", [])
+        if medicare_brackets:
+            base_rate = medicare_brackets[0]["tax_rate"]  # 1.45%
+            surtax_rate = medicare_brackets[1]["tax_rate"]  # 2.35%
+            surtax_threshold = medicare_brackets[1]["min_salary"]  # 200,000
+            payroll_specific_tax += salary * base_rate
+            if salary > surtax_threshold:
+                payroll_specific_tax += (salary - surtax_threshold) * (
+                    surtax_rate - base_rate
+                )
+
         ordinary_tax = sum(
             self._calculate_ordinary_tax(brackets, ordinary_income)
             for label, brackets in self.ordinary_brackets_by_year.items()
