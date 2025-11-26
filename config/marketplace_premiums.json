@@ -22,5 +22,6 @@
       { "max_ratio": 4.0, "pct": 0.095 },
       { "max_ratio": 9999, "pct": 0.0 }
     ]
-  }
+  },
+  "magi_factor": 0.7
 }

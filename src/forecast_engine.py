@@ -31,7 +31,7 @@ class ForecastEngine:
         retirement_period: str,
         sepp_policies: Optional[Dict[str, Any]],
         roth_policies: Dict[str, Dict[str, Union[int, float, bool]]],
-        marketplace_premiums: Dict[str, Dict[str, Any]],
+        marketplace_premiums: Dict[str, Any],
         forecast_start_year: int | None = None,
     ):
         self.buckets = buckets
@@ -230,6 +230,7 @@ class ForecastEngine:
         if self.retirement_period > tx_month or age >= 65:
             return
 
+        # household_type drives both premium and FPL baseline
         household_type = (
             "family" if tx_month < pd.Period("2032-12", freq="M") else "couple"
         )
@@ -238,6 +239,7 @@ class ForecastEngine:
         benchmark_premium = self._inflated_premium(bracket["monthly_premium"], tx_month)
         fpl = bracket["fpl"]
         contrib_bands = bracket["contrib_bands"]
+        magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
         year = tx_month.start_time.year
         if not hasattr(self, "_marketplace_premiums_by_year"):
@@ -254,13 +256,16 @@ class ForecastEngine:
             annual_spend_est = spend_ytd * (12.0 / max(1, tx_month.month))
 
             # --- Age-based MAGI assumption ---
-            agi_est = annual_spend_est * 0.50 if age < 59.5 else annual_spend_est
+            if age < 59.5:
+                agi_est = annual_spend_est * magi_factor
+            else:
+                agi_est = annual_spend_est
 
             fpl_ratio = agi_est / fpl if fpl else 0.0
 
             # --- Find contribution percentage from bands ---
             contrib_pct = 0.0
-            for band in contrib_bands:
+            for band in sorted(contrib_bands, key=lambda b: b["max_ratio"]):
                 if fpl_ratio <= band["max_ratio"]:
                     contrib_pct = band["pct"]
                     break
@@ -268,25 +273,31 @@ class ForecastEngine:
             # --- Apply contribution logic ---
             if contrib_pct == -1.0:
                 monthly_premium = 0
+                premium_label = "Medicare Premiums"
             elif contrib_pct == 0.0:
                 monthly_premium = benchmark_premium
+                premium_label = "Marketplace Premiums"
             else:
                 capped_monthly = (agi_est * contrib_pct) / 12.0
                 monthly_premium = int(min(benchmark_premium, capped_monthly))
+                premium_label = "Marketplace Premiums"
 
-            self._marketplace_premiums_by_year[year] = monthly_premium
+            self._marketplace_premiums_by_year[year] = {
+                "premium": monthly_premium,
+                "label": premium_label,
+            }
 
             logging.debug(
                 f"[Marketplace] Annual premium set for {year}: ${monthly_premium:.0f} "
                 f"(household {household_type}, age {age}, spend ${annual_spend_est:.0f}, "
-                f"AGI est ${agi_est:.0f}, FPL {fpl}, ratio {fpl_ratio:.2f}, contrib {contrib_pct})"
+                f"AGI est ${agi_est:.0f}, FPL {fpl}, ratio {fpl_ratio:.2f}, contrib {contrib_pct}, "
+                f"label {premium_label})"
             )
 
-        monthly_premium = self._marketplace_premiums_by_year[year]
-        if monthly_premium > 0:
-            self.buckets["Cash"].withdraw(
-                monthly_premium, "Marketplace Premium", tx_month
-            )
+        record = self._marketplace_premiums_by_year[year]
+        monthly_premium = record["premium"]
+        premium_label = record["label"]
+        self.buckets["Cash"].withdraw(monthly_premium, premium_label, tx_month)
 
     def _apply_irmaa_premiums(self, tx_month: pd.Period) -> None:
         age = self._get_age_in_years(tx_month)
