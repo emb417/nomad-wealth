@@ -1,8 +1,26 @@
 {
-  "silver_family": {
-    "monthly_premium": 1750
+  "family": {
+    "monthly_premium": 1764,
+    "fpl": 25520,
+    "contrib_bands": [
+      { "max_ratio": 1.38, "pct": -1.0 },
+      { "max_ratio": 2.0, "pct": -1.0 },
+      { "max_ratio": 2.5, "pct": 0.06 },
+      { "max_ratio": 3.0, "pct": 0.08 },
+      { "max_ratio": 4.0, "pct": 0.095 },
+      { "max_ratio": 9999, "pct": 0.0 }
+    ]
   },
-  "silver_couple": {
-    "monthly_premium": 1250
+  "couple": {
+    "monthly_premium": 1500,
+    "fpl": 17240,
+    "contrib_bands": [
+      { "max_ratio": 1.38, "pct": -1.0 },
+      { "max_ratio": 2.0, "pct": -1.0 },
+      { "max_ratio": 2.5, "pct": 0.06 },
+      { "max_ratio": 3.0, "pct": 0.08 },
+      { "max_ratio": 4.0, "pct": 0.095 },
+      { "max_ratio": 9999, "pct": 0.0 }
+    ]
   }
 }

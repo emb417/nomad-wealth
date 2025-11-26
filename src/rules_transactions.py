@@ -14,6 +14,11 @@ class RuleTransaction(ABC):
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
         pass
 
+    @abstractmethod
+    def get_dataframe(self) -> pd.DataFrame:
+        """Return the underlying transaction DataFrame."""
+        raise NotImplementedError
+
 
 class FixedTransaction(RuleTransaction):
     def __init__(
@@ -97,6 +102,9 @@ class FixedTransaction(RuleTransaction):
                         f"[Fallback] {tx_month} — ${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
 
+    def get_dataframe(self) -> pd.DataFrame:
+        return self.df
+
 
 class RecurringTransaction(RuleTransaction):
     def __init__(
@@ -125,8 +133,8 @@ class RecurringTransaction(RuleTransaction):
             )
         )
         self.description_inflation_modifiers = description_inflation_modifiers or {}
-        self.simulation_start_year = (
-            simulation_start_year or pd.DatetimeIndex(self.df["Month"]).year.min()
+        self.simulation_start_year = simulation_start_year or int(
+            self.df["Start Month"].iloc[0].year
         )
 
     def apply(self, buckets: Dict[str, Bucket], tx_month: pd.Period) -> None:
@@ -187,3 +195,6 @@ class RecurringTransaction(RuleTransaction):
                     logging.debug(
                         f"[Fallback] {tx_month} — ${shortfall:,} pulled from Cash for '{bucket_name}'"
                     )
+
+    def get_dataframe(self) -> pd.DataFrame:
+        return self.df

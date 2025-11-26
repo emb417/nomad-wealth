@@ -401,7 +401,7 @@ def run_one_trial(
         retirement_period=json_data["policies"]["Salary"]["Retirement Month"],
         sepp_policies=json_data["policies"]["SEPP"],
         roth_policies=json_data["policies"]["Roth Conversions"],
-        marketplace_premiums=json_data["marketplace_premiums"],
+        marketplace_premiums=dict(json_data["marketplace_premiums"]),
     )
     forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
 

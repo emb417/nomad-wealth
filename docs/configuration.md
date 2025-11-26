@@ -577,10 +577,10 @@ Example (`marketplace_premiums.json`):
 
 ```json
 {
-  "silver_family": {
+  "family": {
     "monthly_premium": 1750
   },
-  "silver_couple": {
+  "couple": {
     "monthly_premium": 1250
   }
 }
@@ -592,10 +592,10 @@ Example (`marketplace_premiums.json`):
 
 Marketplace premiums represent your monthly health insurance costs. These values ensure your forecasts account for real, recurring expenses:
 
-- **Plan Key** → the name of the plan type (e.g., `silver_family`, `silver_couple`).
+- **Plan Key** → the name of the plan type (e.g., `family`, `couple`).
 - **monthly_premium** → the monthly cost of the plan in dollars.
     - Treated as a recurring expense in your forecast.
-    - Can be extended to include other tiers (e.g., `silver_individual`, `gold_family`).
+    - Can be extended to include other tiers (e.g., `individual`, `family`).
 
 ---
 

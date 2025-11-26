@@ -31,7 +31,8 @@ class ForecastEngine:
         retirement_period: str,
         sepp_policies: Optional[Dict[str, Any]],
         roth_policies: Dict[str, Dict[str, Union[int, float, bool]]],
-        marketplace_premiums: Dict[str, Dict[str, float]],
+        marketplace_premiums: Dict[str, Dict[str, Any]],
+        forecast_start_year: int | None = None,
     ):
         self.buckets = buckets
         self.rule_transactions = rule_transactions
@@ -50,6 +51,7 @@ class ForecastEngine:
         self.base_premiums_by_year = tax_calc.base_premiums_by_year
 
         self.marketplace_premiums = marketplace_premiums
+        self.forecast_start_year: int = forecast_start_year or pd.Timestamp.now().year
 
         self.annual_tax_estimate = 0
         self.monthly_tax_drip = 0
@@ -61,15 +63,19 @@ class ForecastEngine:
         self, ledger_df: pd.DataFrame
     ) -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame]:
         self._initialize_results()
+        if not ledger_df.empty:
+            first_month = pd.Period(ledger_df.iloc[0]["Month"], freq="M")
+            self.forecast_start_year = first_month.start_time.year
 
         for _, row in ledger_df.iterrows():
             forecast_month = row["Month"]
 
             self._apply_sepp_withdrawal(forecast_month)
-            self._apply_marketplace_premiums(forecast_month)
-            self._apply_irmaa_premiums(forecast_month)
             self._apply_rule_transactions(self.buckets, forecast_month)
             self._apply_policy_transactions(self.buckets, forecast_month)
+
+            self._apply_marketplace_premiums(forecast_month)
+            self._apply_irmaa_premiums(forecast_month)
 
             gain_txns, monthly_returns = self.market_gains.apply(
                 self.buckets, forecast_month
@@ -125,6 +131,25 @@ class ForecastEngine:
             return 0
         latest_record = max(candidates, key=lambda r: r["Month"])
         return latest_record.get(bucket_name, 0)
+
+    def _get_spend_basis(self, tx_month: pd.Period) -> float:
+        """
+        Sum all expense-type withdrawals from Cash for the given month.
+        Uses FlowTracker records instead of re-applying transactions.
+        """
+        df = self.buckets["Cash"].flow_tracker.to_dataframe()
+        if df.empty:
+            return 0.0
+
+        # Filter for this month and withdrawals
+        month_records = df[(df["date"] == tx_month) & (df["type"] == "withdraw")]
+
+        # Optional: filter out non-expense categories if needed
+        expense_records = month_records[
+            ~month_records["target"].isin(["Investment", "Transfer"])
+        ]
+
+        return float(expense_records["amount"].sum())
 
     def _calculate_sepp_amortized_annual_payment(
         self, principal: int, interest_rate: float, life_expectancy: float
@@ -193,28 +218,75 @@ class ForecastEngine:
         }
         return next((v for a, v in sorted(table.items()) if age <= a), 33.1)
 
+    def _inflated_premium(self, base_premium: float, tx_month: pd.Period) -> float:
+        year = tx_month.start_time.year
+        year_infl = self.inflation.get(year, {})
+        health_rate = year_infl.get("Health", year_infl.get("default", 0.02))
+        years_elapsed = max(0, year - self.forecast_start_year)
+        return base_premium * ((1 + health_rate) ** years_elapsed)
+
     def _apply_marketplace_premiums(self, tx_month: pd.Period) -> None:
         age = self._get_age_in_years(tx_month)
         if self.retirement_period > tx_month or age >= 65:
             return
 
         household_type = (
-            "silver_family"
-            if tx_month < pd.Period("2032-12", freq="M")
-            else "silver_couple"
+            "family" if tx_month < pd.Period("2032-12", freq="M") else "couple"
         )
-        benchmark_premium = self.marketplace_premiums[household_type]["monthly_premium"]
+        bracket = self.marketplace_premiums[household_type]
 
-        record = self._get_minus_2_tax_record(tx_month)
-        prior_magi = record["AGI"] + record["Tax-Exempt Interest"]
-        capped_monthly = (prior_magi * 0.085) / 12
-        monthly_premium = int(min(benchmark_premium, capped_monthly))
+        benchmark_premium = self._inflated_premium(bracket["monthly_premium"], tx_month)
+        fpl = bracket["fpl"]
+        contrib_bands = bracket["contrib_bands"]
 
-        self.buckets["Cash"].withdraw(monthly_premium, "Marketplace Premium", tx_month)
-        logging.debug(
-            f"[Marketplace] Deducted ${monthly_premium:.0f} in {tx_month} "
-            f"for {household_type} (age {age}, MAGI ${prior_magi:.0f}, cap ${capped_monthly:.0f})"
-        )
+        year = tx_month.start_time.year
+        if not hasattr(self, "_marketplace_premiums_by_year"):
+            self._marketplace_premiums_by_year = {}
+
+        if year not in self._marketplace_premiums_by_year:
+            # --- Estimate annual spend basis ---
+            spend_ytd = sum(
+                self._get_spend_basis(m)
+                for m in pd.period_range(
+                    start=pd.Period(f"{year}-01", freq="M"), end=tx_month, freq="M"
+                )
+            )
+            annual_spend_est = spend_ytd * (12.0 / max(1, tx_month.month))
+
+            # --- Age-based MAGI assumption ---
+            agi_est = annual_spend_est * 0.50 if age < 59.5 else annual_spend_est
+
+            fpl_ratio = agi_est / fpl if fpl else 0.0
+
+            # --- Find contribution percentage from bands ---
+            contrib_pct = 0.0
+            for band in contrib_bands:
+                if fpl_ratio <= band["max_ratio"]:
+                    contrib_pct = band["pct"]
+                    break
+
+            # --- Apply contribution logic ---
+            if contrib_pct == -1.0:
+                monthly_premium = 0
+            elif contrib_pct == 0.0:
+                monthly_premium = benchmark_premium
+            else:
+                capped_monthly = (agi_est * contrib_pct) / 12.0
+                monthly_premium = int(min(benchmark_premium, capped_monthly))
+
+            self._marketplace_premiums_by_year[year] = monthly_premium
+
+            logging.debug(
+                f"[Marketplace] Annual premium set for {year}: ${monthly_premium:.0f} "
+                f"(household {household_type}, age {age}, spend ${annual_spend_est:.0f}, "
+                f"AGI est ${agi_est:.0f}, FPL {fpl}, ratio {fpl_ratio:.2f}, contrib {contrib_pct})"
+            )
+
+        monthly_premium = self._marketplace_premiums_by_year[year]
+        if monthly_premium > 0:
+            self.buckets["Cash"].withdraw(
+                monthly_premium, "Marketplace Premium", tx_month
+            )
 
     def _apply_irmaa_premiums(self, tx_month: pd.Period) -> None:
         age = self._get_age_in_years(tx_month)
