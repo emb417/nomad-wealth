@@ -57,10 +57,13 @@ Nomad Wealth enforces IRS rules so your forecasts reflect reality:
 - Ordinary income brackets inflated annually.
 - Capital gains layered above ordinary income.
 - Social Security capped at 85% of provisional income.
+- SEPP withdrawals applied using IRS amortization and uniform life expectancy tables
+- Inflation modeled stochastically, anchored to a base year.
+- Marketplace premiums based on projected annual AGI with dependent age and OHP coverage rules
 - Penalty taxes applied only when rules require it.
 - AGI includes salary, withdrawals, conversions, gains, and Social Security.
 - Taxable income calculated after deductions.
-- Inflation modeled stochastically, anchored to a base year.
+- Tax collection based on projected annual AGI with stable monthly withholding and year‑end reconciliation
 
 ---
 

@@ -255,7 +255,6 @@ class ForecastEngine:
         self,
         year: int,
         tx_month: pd.Period,
-        age_current_month: float,
         magi_factor: float,
     ) -> float:
         """
@@ -344,7 +343,7 @@ class ForecastEngine:
         magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
         # --- Estimate annual AGI ---
-        annual_agi = self._projected_annual_agi(year, tx_month, age, magi_factor)
+        annual_agi = self._projected_annual_agi(year, tx_month, magi_factor)
 
         couple_cfg = self.marketplace_premiums["couple"]
         family_cfg = self.marketplace_premiums["family"]
@@ -629,7 +628,7 @@ class ForecastEngine:
         magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
         # --- Project annual AGI using insurance-style method ---
-        annual_agi = self._projected_annual_agi(year, forecast_date, age, magi_factor)
+        annual_agi = self._projected_annual_agi(year, forecast_date, magi_factor)
 
         # --- Map projected AGI into tax categories ---
         # Before 59.5 → treat projected AGI as capital gains (brokerage withdrawals)

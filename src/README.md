@@ -621,6 +621,7 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
     - `inflation` → inflation modifiers by year.
     - `tax_calc` → `TaxCalculator` instance.
     - `dob` → date of birth for age calculations.
+    - `dep_dob` → dependent date of birth for ACA coverage logic.
     - `magi` → dictionary of **actual MAGI values** by year.
     - `retirement_period` → cutoff period for retirement.
     - `sepp_policies` → SEPP configuration (enabled, source, target, start/end months, interest rate).
@@ -677,8 +678,15 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
 - **`_apply_marketplace_premiums(tx_month)`**
 
   - Applies ACA marketplace premiums if before retirement and under age 65.
-  - Caps premiums at 8.5% of prior MAGI.
-  - Withdraws capped premium from Cash bucket.
+  - Uses `_projected_annual_agi` to estimate annual income consistently with insurance logic:
+    - First forecast year: YTD income + projected remaining spend.
+    - Future years: January spend × 12.
+    - MAGI factor applied only if age at Jan 1 < 59.5 (no mid‑year flips).
+  - Full‑family OHP coverage applies if annual AGI ≤ family OHP cap.
+  - Dependent coverage logic:
+    - If dependent <25, OHP eligibility and family brackets apply.
+    - Once dependent turns 25, only couple plan applies.
+  - Withdraws benchmark premium minus marketplace credit from Cash bucket.
 
 - **`_apply_irmaa_premiums(tx_month)`**
 
@@ -746,17 +754,19 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
     - Realized gains, taxable gains.
     - Tax‑free withdrawals, penalty tax.
 
-- **`_update_tax_estimate_if_needed(forecast_date)`**
+- **`_update_tax_projection(forecast_date)`** (renamed from `_update_tax_estimate_if_needed`)
 
-  - Computes year‑to‑date tax estimate using `TaxCalculator`.
-  - Compares current cumulative log against prior month’s log (no cached snapshots).
-  - Incorporates YTD baseline actuals from `profile.json`.
-  - Updates `monthly_tax_drip` to reflect marginal liability for the current month.
+  - Replaces marginal month‑to‑month tax estimation with annual projection:
+    - Calls `_projected_annual_agi` to estimate annual income.
+    - Maps projected AGI into tax categories (`gains` if <59.5, `withdrawals` if ≥59.5).
+    - Computes annual tax liability with `TaxCalculator`.
+    - Sets `monthly_tax_drip` as annual liability ÷ 12 (or ÷ remaining months in first forecast year).
+  - Ensures monthly withholding is stable and reconciled at year‑end.
 
 - **`_withhold_monthly_taxes(tx_month, buckets)`**
 
-  - Transfers monthly tax drip from Cash to Tax Collection bucket.
-  - Ensures ongoing withholding aligns with estimated liability.
+  - Transfers `monthly_tax_drip` from Cash to Tax Collection bucket.
+  - Provides smooth monthly withholding aligned with projected annual liability.
 
 - **`_estimate_roth_headroom(...)`**
 
@@ -794,8 +804,11 @@ It integrates buckets, rule transactions, policy transactions, refill/liquidatio
 - All results are **auditable via structured records**: monthly snapshots, tax logs, and return records.
 - Tax inputs (salary, unemployment, Social Security, withdrawals, gains, penalties, etc.) are consistently aggregated through structured getters.
 - Yearly tax logs ensure reproducibility of IRS‑aligned categories (ordinary income, capital gains, Social Security, Roth conversions, penalties).
-- **Tax estimation now uses actual YTD baselines** from `profile.json`, eliminating cold‑start distortions.
-- **No cached snapshots**: marginal tax is calculated by comparing current vs. prior month logs directly.
+- **Marketplace premiums now use projected annual AGI** (YTD + spend in first year, January spend × 12 in future years) with dependent age logic and full‑family OHP coverage.
+- **Tax collection now uses projected annual AGI** instead of volatile monthly deltas:
+  - Stable monthly drip based on annual liability.
+  - Age cutoff at Jan 1 determines whether AGI is treated as gains (<59.5) or withdrawals (≥59.5).
+  - Year‑end reconciliation handles large events (Roth conversions, property sales).
 - SEPP withdrawals, marketplace premiums, and IRMAA surcharges are applied in compliance with IRS and SSA rules.
 - Roth conversion logic enforces **policy‑driven thresholds** (age cutoffs, source balances, max tax rates) and calculates headroom before applying conversions.
 - Year‑end reconciliation finalizes Roth conversions, computes tax liabilities, and records withdrawal rates and portfolio values.

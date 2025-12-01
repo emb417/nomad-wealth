@@ -42,6 +42,10 @@ Nomad Wealth is organized into modular layers:
 
 ---
 
+Here’s a patched version of the **IRS Alignment** section that now includes the SEPP functionality alongside the other IRS‑aligned rules:
+
+---
+
 ## 🧾 IRS Alignment
 
 Nomad Wealth enforces IRS rules so your forecasts reflect reality:
@@ -51,8 +55,26 @@ Nomad Wealth enforces IRS rules so your forecasts reflect reality:
 - Social Security taxation capped at 85%.
 - Penalty taxes applied to early withdrawals.
 - Roth conversions modeled independently.
+- **Substantially Equal Periodic Payments (SEPP)**:  
+  - Implemented using IRS amortization method (`_calculate_sepp_amortized_annual_payment`).  
+  - Annual payment is based on principal balance, interest rate, and IRS uniform life expectancy tables.  
+  - Converted to a fixed monthly amount at SEPP start and cached for consistency.  
+  - `_apply_sepp_withdrawal` enforces SEPP rules:  
+    - Withdrawals only occur between configured start and end months.  
+    - Source and target buckets are defined in `sepp_policies`.  
+    - Monthly SEPP transactions are applied automatically and logged.  
+  - `_get_uniform_life_expectancy` provides IRS‑aligned divisors for ages 50–90.  
+  - Ensures penalty‑free withdrawals under IRS 72(t) rules.
 - IRMAA premiums applied based on prior MAGI, doubled for MFJ.
-- Marketplace premiums capped at 8.5% of prior MAGI.
+- **Marketplace premiums use projected annual AGI**:  
+  - First forecast year → YTD income + projected remaining spend.  
+  - Future years → January spend × 12.  
+  - Dependent coverage applies until age 25, then only couple plan is eligible.  
+  - Full‑family OHP coverage applies if annual AGI ≤ family cap.  
+- **Tax collection uses projected annual AGI**:  
+  - Annual liability is calculated once per year.  
+  - Monthly withholding (`monthly_tax_drip`) spreads liability evenly across months (or remaining months in the first forecast year).  
+  - Year‑end reconciliation handles large events (Roth conversions, property sales).  
 
 ---
 
