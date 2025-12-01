@@ -674,7 +674,7 @@
 <li>Social Security taxation capped at 85%.</li>
 <li>Penalty taxes applied to early withdrawals.</li>
 <li>Roth conversions modeled independently.</li>
-<li><strong>Substantially Equal Periodic Payments (SEPP)</strong>:  </li>
+<li><strong>Substantially Equal Periodic Payments (SEPP)</strong>:  <ul>
 <li>Implemented using IRS amortization method (<code>_calculate_sepp_amortized_annual_payment</code>).  </li>
 <li>Annual payment is based on principal balance, interest rate, and IRS uniform life expectancy tables.  </li>
 <li>Converted to a fixed monthly amount at SEPP start and cached for consistency.  </li>
@@ -686,16 +686,22 @@
 </li>
 <li><code>_get_uniform_life_expectancy</code> provides IRS‑aligned divisors for ages 50–90.  </li>
 <li>Ensures penalty‑free withdrawals under IRS 72(t) rules.</li>
+</ul>
+</li>
 <li>IRMAA premiums applied based on prior MAGI, doubled for MFJ.</li>
-<li><strong>Marketplace premiums use projected annual AGI</strong>:  </li>
+<li><strong>Marketplace premiums use projected annual AGI</strong>:  <ul>
 <li>First forecast year → YTD income + projected remaining spend.  </li>
 <li>Future years → January spend × 12.  </li>
 <li>Dependent coverage applies until age 25, then only couple plan is eligible.  </li>
 <li>Full‑family OHP coverage applies if annual AGI ≤ family cap.  </li>
-<li><strong>Tax collection uses projected annual AGI</strong>:  </li>
+</ul>
+</li>
+<li><strong>Tax collection uses projected annual AGI</strong>:  <ul>
 <li>Annual liability is calculated once per year.  </li>
 <li>Monthly withholding (<code>monthly_tax_drip</code>) spreads liability evenly across months (or remaining months in the first forecast year).  </li>
 <li>Year‑end reconciliation handles large events (Roth conversions, property sales).  </li>
+</ul>
+</li>
 </ul>
 <hr />
 <h2 id="outputs">📊 Outputs</h2>

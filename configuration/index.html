@@ -1386,19 +1386,25 @@
 <h3 id="profiles-field-definitions">🔑 Profiles Field Definitions</h3>
 <ul>
 <li><strong>Birth Month</strong> → start of simulation, expressed as <code>YYYY-MM</code>.  </li>
-<li><strong>Dependent Birth Month</strong> → date of birth for dependent coverage logic.  </li>
+<li><strong>Dependent Birth Month</strong> → date of birth for dependent coverage logic.  <ul>
 <li>Used to determine ACA eligibility.  </li>
 <li>Once dependent turns 25, only couple plan applies.  </li>
+</ul>
+</li>
 <li><strong>End Month</strong> → end of simulation horizon, expressed as <code>YYYY-MM</code>.  </li>
-<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.  </li>
+<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.  <ul>
 <li>Keys are years (<code>2023</code>, <code>2024</code>, …).  </li>
 <li>Values are annual MAGI amounts.  </li>
 <li>Used for IRMAA premium calculations, ACA marketplace brackets, and tax logic.  </li>
-<li><strong>YTD Income</strong> → snapshot of income and taxes already earned/paid in the current year.  </li>
+</ul>
+</li>
+<li><strong>YTD Income</strong> → snapshot of income and taxes already earned/paid in the current year.  <ul>
 <li>Keys include <code>salary</code>, <code>withdrawals</code>, <code>gains</code>, <code>ss_benefits</code>, <code>fixed_income_interest</code>, <code>unemployment</code>, and <code>tax_paid</code>.  </li>
 <li>Values are cumulative amounts up to the current month.  </li>
 <li>Used to seed simulations with realistic year‑to‑date baselines, ensuring withholding and liability match real‑world outcomes.  </li>
 <li>In the first forecast year, YTD income is combined with projected spend to estimate annual AGI for both insurance premiums and tax collection.</li>
+</ul>
+</li>
 </ul>
 <hr />
 <h3 id="profiles-audit-notes">🧾 Profiles Audit Notes</h3>
@@ -1407,9 +1413,11 @@
 <li><strong>Dependent Birth Month</strong> → ensures ACA coverage logic transitions correctly when dependent turns 25.  </li>
 <li><strong>End Month</strong> → defines the final forecast period.  </li>
 <li><strong>MAGI</strong> → feeds into IRMAA thresholds, Medicare premium adjustments, and ACA marketplace credits.  </li>
-<li><strong>YTD Income</strong> → ensures simulations start from actual year‑to‑date earnings and taxes, preventing cold‑start distortions.  </li>
+<li><strong>YTD Income</strong> → ensures simulations start from actual year‑to‑date earnings and taxes, preventing cold‑start distortions.  <ul>
 <li>First forecast year: YTD income + projected remaining spend used for annual AGI.  </li>
 <li>Future years: January spend × 12 sets annual AGI baseline.  </li>
+</ul>
+</li>
 <li>All dates are parsed into <code>pandas.Period("M")</code> for monthly granularity.  </li>
 <li><strong>Audit clarity</strong>: profiles should be updated annually to reflect current MAGI, dependent age, and YTD income values.  </li>
 </ul>
