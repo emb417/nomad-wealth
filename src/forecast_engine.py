@@ -33,6 +33,7 @@ class ForecastEngine:
         roth_policies: Dict[str, Dict[str, Union[int, float, bool]]],
         marketplace_premiums: Dict[str, Any],
         ytd_income: Dict[str, int],
+        dep_dob: str,
         forecast_start_year: int | None = None,
     ):
         self.buckets = buckets
@@ -52,6 +53,7 @@ class ForecastEngine:
         self.base_premiums_by_year = tax_calc.base_premiums_by_year
 
         self.marketplace_premiums = marketplace_premiums
+        self.dep_dob = pd.to_datetime(dep_dob).to_period("M")
         self.forecast_start_year: int = forecast_start_year or pd.Timestamp.now().year
 
         self.ytd_income = {k: int(v) for k, v in ytd_income.items()}
@@ -142,6 +144,11 @@ class ForecastEngine:
         Assumes self.dob is a pd.Period("M").
         """
         return (period - self.dob).n / 12
+
+    def _get_dependent_age(self, tx_month: pd.Period) -> int:
+        return (tx_month.start_time.year - self.dep_dob.start_time.year) - (
+            1 if tx_month.month < self.dep_dob.month else 0
+        )
 
     def _get_prior_year_end_balance(self, tx_month: pd.Period, bucket_name: str) -> int:
         prior_year = tx_month.year - 1
@@ -244,86 +251,163 @@ class ForecastEngine:
         years_elapsed = max(0, year - self.forecast_start_year)
         return base_premium * ((1 + health_rate) ** years_elapsed)
 
+    def _projected_annual_agi(
+        self,
+        year: int,
+        tx_month: pd.Period,
+        age_current_month: float,
+        magi_factor: float,
+    ) -> float:
+        """
+        Estimate annual AGI with year-locked application of magi_factor:
+        - If MAGI override exists, use it.
+        - For the first forecast year: AGI = YTD income already realized + projected remaining spend.
+        - For future years: AGI = January spend * 12.
+        - Apply magi_factor only if age on Jan 1 of the year is < 59.5 (no mid-year flips).
+        """
+        # 0) MAGI override
+        if year in getattr(self, "magi", {}):
+            return float(self.magi[year])
+
+        forecast_start = getattr(self, "forecast_start_year", year)
+
+        # Age lock at year start to avoid mid-year premium changes
+        jan_period = pd.Period(f"{year}-01", freq="M")
+        age_at_jan = self._get_age_in_years(jan_period)
+        apply_factor = age_at_jan < 59.5
+
+        if year == forecast_start:
+            # First simulation year: YTD income + remaining spend
+            ytd_income_total = (
+                float(sum(getattr(self, "ytd_income", {}).values()))
+                if getattr(self, "ytd_income", None)
+                else 0.0
+            )
+
+            spend_ytd = sum(
+                self._get_spend_basis(m)
+                for m in pd.period_range(
+                    start=pd.Period(f"{year}-01", freq="M"), end=tx_month, freq="M"
+                )
+            )
+            months_elapsed = max(1, tx_month.month)
+            avg_spend_per_month = spend_ytd / months_elapsed
+            annual_spend_target = avg_spend_per_month * 12.0
+            remaining_spend = max(0.0, annual_spend_target - spend_ytd)
+
+            spend_component = remaining_spend * (magi_factor if apply_factor else 1.0)
+            return ytd_income_total + spend_component
+
+        else:
+            # Future years: January spend sets the annual spend target
+            jan_spend = self._get_spend_basis(jan_period)
+            annual_spend_target = jan_spend * 12.0
+
+            spend_component = annual_spend_target * (
+                magi_factor if apply_factor else 1.0
+            )
+            return spend_component
+
+    def _lookup_marketplace_credit(
+        self, bands: list[dict], annual_agi: float, cap: float
+    ) -> float:
+        """
+        Interpolate monthly credit from marketplace_credit_bands.
+        Clamp to 0 if income > cap.
+        """
+        if annual_agi > cap:
+            return 0.0
+
+        points = sorted(bands, key=lambda b: b["income"])
+        if not points:
+            return 0.0
+
+        if annual_agi <= points[0]["income"]:
+            return points[0]["credit"]
+        if annual_agi >= points[-1]["income"]:
+            return points[-1]["credit"]
+
+        for i in range(len(points) - 1):
+            x0, y0 = points[i]["income"], points[i]["credit"]
+            x1, y1 = points[i + 1]["income"], points[i + 1]["credit"]
+            if x0 <= annual_agi <= x1:
+                t = (annual_agi - x0) / (x1 - x0)
+                return y0 + t * (y1 - y0)
+        return 0.0
+
     def _apply_marketplace_premiums(self, tx_month: pd.Period) -> None:
         age = self._get_age_in_years(tx_month)
         if self.retirement_period > tx_month or age >= 65:
             return
 
-        # household_type drives both premium and FPL baseline
-        household_type = (
-            "family" if tx_month < pd.Period("2032-12", freq="M") else "couple"
-        )
-        bracket = self.marketplace_premiums[household_type]
-
-        benchmark_premium = self._inflated_premium(bracket["monthly_premium"], tx_month)
-        fpl = bracket["fpl"]
-        contrib_bands = bracket["contrib_bands"]
+        year = tx_month.start_time.year
         magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
-        year = tx_month.start_time.year
-        if not hasattr(self, "_marketplace_premiums_by_year"):
-            self._marketplace_premiums_by_year = {}
+        # --- Estimate annual AGI ---
+        annual_agi = self._projected_annual_agi(year, tx_month, age, magi_factor)
 
-        if year not in self._marketplace_premiums_by_year:
-            # --- Estimate AGI baseline ---
-            if year == self.forecast_start_year and self.ytd_income:
-                # Use YTD income components for the first simulation year
-                agi_est = sum(self.ytd_income.values())
-                annual_spend_est = agi_est
-            elif year in self.magi:
-                # Use MAGI override if available
-                agi_est = self.magi[year]
-                annual_spend_est = agi_est
-            else:
-                # Fall back to spend basis extrapolation
-                spend_ytd = sum(
-                    self._get_spend_basis(m)
-                    for m in pd.period_range(
-                        start=pd.Period(f"{year}-01", freq="M"), end=tx_month, freq="M"
-                    )
-                )
-                annual_spend_est = spend_ytd * (12.0 / max(1, tx_month.month))
-                agi_est = (
-                    annual_spend_est * magi_factor if age < 59.5 else annual_spend_est
-                )
+        couple_cfg = self.marketplace_premiums["couple"]
+        family_cfg = self.marketplace_premiums["family"]
 
-            fpl_ratio = agi_est / fpl if fpl else 0.0
+        # --- Dependent age check ---
+        dep_age = self._get_dependent_age(tx_month)
+        dep_off_plan = (
+            dep_age >= 25
+        )  # once dependent turns 25, they move to own insurance
 
-            # --- Find contribution percentage from bands ---
-            contrib_pct = 0.0
-            for band in sorted(contrib_bands, key=lambda b: b["max_ratio"]):
-                if fpl_ratio <= band["max_ratio"]:
-                    contrib_pct = band["pct"]
-                    break
-
-            # --- Apply contribution logic ---
-            if contrib_pct == -1.0:
-                monthly_premium = 0
-                premium_label = "Medicare Premiums"
-            elif contrib_pct == 0.0:
-                monthly_premium = benchmark_premium
-                premium_label = "Marketplace Premiums"
-            else:
-                capped_monthly = (agi_est * contrib_pct) / 12.0
-                monthly_premium = int(min(benchmark_premium, capped_monthly))
-                premium_label = "Marketplace Premiums"
-
-            self._marketplace_premiums_by_year[year] = {
-                "premium": monthly_premium,
-                "label": premium_label,
-            }
-
+        # --- Free OHP for whole family ---
+        if not dep_off_plan and annual_agi <= family_cfg["ohp_salary_cap"]:
+            self.buckets["Cash"].withdraw(0, "OHP Coverage", tx_month)
             logging.debug(
-                f"[Marketplace] Annual premium set for {year}: ${monthly_premium:.0f} "
-                f"(household {household_type}, age {age}, spend ${annual_spend_est:.0f}, "
-                f"AGI est ${agi_est:.0f}, FPL {fpl}, ratio {fpl_ratio:.2f}, contrib {contrib_pct}, "
-                f"label {premium_label})"
+                f"[OHP] {year} AGI=${annual_agi:.0f} <= cap ${family_cfg['ohp_salary_cap']}, "
+                f"premium=$0 (full family covered by OHP)"
             )
+            return
 
-        record = self._marketplace_premiums_by_year[year]
-        monthly_premium = record["premium"]
-        premium_label = record["label"]
-        self.buckets["Cash"].withdraw(monthly_premium, premium_label, tx_month)
+        # --- Marketplace bracket selection ---
+        if dep_off_plan:
+            # Dependent is 25+ → only couple plan applies
+            bracket_name, bracket = "couple", couple_cfg
+            cap = couple_cfg["adults_marketplace_salary_cap"]
+        else:
+            # Dependent still under 25
+            if annual_agi <= couple_cfg["dependent_ohp_salary_cap"]:
+                if annual_agi <= couple_cfg["adults_marketplace_salary_cap"]:
+                    bracket_name, bracket = "couple", couple_cfg
+                    cap = couple_cfg["adults_marketplace_salary_cap"]
+                elif annual_agi <= family_cfg["marketplace_salary_cap"]:
+                    bracket_name, bracket = "family", family_cfg
+                    cap = family_cfg["marketplace_salary_cap"]
+                else:
+                    bracket_name, bracket = "family", family_cfg
+                    cap = family_cfg["marketplace_salary_cap"]
+            else:
+                if annual_agi <= family_cfg["marketplace_salary_cap"]:
+                    bracket_name, bracket = "family", family_cfg
+                    cap = family_cfg["marketplace_salary_cap"]
+                else:
+                    bracket_name, bracket = "family", family_cfg
+                    cap = family_cfg["marketplace_salary_cap"]
+
+        # --- Inflate benchmark silver premium ---
+        benchmark_monthly = self._inflated_premium(bracket["monthly_premium"], tx_month)
+
+        # --- Lookup marketplace credit ---
+        monthly_credit = self._lookup_marketplace_credit(
+            bracket["marketplace_credit_bands"], annual_agi, cap
+        )
+
+        # --- Net premium ---
+        monthly_premium_net = int(max(0.0, benchmark_monthly - monthly_credit))
+        self.buckets["Cash"].withdraw(
+            monthly_premium_net, "Marketplace Premiums", tx_month
+        )
+
+        logging.debug(
+            f"[Marketplace] {year} bracket={bracket_name} dep_age={dep_age} dep_off_plan={dep_off_plan} "
+            f"AGI=${annual_agi:.0f} credit=${monthly_credit:.0f} "
+            f"benchmark=${benchmark_monthly:.0f} net=${monthly_premium_net:.0f}"
+        )
 
     def _apply_irmaa_premiums(self, tx_month: pd.Period) -> None:
         age = self._get_age_in_years(tx_month)

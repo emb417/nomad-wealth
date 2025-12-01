@@ -52,8 +52,8 @@ logging.basicConfig(
 )
 
 # Simulation settings
-SIM_SIZE = 100
-SIM_EXAMPLE_SIZE = 1
+SIM_SIZE = 200
+SIM_EXAMPLE_SIZE = 2
 SHOW_HISTORICAL = False
 SHOW_MONTE_CARLO = True
 SHOW_EXAMPLES = True
@@ -403,6 +403,7 @@ def run_one_trial(
         roth_policies=json_data["policies"]["Roth Conversions"],
         marketplace_premiums=dict(json_data["marketplace_premiums"]),
         ytd_income=json_data["profile"]["YTD Income"],
+        dep_dob=json_data["profile"]["Dependent Birth Month"],
     )
     forecast_df, taxes_df, monthly_returns_df = engine.run(future_df)
 

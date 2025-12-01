@@ -1,27 +1,32 @@
 {
-  "family": {
-    "monthly_premium": 1764,
-    "fpl": 25520,
-    "contrib_bands": [
-      { "max_ratio": 1.38, "pct": -1.0 },
-      { "max_ratio": 2.0, "pct": -1.0 },
-      { "max_ratio": 2.5, "pct": 0.06 },
-      { "max_ratio": 3.0, "pct": 0.08 },
-      { "max_ratio": 4.0, "pct": 0.095 },
-      { "max_ratio": 9999, "pct": 0.0 }
-    ]
-  },
+  "magi_factor": 0.63,
   "couple": {
-    "monthly_premium": 1500,
-    "fpl": 17240,
-    "contrib_bands": [
-      { "max_ratio": 1.38, "pct": -1.0 },
-      { "max_ratio": 2.0, "pct": -1.0 },
-      { "max_ratio": 2.5, "pct": 0.06 },
-      { "max_ratio": 3.0, "pct": 0.08 },
-      { "max_ratio": 4.0, "pct": 0.095 },
-      { "max_ratio": 9999, "pct": 0.0 }
+    "dependent_ohp_salary_cap": 81000,
+    "adults_marketplace_salary_cap": 81000,
+    "monthly_premium": 1514,
+    "marketplace_credit_bands": [
+      { "income": 54000, "credit": 1089 },
+      { "income": 60000, "credit": 1014 },
+      { "income": 64000, "credit": 960 },
+      { "income": 68000, "credit": 904 },
+      { "income": 72000, "credit": 847 },
+      { "income": 76000, "credit": 788 },
+      { "income": 80000, "credit": 727 },
+      { "income": 81000, "credit": 718 }
     ]
   },
-  "magi_factor": 0.7
+  "family": {
+    "ohp_salary_cap": 53000,
+    "marketplace_salary_cap": 106000,
+    "monthly_premium": 1764,
+    "marketplace_credit_bands": [
+      { "income": 82000, "credit": 963 },
+      { "income": 86000, "credit": 930 },
+      { "income": 90000, "credit": 897 },
+      { "income": 94000, "credit": 863 },
+      { "income": 98000, "credit": 830 },
+      { "income": 102000, "credit": 797 },
+      { "income": 106000, "credit": 764 }
+    ]
+  }
 }
