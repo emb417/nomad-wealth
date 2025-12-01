@@ -664,6 +664,8 @@
 </li>
 </ol>
 <hr />
+<p>Here’s a patched version of the <strong>IRS Alignment</strong> section that now includes the SEPP functionality alongside the other IRS‑aligned rules:</p>
+<hr />
 <h2 id="irs-alignment">🧾 IRS Alignment</h2>
 <p>Nomad Wealth enforces IRS rules so your forecasts reflect reality:</p>
 <ul>
@@ -672,8 +674,28 @@
 <li>Social Security taxation capped at 85%.</li>
 <li>Penalty taxes applied to early withdrawals.</li>
 <li>Roth conversions modeled independently.</li>
+<li><strong>Substantially Equal Periodic Payments (SEPP)</strong>:  </li>
+<li>Implemented using IRS amortization method (<code>_calculate_sepp_amortized_annual_payment</code>).  </li>
+<li>Annual payment is based on principal balance, interest rate, and IRS uniform life expectancy tables.  </li>
+<li>Converted to a fixed monthly amount at SEPP start and cached for consistency.  </li>
+<li><code>_apply_sepp_withdrawal</code> enforces SEPP rules:  <ul>
+<li>Withdrawals only occur between configured start and end months.  </li>
+<li>Source and target buckets are defined in <code>sepp_policies</code>.  </li>
+<li>Monthly SEPP transactions are applied automatically and logged.  </li>
+</ul>
+</li>
+<li><code>_get_uniform_life_expectancy</code> provides IRS‑aligned divisors for ages 50–90.  </li>
+<li>Ensures penalty‑free withdrawals under IRS 72(t) rules.</li>
 <li>IRMAA premiums applied based on prior MAGI, doubled for MFJ.</li>
-<li>Marketplace premiums capped at 8.5% of prior MAGI.</li>
+<li><strong>Marketplace premiums use projected annual AGI</strong>:  </li>
+<li>First forecast year → YTD income + projected remaining spend.  </li>
+<li>Future years → January spend × 12.  </li>
+<li>Dependent coverage applies until age 25, then only couple plan is eligible.  </li>
+<li>Full‑family OHP coverage applies if annual AGI ≤ family cap.  </li>
+<li><strong>Tax collection uses projected annual AGI</strong>:  </li>
+<li>Annual liability is calculated once per year.  </li>
+<li>Monthly withholding (<code>monthly_tax_drip</code>) spreads liability evenly across months (or remaining months in the first forecast year).  </li>
+<li>Year‑end reconciliation handles large events (Roth conversions, property sales).  </li>
 </ul>
 <hr />
 <h2 id="outputs">📊 Outputs</h2>

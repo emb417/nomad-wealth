@@ -1331,13 +1331,13 @@
 
 
 <h1 id="configuration-reference">⚙️ Configuration Reference</h1>
-<p>Nomad Wealth is <strong>policy‑first</strong>: all simulation behavior is driven by configuration files. These files represent your accounts (i.e., buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules and inflation shape your financial future.</p>
+<p>Nomad Wealth is <strong>policy‑first</strong>: all simulation behavior is driven by configuration files. These files represent your accounts (buckets), income, expenses, and policies — the building blocks of your retirement plan. By adjusting them, you can personalize forecasts, explore scenarios, and see how IRS rules, state surcharges, and inflation shape your financial future.</p>
 <hr />
 <h2 id="getting-started-levels-of-personalization">🔑 Getting Started: Levels of Personalization</h2>
 <h3 id="basic">BASIC</h3>
 <p>Minimum inputs to run your own forecast:</p>
 <ul>
-<li><strong><code>profile.json</code></strong> → sets your birth month, income assumptions, and retirement horizon.</li>
+<li><strong><code>profile.json</code></strong> → sets your birth month, income actuals, and retirement horizon.</li>
 <li><strong><code>balance.csv</code></strong> → starting balances for each bucket.</li>
 <li><strong><code>recurring.csv</code></strong> → ongoing monthly expenses (insurance, food, utilities).</li>
 <li><strong><code>fixed.csv</code></strong> → one‑time events (tuition, travel).</li>
@@ -1361,33 +1361,57 @@
 <hr />
 <h2 id="json-configuration">📂 JSON Configuration</h2>
 <h3 id="profiles">Profiles</h3>
-<p>Profiles set your retirement horizon and income assumptions, so the system can calculate eligibility, Medicare premiums, and sufficiency.</p>
+<p>Profiles define your retirement horizon, dependent context, income actuals, and year‑to‑date baselines. They drive calculations for ACA marketplace eligibility, Medicare premiums, and tax sufficiency.</p>
 <p><strong>Example (<code>profile.json</code>):</strong></p>
 <pre><code class="language-json">{
   &quot;Birth Month&quot;: &quot;1975-04&quot;,
+  &quot;Dependent Birth Month&quot;: &quot;2009-07&quot;,
   &quot;End Month&quot;: &quot;2065-12&quot;,
   &quot;MAGI&quot;: {
     &quot;2023&quot;: 200000,
-    &quot;2024&quot;: 204000,
-    &quot;2025&quot;: 208000
+    &quot;2024&quot;: 204000
+  },
+  &quot;YTD Income&quot;: {
+    &quot;salary&quot;: 173333,
+    &quot;withdrawals&quot;: 0,
+    &quot;gains&quot;: 0,
+    &quot;ss_benefits&quot;: 0,
+    &quot;fixed_income_interest&quot;: 200,
+    &quot;unemployment&quot;: 0,
+    &quot;tax_paid&quot;: 56000
   }
 }
 </code></pre>
 <hr />
 <h3 id="profiles-field-definitions">🔑 Profiles Field Definitions</h3>
 <ul>
-<li><strong>Birth Month</strong> → start of simulation, expressed as <code>YYYY-MM</code>.</li>
-<li><strong>End Month</strong> → end of simulation horizon, expressed as <code>YYYY-MM</code>.</li>
-<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year. - Keys are years (<code>2023</code>, <code>2024</code>, <code>2025</code>). - Values are annual MAGI amounts. - Used for IRMAA premium calculations and tax logic.</li>
+<li><strong>Birth Month</strong> → start of simulation, expressed as <code>YYYY-MM</code>.  </li>
+<li><strong>Dependent Birth Month</strong> → date of birth for dependent coverage logic.  </li>
+<li>Used to determine ACA eligibility.  </li>
+<li>Once dependent turns 25, only couple plan applies.  </li>
+<li><strong>End Month</strong> → end of simulation horizon, expressed as <code>YYYY-MM</code>.  </li>
+<li><strong>MAGI</strong> → dictionary of Modified Adjusted Gross Income values by year.  </li>
+<li>Keys are years (<code>2023</code>, <code>2024</code>, …).  </li>
+<li>Values are annual MAGI amounts.  </li>
+<li>Used for IRMAA premium calculations, ACA marketplace brackets, and tax logic.  </li>
+<li><strong>YTD Income</strong> → snapshot of income and taxes already earned/paid in the current year.  </li>
+<li>Keys include <code>salary</code>, <code>withdrawals</code>, <code>gains</code>, <code>ss_benefits</code>, <code>fixed_income_interest</code>, <code>unemployment</code>, and <code>tax_paid</code>.  </li>
+<li>Values are cumulative amounts up to the current month.  </li>
+<li>Used to seed simulations with realistic year‑to‑date baselines, ensuring withholding and liability match real‑world outcomes.  </li>
+<li>In the first forecast year, YTD income is combined with projected spend to estimate annual AGI for both insurance premiums and tax collection.</li>
 </ul>
 <hr />
 <h3 id="profiles-audit-notes">🧾 Profiles Audit Notes</h3>
 <ul>
-<li>Birth Month is used to calculate retirement eligibility (e.g., age 59.5 for penalty‑free withdrawals).</li>
-<li>End Month defines the final forecast period.</li>
-<li>MAGI values feed into IRMAA thresholds and Medicare premium adjustments.</li>
-<li>All dates are parsed into <code>pandas.Period("M")</code> for monthly granularity.</li>
-<li>Audit clarity: profiles must be updated annually to reflect current MAGI values.</li>
+<li><strong>Birth Month</strong> → determines retirement eligibility (e.g., age 59.5 for penalty‑free withdrawals).  </li>
+<li><strong>Dependent Birth Month</strong> → ensures ACA coverage logic transitions correctly when dependent turns 25.  </li>
+<li><strong>End Month</strong> → defines the final forecast period.  </li>
+<li><strong>MAGI</strong> → feeds into IRMAA thresholds, Medicare premium adjustments, and ACA marketplace credits.  </li>
+<li><strong>YTD Income</strong> → ensures simulations start from actual year‑to‑date earnings and taxes, preventing cold‑start distortions.  </li>
+<li>First forecast year: YTD income + projected remaining spend used for annual AGI.  </li>
+<li>Future years: January spend × 12 sets annual AGI baseline.  </li>
+<li>All dates are parsed into <code>pandas.Period("M")</code> for monthly granularity.  </li>
+<li><strong>Audit clarity</strong>: profiles should be updated annually to reflect current MAGI, dependent age, and YTD income values.  </li>
 </ul>
 <hr />
 <h3 id="buckets">Buckets</h3>
@@ -1858,10 +1882,10 @@
 <p>Marketplace premiums model your monthly healthcare costs, so you can see how insurance affects your retirement outlook.</p>
 <p>Example (<code>marketplace_premiums.json</code>):</p>
 <pre><code class="language-json">{
-  &quot;silver_family&quot;: {
+  &quot;family&quot;: {
     &quot;monthly_premium&quot;: 1750
   },
-  &quot;silver_couple&quot;: {
+  &quot;couple&quot;: {
     &quot;monthly_premium&quot;: 1250
   }
 }
@@ -1870,10 +1894,10 @@
 <h3 id="marketplace-premiums-field-definitions">🔑 Marketplace Premiums Field Definitions</h3>
 <p>Marketplace premiums represent your monthly health insurance costs. These values ensure your forecasts account for real, recurring expenses:</p>
 <ul>
-<li><strong>Plan Key</strong> → the name of the plan type (e.g., <code>silver_family</code>, <code>silver_couple</code>).</li>
+<li><strong>Plan Key</strong> → the name of the plan type (e.g., <code>family</code>, <code>couple</code>).</li>
 <li><strong>monthly_premium</strong> → the monthly cost of the plan in dollars.<ul>
 <li>Treated as a recurring expense in your forecast.</li>
-<li>Can be extended to include other tiers (e.g., <code>silver_individual</code>, <code>gold_family</code>).</li>
+<li>Can be extended to include other tiers (e.g., <code>individual</code>, <code>family</code>).</li>
 </ul>
 </li>
 </ul>
