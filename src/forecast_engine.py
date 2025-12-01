@@ -540,7 +540,7 @@ class ForecastEngine:
             penalty,
         )
 
-        self._update_tax_estimate_if_needed(forecast_month)
+        self._update_tax_projection(forecast_month)
         self._withhold_monthly_taxes(forecast_month, buckets)
 
         if forecast_month.month == 12:
@@ -623,52 +623,56 @@ class ForecastEngine:
         ylog["Tax-Free Withdrawals"] += taxfree
         ylog["Fixed Income Withdrawals"] += fixed_income_withdrawals
 
-    def _update_tax_estimate_if_needed(self, forecast_date: pd.Period):
+    def _update_tax_projection(self, forecast_date: pd.Period):
         year = forecast_date.year
-        ylog = self.yearly_tax_log.get(year, {})
-        baseline = self.ytd_baseline if year == self.forecast_start_year else {}
+        age = self._get_age_in_years(forecast_date)
+        magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
-        curr_for_calc = {
-            "unemployment": baseline.get("unemployment", 0)
-            + ylog.get("Unemployment", 0),
-            "fixed_income_interest": baseline.get("fixed_income_interest", 0)
-            + ylog.get("Fixed Income Interest", 0),
-            "salary": baseline.get("salary", 0) + ylog.get("Salary", 0),
-            "ss_benefits": baseline.get("ss_benefits", 0)
-            + ylog.get("Social Security", 0),
-            "withdrawals": baseline.get("withdrawals", 0)
-            + ylog.get("Tax-Deferred Withdrawals", 0),
-            "gains": baseline.get("gains", 0) + ylog.get("Taxable Gains", 0),
-            "roth": baseline.get("roth", 0) + ylog.get("Roth Conversions", 0),
-            "penalty_basis": baseline.get("penalty_basis", 0)
-            + ylog.get("Penalty Tax", 0),
-        }
+        # --- Project annual AGI using insurance-style method ---
+        annual_agi = self._projected_annual_agi(year, forecast_date, age, magi_factor)
 
-        prev_for_calc = {
-            "unemployment": curr_for_calc["unemployment"] - ylog.get("Unemployment", 0),
-            "fixed_income_interest": curr_for_calc["fixed_income_interest"]
-            - ylog.get("Fixed Income Interest", 0),
-            "salary": curr_for_calc["salary"] - ylog.get("Salary", 0),
-            "ss_benefits": curr_for_calc["ss_benefits"]
-            - ylog.get("Social Security", 0),
-            "withdrawals": curr_for_calc["withdrawals"]
-            - ylog.get("Tax-Deferred Withdrawals", 0),
-            "gains": curr_for_calc["gains"] - ylog.get("Taxable Gains", 0),
-            "roth": curr_for_calc["roth"] - ylog.get("Roth Conversions", 0),
-            "penalty_basis": curr_for_calc["penalty_basis"]
-            - ylog.get("Penalty Tax", 0),
-        }
+        # --- Map projected AGI into tax categories ---
+        # Before 59.5 → treat projected AGI as capital gains (brokerage withdrawals)
+        # After 59.5 → treat projected AGI as tax-deferred withdrawals (IRA/401k)
+        jan_period = pd.Period(f"{year}-01", freq="M")
+        age_at_jan = self._get_age_in_years(jan_period)
 
-        # Calculate marginal tax for this month
-        tax_prev = self.tax_calc.calculate_tax(year=year, **prev_for_calc)["total_tax"]
-        tax_curr = self.tax_calc.calculate_tax(year=year, **curr_for_calc)["total_tax"]
+        if age_at_jan < 59.5:
+            tax_inputs = {
+                "salary": 0,
+                "fixed_income_interest": 0,
+                "unemployment": 0,
+                "ss_benefits": 0,
+                "withdrawals": 0,
+                "gains": int(annual_agi),
+                "roth": 0,
+                "penalty_basis": 0,
+            }
+        else:
+            tax_inputs = {
+                "salary": 0,
+                "fixed_income_interest": 0,
+                "unemployment": 0,
+                "ss_benefits": 0,
+                "withdrawals": int(annual_agi),
+                "gains": 0,
+                "roth": 0,
+                "penalty_basis": 0,
+            }
 
-        baseline_paid = baseline.get("tax_paid", 0)
-        marginal_this_month = max(
-            (tax_curr - baseline_paid) - (tax_prev - baseline_paid), 0
+        # --- Calculate annual tax liability ---
+        tax_liability = self.tax_calc.calculate_tax(year=year, **tax_inputs)[
+            "total_tax"
+        ]
+
+        # --- Spread evenly across months ---
+        self.monthly_tax_drip = int(tax_liability / 12.0)
+
+        logging.debug(
+            f"[TaxProjection] {year} AGI=${annual_agi:.0f}, "
+            f"annual_tax=${tax_liability:.0f}, "
+            f"monthly_drip=${self.monthly_tax_drip:.0f}"
         )
-
-        self.monthly_tax_drip = int(marginal_this_month)
 
     def _withhold_monthly_taxes(self, tx_month, buckets):
         buckets["Cash"].transfer(
