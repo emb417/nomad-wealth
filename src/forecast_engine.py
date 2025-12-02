@@ -631,7 +631,6 @@ class ForecastEngine:
 
     def _update_tax_projection(self, forecast_date: pd.Period):
         year = forecast_date.year
-        age = self._get_age_in_years(forecast_date)
         magi_factor = self.marketplace_premiums.get("magi_factor", 1.0)
 
         # --- Project annual AGI using insurance-style method ---
