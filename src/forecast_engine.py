@@ -52,6 +52,7 @@ class ForecastEngine:
         self.irmaa_brackets_by_year = tax_calc.irmaa_brackets_by_year
         self.base_premiums_by_year = tax_calc.base_premiums_by_year
 
+        self.estimated_agi: dict[int, float] = {}
         self.marketplace_premiums = marketplace_premiums
         self.dep_dob = pd.to_datetime(dep_dob).to_period("M")
         self.forecast_start_year: int = forecast_start_year or pd.Timestamp.now().year
@@ -258,15 +259,18 @@ class ForecastEngine:
         magi_factor: float,
     ) -> float:
         """
-        Estimate annual AGI with year-locked application of magi_factor:
-        - If MAGI override exists, use it.
-        - For the first forecast year: AGI = YTD income already realized + projected remaining spend.
-        - For future years: AGI = January spend * 12.
-        - Apply magi_factor only if age on Jan 1 of the year is < 59.5 (no mid-year flips).
+        Estimate annual AGI with year-locked application of magi_factor.
+        Results cached by year in self.estimated_agi.
         """
+        # Check cache first
+        if year in self.estimated_agi:
+            return self.estimated_agi[year]
+
         # 0) MAGI override
         if year in getattr(self, "magi", {}):
-            return float(self.magi[year])
+            result = float(self.magi[year])
+            self.estimated_agi[year] = result
+            return result
 
         forecast_start = getattr(self, "forecast_start_year", year)
 
@@ -295,17 +299,20 @@ class ForecastEngine:
             remaining_spend = max(0.0, annual_spend_target - spend_ytd)
 
             spend_component = remaining_spend * (magi_factor if apply_factor else 1.0)
-            return ytd_income_total + spend_component
+            result = ytd_income_total + spend_component
 
         else:
             # Future years: January spend sets the annual spend target
             jan_spend = self._get_spend_basis(jan_period)
             annual_spend_target = jan_spend * 12.0
-
             spend_component = annual_spend_target * (
                 magi_factor if apply_factor else 1.0
             )
-            return spend_component
+            result = spend_component
+
+        # Cache result
+        self.estimated_agi[year] = result
+        return result
 
     def _lookup_marketplace_credit(
         self, bands: list[dict], annual_agi: float, cap: float
