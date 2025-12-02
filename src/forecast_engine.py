@@ -696,37 +696,19 @@ class ForecastEngine:
         max_rate: float,
         max_conversion_amount: int,
         tx_month: Optional[pd.Period] = None,
-        step: int = 1000,
     ) -> int:
         if tx_month is None:
             raise ValueError("tx_month is required to estimate Roth headroom")
 
         year = tx_month.year
+        source_bucket = self.buckets.get("Tax-Deferred")
+        available_source = source_bucket.balance() if source_bucket else 0
+        cap = min(max_conversion_amount, available_source)
+        if cap <= 0:
+            return 0
 
-        # Use MAGI if available, otherwise build from components
-        if year in self.magi:
-            base_income = self.magi[year]
-            base_tax = self.tax_calc.calculate_tax(
-                year=year,
-                salary=base_income,
-                ss_benefits=0,
-                withdrawals=0,
-                gains=0,
-                fixed_income_interest=0,
-                unemployment=0,
-                roth=0,
-                penalty_basis=0,
-            )
-        else:
-            base_income = (
-                salary
-                + unemployment
-                + withdrawals
-                + gains
-                + ss_benefits
-                + fixed_income_interest
-            )
-            base_tax = self.tax_calc.calculate_tax(
+        def eff_rate_after(roth_amt: int) -> float:
+            tt = self.tax_calc.calculate_tax(
                 year=year,
                 salary=salary,
                 ss_benefits=ss_benefits,
@@ -734,32 +716,26 @@ class ForecastEngine:
                 gains=gains,
                 fixed_income_interest=fixed_income_interest,
                 unemployment=unemployment,
-                roth=0,
+                roth=roth_amt,
                 penalty_basis=penalty_basis,
             )
+            return tt["effective_tax_rate"]
 
-        headroom = 0
-        for roth_amount in range(step, max_conversion_amount + step, step):
-            test_tax = self.tax_calc.calculate_tax(
-                year=year,
-                salary=salary if year not in self.magi else base_income,
-                ss_benefits=0 if year in self.magi else ss_benefits,
-                withdrawals=0 if year in self.magi else withdrawals,
-                gains=0 if year in self.magi else gains,
-                fixed_income_interest=0 if year in self.magi else fixed_income_interest,
-                unemployment=0 if year in self.magi else unemployment,
-                roth=roth_amount,
-                penalty_basis=0 if year in self.magi else penalty_basis,
-            )
+        if eff_rate_after(cap) <= max_rate:
+            return cap
 
-            extra_tax = test_tax["total_tax"] - base_tax["total_tax"]
-            effective_rate = extra_tax / roth_amount if roth_amount > 0 else 0.0
+        lo, hi = 0, cap
+        best = 0
+        while lo <= hi:
+            mid = (lo + hi) // 2
+            rate = eff_rate_after(mid)
+            if rate <= max_rate:
+                best = mid
+                lo = mid + 1
+            else:
+                hi = mid - 1
 
-            if effective_rate > max_rate:
-                break
-            headroom = roth_amount
-
-        return headroom
+        return best
 
     def _apply_roth_conversion_if_eligible(
         self,
