@@ -649,7 +649,8 @@ class ForecastEngine:
                 "unemployment": 0,
                 "ss_benefits": 0,
                 "withdrawals": 0,
-                "gains": int(annual_agi),
+                "taxable_gains": int(annual_agi),
+                "realized_gains": 0,
                 "roth": 0,
                 "penalty_basis": 0,
             }
@@ -660,7 +661,8 @@ class ForecastEngine:
                 "unemployment": 0,
                 "ss_benefits": 0,
                 "withdrawals": int(annual_agi),
-                "gains": 0,
+                "taxable_gains": 0,
+                "realized_gains": 0,
                 "roth": 0,
                 "penalty_basis": 0,
             }
@@ -689,7 +691,8 @@ class ForecastEngine:
         salary: int,
         ss_benefits: int,
         withdrawals: int,
-        gains: int,
+        taxable_gains: int,
+        realized_gains: int,
         fixed_income_interest: int,
         unemployment: int,
         penalty_basis: int,
@@ -713,7 +716,8 @@ class ForecastEngine:
                 salary=salary,
                 ss_benefits=ss_benefits,
                 withdrawals=withdrawals,
-                gains=gains,
+                taxable_gains=taxable_gains,
+                realized_gains=0,
                 fixed_income_interest=fixed_income_interest,
                 unemployment=unemployment,
                 roth=roth_amt,
@@ -781,7 +785,8 @@ class ForecastEngine:
             salary=ylog.get("Salary", 0),
             ss_benefits=ylog.get("Social Security", 0),
             withdrawals=ylog.get("Tax-Deferred Withdrawals", 0),
-            gains=ylog.get("Taxable Gains", 0),
+            taxable_gains=ylog.get("Taxable Gains", 0),
+            realized_gains=ylog.get("Realized Gains", 0),
             fixed_income_interest=ylog.get("Fixed Income Interest", 0),
             unemployment=ylog.get("Unemployment", 0),
             penalty_basis=ylog.get("Penalty Tax", 0),
@@ -847,9 +852,11 @@ class ForecastEngine:
             salary=combined.get("Salary", 0),
             ss_benefits=combined.get("Social Security", 0),
             withdrawals=combined.get("Tax-Deferred Withdrawals", 0),
-            gains=combined.get("Taxable Gains", 0),
+            taxable_gains=combined.get("Taxable Gains", 0),
+            realized_gains=combined.get("Realized Gains", 0),
             roth=combined.get("Roth Conversions", 0),
             penalty_basis=combined.get("Penalty Tax", 0),
+            tax_free_withdrawals=combined.get("Tax-Free Withdrawals", 0),
         )
 
         # Apply Roth conversion if headroom exists
@@ -867,9 +874,11 @@ class ForecastEngine:
             salary=combined.get("Salary", 0),
             ss_benefits=combined.get("Social Security", 0),
             withdrawals=combined.get("Tax-Deferred Withdrawals", 0),
-            gains=combined.get("Taxable Gains", 0),
+            taxable_gains=combined.get("Taxable Gains", 0),
+            realized_gains=combined.get("Realized Gains", 0),
             roth=converted,
             penalty_basis=combined.get("Penalty Tax", 0),
+            tax_free_withdrawals=combined.get("Tax-Free Withdrawals", 0),
         )
 
         # Baseline taxes actually paid
@@ -901,6 +910,7 @@ class ForecastEngine:
             combined.get("Fixed Income Withdrawals", 0)
             + combined.get("Tax-Free Withdrawals", 0)
             + combined.get("Tax-Deferred Withdrawals", 0)
+            + combined.get("Realized Gains", 0)
         )
         portfolio_value = sum(bucket.balance() for bucket in buckets.values())
         withdrawal_rate = (

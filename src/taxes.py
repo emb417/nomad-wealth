@@ -189,30 +189,33 @@ class TaxCalculator:
         unemployment: int = 0,
         ss_benefits: int = 0,
         withdrawals: int = 0,
-        gains: int = 0,
+        taxable_gains: int = 0,
+        realized_gains: int = 0,
         roth: int = 0,
         penalty_basis: int = 0,
+        tax_free_withdrawals: int = 0,
     ) -> Dict[str, Any]:
         year_str = str(year)
         deduction = self.standard_deduction_by_year.get(year_str, 0)
 
         # Unemployment is taxable, but not part of provisional income for SS
-        provisional_income = salary + withdrawals + roth + gains
+        provisional_income = salary + withdrawals + roth + taxable_gains
         taxable_ss = self._taxable_social_security(
             year, ss_benefits, provisional_income
         )
 
+        # AGI: taxable components only
         agi = (
             salary
             + unemployment
             + withdrawals
             + roth
-            + gains
+            + taxable_gains
             + ss_benefits
             + fixed_income_interest
         )
 
-        # Compute ordinary income after deduction
+        # Ordinary income after deduction
         ordinary_income = max(
             0,
             salary
@@ -224,7 +227,7 @@ class TaxCalculator:
             - deduction,
         )
 
-        # Apply Payroll Specific brackets to salary
+        # Payroll taxes
         payroll_specific_tax = 0
         ss_brackets = self.payroll_brackets_by_year.get(f"Social Security {year}", [])
         if ss_brackets:
@@ -233,9 +236,9 @@ class TaxCalculator:
 
         medicare_brackets = self.payroll_brackets_by_year.get(f"Medicare {year}", [])
         if medicare_brackets:
-            base_rate = medicare_brackets[0]["tax_rate"]  # 1.45%
-            surtax_rate = medicare_brackets[1]["tax_rate"]  # 2.35%
-            surtax_threshold = medicare_brackets[1]["min_salary"]  # 200,000
+            base_rate = medicare_brackets[0]["tax_rate"]
+            surtax_rate = medicare_brackets[1]["tax_rate"]
+            surtax_threshold = medicare_brackets[1]["min_salary"]
             payroll_specific_tax += salary * base_rate
             if salary > surtax_threshold:
                 payroll_specific_tax += (salary - surtax_threshold) * (
@@ -252,22 +255,27 @@ class TaxCalculator:
             f"long_term {year}", []
         )
         gains_tax = self._calculate_capital_gains_tax(
-            ordinary_income, gains, capital_gains_brackets
+            ordinary_income, taxable_gains, capital_gains_brackets
         )
 
         penalty_tax = int(round(self.TAXABLE_RATES["Penalty"] * penalty_basis))
 
         total_tax = ordinary_tax + payroll_specific_tax + gains_tax + penalty_tax
-        total_income = (
+
+        # Effective tax rate denominator
+        total_income_for_rate = (
             salary
             + unemployment
             + withdrawals
             + roth
-            + gains
+            + realized_gains
             + ss_benefits
             + fixed_income_interest
+            + tax_free_withdrawals
         )
-        effective_tax_rate = total_tax / total_income if total_income > 0 else 0
+        effective_tax_rate = (
+            total_tax / total_income_for_rate if total_income_for_rate > 0 else 0
+        )
 
         return {
             "agi": agi,
