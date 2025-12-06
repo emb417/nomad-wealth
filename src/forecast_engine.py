@@ -717,7 +717,7 @@ class ForecastEngine:
                 ss_benefits=ss_benefits,
                 withdrawals=withdrawals,
                 taxable_gains=taxable_gains,
-                realized_gains=0,
+                realized_gains=realized_gains,
                 fixed_income_interest=fixed_income_interest,
                 unemployment=unemployment,
                 roth=roth_amt,
@@ -765,20 +765,21 @@ class ForecastEngine:
 
         # If current effective rate already exceeds max, skip conversion
         max_rate = phase_config.get("Max Tax Rate", 0.0)
-        if current_tax.get("effective_tax_rate", 0.0) >= max_rate:
+        if current_tax.get("effective_tax_rate", 0.0) > max_rate:
             return 0
 
-        source_name = phase_config.get("Tax Source Name")
-        min_threshold = phase_config.get("Tax Source Threshold")
-
-        if isinstance(source_name, str) and isinstance(min_threshold, (int, float)):
-            source_bucket = self.buckets.get(source_name)
-            source_balance = source_bucket.balance() if source_bucket else 0
-            if source_balance < min_threshold:
-                logging.debug(
-                    f"[Roth] Skipping conversion in {forecast_month} — {source_name} balance ${source_balance:,} below threshold ${min_threshold:,}"
-                )
-                return 0
+        if current_tax.get("effective_tax_rate", 0.0) > 0:
+            source_name = phase_config.get("Tax Source Name")
+            min_threshold = phase_config.get("Tax Source Threshold")
+            if isinstance(source_name, str) and isinstance(min_threshold, (int, float)):
+                source_bucket = self.buckets.get(source_name)
+                source_balance = source_bucket.balance() if source_bucket else 0
+                if source_balance < min_threshold:
+                    logging.debug(
+                        f"[Roth] Skipping conversion in {forecast_month} — {source_name} "
+                        f"balance ${source_balance:,} below threshold ${min_threshold:,}"
+                    )
+                    return 0
 
         max_amt = int(phase_config.get("Max Conversion Amount", 0))
         headroom = self._estimate_roth_headroom(
@@ -848,6 +849,7 @@ class ForecastEngine:
         # Calculate tax before Roth conversion
         pre_conversion_tax = self.tax_calc.calculate_tax(
             year=year,
+            unemployment=ylog.get("Unemployment", 0),
             fixed_income_interest=combined.get("Fixed Income Interest", 0),
             salary=combined.get("Salary", 0),
             ss_benefits=combined.get("Social Security", 0),
@@ -870,6 +872,7 @@ class ForecastEngine:
         # Recalculate tax after Roth conversion
         final_tax = self.tax_calc.calculate_tax(
             year=year,
+            unemployment=ylog.get("Unemployment", 0),
             fixed_income_interest=combined.get("Fixed Income Interest", 0),
             salary=combined.get("Salary", 0),
             ss_benefits=combined.get("Social Security", 0),

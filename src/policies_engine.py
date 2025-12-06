@@ -23,6 +23,7 @@ class ThresholdRefillPolicy:
         liquidation_targets: Dict[str, int],
         liquidation_threshold: int,
         taxable_eligibility: pd.Period,
+        sepp_enabled: bool,
         sepp_start_month: str,
         sepp_end_month: str,
     ):
@@ -33,6 +34,7 @@ class ThresholdRefillPolicy:
         self.liquidation_threshold = liquidation_threshold
         self.liquidation_sources = liquidation_sources
         self.liquidation_targets = liquidation_targets
+        self.sepp_enabled = sepp_enabled
         self.sepp_start_month = pd.Period(sepp_start_month, freq="M")
         self.sepp_end_month = pd.Period(sepp_end_month, freq="M")
 
@@ -80,7 +82,8 @@ class ThresholdRefillPolicy:
 
                 # SEPP-gate all tax_deferred buckets during SEPP period
                 if (
-                    bt == "tax_deferred"
+                    self.sepp_enabled
+                    and bt == "tax_deferred"
                     and self.sepp_start_month <= tx_month <= self.sepp_end_month
                 ):
                     logging.debug(
@@ -144,7 +147,8 @@ class ThresholdRefillPolicy:
 
             # SEPP-gate all tax_deferred buckets during SEPP period
             if (
-                bt == "tax_deferred"
+                self.sepp_enabled
+                and bt == "tax_deferred"
                 and self.sepp_start_month <= tx_month <= self.sepp_end_month
             ):
                 logging.debug(
